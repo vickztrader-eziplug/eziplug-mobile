@@ -1,0 +1,116 @@
+SELECT CONTACT FUNCTIOSN ==============================================>>>>
+For iOS, add to ios/Runner/Info.plist:
+xml<key>NSContactsUsageDescription</key>
+<string>This app needs access to contacts to select phone numbers</string>
+
+
+
+To USE THE CONFIRM TRANSACTION SCREEN ==============================================>
+// 1. Using Confirm Payment Screen
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => ConfirmPaymentScreen(
+      amount: '1,000.00',
+      details: [
+        PaymentDetail(
+          label: 'Network',
+          value: 'MTN',
+          icon: Icons.sim_card,
+          iconColor: Colors.yellow,
+        ),
+        PaymentDetail(label: 'Product', value: 'Airtime Top Up'),
+        PaymentDetail(label: 'Amount', value: '₦1,000.00'),
+        PaymentDetail(label: 'Phone Number', value: '08111111111'),
+        PaymentDetail(label: 'Amount to Charge', value: '₦980.00'),
+      ],
+      onConfirm: () {
+        // Navigate to PIN screen
+        Navigator.push(context, MaterialPageRoute(
+          builder: (context) => PinEntryScreen(
+            onPinComplete: (pin) {
+              // Validate PIN and proceed
+            },
+          ),
+        ));
+      },
+    ),
+  ),
+);
+
+To USE THE PIN ENTRY SCREEN ==============================================>
+1. PIN WIth AUth
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => PinEntryScreen(
+      title: 'Confirm Purchase',
+      subtitle: 'Enter PIN to buy airtime',
+      onPinComplete: (pin) async {
+        // Your API call here
+        await yourApiCall(pin);
+      },
+    ),
+  ),
+);
+
+// 2. Using PIN Screen
+Navigator.push(
+context,
+MaterialPageRoute(
+    builder: (context) => PinEntryScreen(
+    title: 'Confirm Payment',
+    subtitle: 'Enter your 4 digit PIN',
+    onPinComplete: (pin) {
+        // Validate PIN
+        if (pin == '1234') {
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+            builder: (context) => const AirtimeScreen(),
+            ),
+        );
+        }
+    },
+    onForgotPin: () {
+        // Handle forgot PIN
+    },
+    ),
+),
+);
+
+
+To USE THE RECEIPT SCREEN ==============================================>
+// 3. Using Receipt Screen
+  MaterialPageRoute(
+    builder: (context) => ReceiptScreen(
+      title: 'Transaction Receipt',
+      subtitle: 'Your transaction was successful',
+      details: [
+        ReceiptDetail(label: 'Transaction ID', value: '20202323458349'),
+        ReceiptDetail(label: 'Date', value: '11:25 AM, June 2025'),
+        ReceiptDetail(label: 'Mobile Number', value: '09101010101'),
+        ReceiptDetail(label: 'Transaction Type', value: 'Airtime Top up'),
+        ReceiptDetail(label: 'Amount', value: '₦1,000.00'),
+        ReceiptDetail(label: 'Amount Deduction', value: '₦980.00'),
+      ],
+      onRepeat: () {
+        // Repeat transaction logic
+      },
+      onShare: () {
+        // Share receipt logic
+      },
+      onReport: () {
+        // Report transaction logic
+      },
+    ),
+  )
+
+
+
+UPDATE ================================================================>
+Test thoroughly with real transactions
+Set up push notifications (optional)
+Build admin panel for approvals
+Add transaction history screen
+Implement refund system if needed
