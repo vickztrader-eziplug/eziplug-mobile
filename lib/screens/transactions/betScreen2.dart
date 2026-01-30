@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/toast_helper.dart';
 import '../../services/betting_service.dart';
 import '../../models/bet_category.dart';
 import '../../models/bet_event.dart';
@@ -57,17 +57,14 @@ class _BettingScreenState extends State<BettingScreen> {
         final message = result['message'] ?? 'Failed to load categories';
         print('❌ Error: $message'); // Debug
 
-        Fluttertoast.showToast(msg: message, backgroundColor: Colors.red);
+        ToastHelper.showError(message);
       }
     } catch (e) {
       setState(() => _loadingCategories = false);
 
       print('❌ Exception in _loadCategories: $e'); // Debug
 
-      Fluttertoast.showToast(
-        msg: 'Error loading categories: $e',
-        backgroundColor: Colors.red,
-      );
+      ToastHelper.showError('Network error. Please try again later.');
     }
   }
 
@@ -83,10 +80,7 @@ class _BettingScreenState extends State<BettingScreen> {
       });
     } else {
       setState(() => _loadingEvents = false);
-      Fluttertoast.showToast(
-        msg: result['message'] ?? 'Failed to load events',
-        backgroundColor: Colors.red,
-      );
+      ToastHelper.showError(result['message'] ?? 'Failed to load events');
     }
   }
 
@@ -105,10 +99,7 @@ class _BettingScreenState extends State<BettingScreen> {
       });
     } else {
       setState(() => _loadingEvents = false);
-      Fluttertoast.showToast(
-        msg: result['message'] ?? 'Failed to load events',
-        backgroundColor: Colors.red,
-      );
+      ToastHelper.showError(result['message'] ?? 'Failed to load events');
     }
   }
 

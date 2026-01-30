@@ -1,293 +1,394 @@
 import 'package:cashpoint/routes.dart';
-import 'package:cashpoint/screens/home/home3.dart';
 import 'package:cashpoint/screens/home/main_screen.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
-// More Services Screen
+// More Services Screen - Enhanced Version
 class MoreServicesScreen extends StatelessWidget {
   const MoreServicesScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => const MainScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const Spacer(),
-                  const Text(
-                    'More Services',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  const SizedBox(width: 48),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // White Content Card
-            Expanded(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(
+        slivers: [
+          // Gradient App Bar
+          SliverAppBar(
+            expandedHeight: 140,
+            floating: false,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: AppColors.primary,
+            leading: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildServiceCard(
-                              'Buy Giftcard',
-                              Icons.card_giftcard_outlined,
-                              () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.buyGiftcard,
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: _buildServiceCard(
-                              'Sell Giftcard',
-                              Icons.card_giftcard,
-                              () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.sellGiftcard,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Row(
-                      //   children: [
-                      //     Expanded(
-                      //       child: _buildServiceCard(
-                      //         'Sell Crypto',
-                      //         Icons.calculate_outlined,
-                      //         () {
-                      //           Navigator.pushNamed(
-                      //             context,
-                      //             AppRoutes.sellCrypto,
-                      //           );
-                      //         },
-                      //       ),
-                      //     ),
-                      //     const SizedBox(width: 5),
-                      //   ],
-                      // ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildServiceCard(
-                              'Betting',
-                              Icons.sports_esports_outlined,
-                              () {
-                                Navigator.pushNamed(context, AppRoutes.bet);
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: _buildServiceCard(
-                              'Gift User',
-                              Icons.card_giftcard,
-                              () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.giftUser,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildServiceCard(
-                              'Buy Airtime',
-                              Icons.phone_android,
-                              () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.buyAirtime,
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: _buildServiceCard(
-                              'Buy Data',
-                              Icons.wifi,
-                              () {
-                                Navigator.pushNamed(context, AppRoutes.buyData);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildServiceCard(
-                              'Electricity Bill',
-                              Icons.flash_on_outlined,
-                              () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.buyElectricity,
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: _buildServiceCard('Cable TV', Icons.tv, () {
-                              Navigator.pushNamed(context, AppRoutes.buyCable);
-                            }),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildServiceCard(
-                              'Education PIN',
-                              Icons.school_outlined,
-                              () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.educationPin,
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: _buildServiceCard(
-                              'Airtime Swap',
-                              Icons.swap_horiz,
-                              () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.airtimeSwap,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildServiceCard(
-                              'Save & Earn',
-                              Icons.savings_outlined,
-                              () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.saveAndEarn,
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: _buildServiceCard(
-                              'Rate Calculator',
-                              Icons.percent,
-                              () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.rateCalculator,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
+                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+              ),
+              onPressed: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const MainScreen()),
+                );
+              },
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primaryLight,
+                      AppColors.gradientEnd,
                     ],
                   ),
                 ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        const Text(
+                          'All Services',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Explore our complete range of services',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.85),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+
+          // Services Grid
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Gift Cards Section
+                _buildSectionHeader('Gift Cards', Icons.card_giftcard_rounded, AppColors.giftcardColor),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildEnhancedServiceCard(
+                        context: context,
+                        title: 'Buy Giftcard',
+                        subtitle: 'Shop gift cards',
+                        icon: Icons.card_giftcard_outlined,
+                        color: AppColors.giftcardColor,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.buyGiftcard),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildEnhancedServiceCard(
+                        context: context,
+                        title: 'Sell Giftcard',
+                        subtitle: 'Convert to cash',
+                        icon: Icons.sell_outlined,
+                        color: const Color(0xFFE91E63),
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.sellGiftcard),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Airtime & Data Section
+                _buildSectionHeader('Airtime & Data', Icons.phone_android_rounded, AppColors.airtimeColor),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildEnhancedServiceCard(
+                        context: context,
+                        title: 'Buy Airtime',
+                        subtitle: 'Recharge instantly',
+                        icon: Icons.phone_android,
+                        color: AppColors.airtimeColor,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.buyAirtime),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildEnhancedServiceCard(
+                        context: context,
+                        title: 'Buy Data',
+                        subtitle: 'Stay connected',
+                        icon: Icons.wifi_rounded,
+                        color: AppColors.dataColor,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.buyData),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildEnhancedServiceCard(
+                  context: context,
+                  title: 'Airtime Swap',
+                  subtitle: 'Convert airtime to cash',
+                  icon: Icons.swap_horiz_rounded,
+                  color: const Color(0xFF9C27B0),
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.airtimeSwap),
+                  isFullWidth: true,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Bills Payment Section
+                _buildSectionHeader('Bills & Utilities', Icons.receipt_long_rounded, AppColors.billsColor),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildEnhancedServiceCard(
+                        context: context,
+                        title: 'Electricity',
+                        subtitle: 'Pay power bills',
+                        icon: Icons.flash_on_rounded,
+                        color: AppColors.billsColor,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.buyElectricity),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildEnhancedServiceCard(
+                        context: context,
+                        title: 'Cable TV',
+                        subtitle: 'DSTV, GOTV & more',
+                        icon: Icons.tv_rounded,
+                        color: AppColors.cableColor,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.buyCable),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Entertainment & Gaming Section
+                _buildSectionHeader('Entertainment', Icons.sports_esports_rounded, const Color(0xFF00BCD4)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildEnhancedServiceCard(
+                        context: context,
+                        title: 'Betting',
+                        subtitle: 'Fund betting wallet',
+                        icon: Icons.sports_esports_rounded,
+                        color: const Color(0xFF00BCD4),
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.bet),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildEnhancedServiceCard(
+                        context: context,
+                        title: 'Gift User',
+                        subtitle: 'Send gifts',
+                        icon: Icons.redeem_rounded,
+                        color: const Color(0xFFFF5722),
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.giftUser),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Education & Finance Section
+                _buildSectionHeader('Education & Finance', Icons.school_rounded, const Color(0xFF3F51B5)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildEnhancedServiceCard(
+                        context: context,
+                        title: 'Education PIN',
+                        subtitle: 'Exam scratch cards',
+                        icon: Icons.school_rounded,
+                        color: const Color(0xFF3F51B5),
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.educationPin),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildEnhancedServiceCard(
+                        context: context,
+                        title: 'Save & Earn',
+                        subtitle: 'Grow your money',
+                        icon: Icons.savings_rounded,
+                        color: const Color(0xFF4CAF50),
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.saveAndEarn),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Tools Section
+                _buildSectionHeader('Tools', Icons.build_rounded, AppColors.calculatorColor),
+                const SizedBox(height: 12),
+                _buildEnhancedServiceCard(
+                  context: context,
+                  title: 'Rate Calculator',
+                  subtitle: 'Check live exchange rates',
+                  icon: Icons.calculate_rounded,
+                  color: AppColors.calculatorColor,
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.rateCalculator),
+                  isFullWidth: true,
+                ),
+
+                const SizedBox(height: 30),
+              ]),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildServiceCard(String title, IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primary, width: 1),
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 18),
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.text,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEnhancedServiceCard({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    bool isFullWidth = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isFullWidth ? 14 : 10,
+            vertical: 12,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      color,
+                      color.withOpacity(0.7),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(icon, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey.shade500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.grey.shade300,
+                size: 18,
               ),
-              child: Icon(icon, color: Colors.white, size: 16),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

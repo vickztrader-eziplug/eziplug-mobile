@@ -29,6 +29,28 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
+  <!-- Toastify CSS and JS for fluttertoast web support -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  
+  <!-- Custom Toastify overrides for proper error/success colors -->
+  <style>
+    /* Override Toastify default gradient - use solid colors */
+    .toastify {
+      background: none !important;
+      background-image: none !important;
+      border-radius: 8px !important;
+      padding: 12px 20px !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      font-size: 14px !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+    /* Position at top */
+    .toastify.on.toastify-top {
+      top: 20px !important;
+    }
+  </style>
+
   <title>cashpoint</title>
   <link rel="manifest" href="manifest.json">
 </head>

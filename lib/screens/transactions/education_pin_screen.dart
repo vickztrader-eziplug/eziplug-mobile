@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/toast_helper.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
 import '../reusable/pin_entry_screen.dart';
 import '../reusable/receipt_screen.dart';
@@ -16,6 +19,9 @@ class EducationPinScreen extends StatefulWidget {
 }
 
 class _EducationPinScreenState extends State<EducationPinScreen> {
+  // Accent color for the screen
+  static const Color _accentColor = Color(0xFF3F51B5);
+
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController(
     text: '1',
@@ -27,6 +33,10 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
   bool _isLoadingWallet = true;
   bool _isLoading = false;
   double _calculatedAmount = 0.0;
+  int _selectedQuantity = 1;
+
+  // Quantity options
+  final List<int> _quantityOptions = [1, 2, 3, 4, 5, 10];
 
   // Default providers with their prices
   final List<Map<String, dynamic>> _providers = [
@@ -41,28 +51,39 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
         },
       ],
     },
-    // {
-    //   'serviceId': 'neco',
-    //   'name': 'NECO',
-    //   'types': [
-    //     {
-    //       'variationCode': 'necodirect',
-    //       'name': 'NECO Direct',
-    //       'price': 1000.00,
-    //     },
-    //   ],
-    // },
-    // {
-    //   'serviceId': 'nabteb',
-    //   'name': 'NABTEB',
-    //   'types': [
-    //     {
-    //       'variationCode': 'nabtebdirect',
-    //       'name': 'NABTEB Direct',
-    //       'price': 1500.00,
-    //     },
-    //   ],
-    // },
+    {
+      'serviceId': 'neco',
+      'name': 'NECO',
+      'types': [
+        {
+          'variationCode': 'necodirect',
+          'name': 'NECO Direct',
+          'price': 1000.00,
+        },
+      ],
+    },
+    {
+      'serviceId': 'nabteb',
+      'name': 'NABTEB',
+      'types': [
+        {
+          'variationCode': 'nabtebdirect',
+          'name': 'NABTEB Direct',
+          'price': 1500.00,
+        },
+      ],
+    },
+    {
+      'serviceId': 'jamb',
+      'name': 'JAMB',
+      'types': [
+        {
+          'variationCode': 'jambdirect',
+          'name': 'JAMB Direct',
+          'price': 5000.00,
+        },
+      ],
+    },
   ];
 
   List<Map<String, dynamic>> _availableTypes = [];
@@ -80,6 +101,15 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
     super.initState();
     _fetchWalletBalance();
     _quantityController.addListener(_calculateAmount);
+    _quantityController.text = _selectedQuantity.toString();
+  }
+
+  void _onQuantitySelected(int quantity) {
+    setState(() {
+      _selectedQuantity = quantity;
+      _quantityController.text = quantity.toString();
+      _calculateAmount();
+    });
   }
 
   Future<void> _fetchWalletBalance() async {
@@ -346,13 +376,8 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
 
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Use ToastHelper for consistent top-positioned toasts
+    ToastHelper.showSnackBar(context, message, color);
   }
 
   String _formatBalance(double balance) {
@@ -367,310 +392,315 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            if (_isLoading)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
-                  ),
-                ),
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Gradient Header
+              ModernFormWidgets.buildGradientHeader(
+                context: context,
+                title: 'Education PIN',
+                subtitle: 'Purchase exam PINs instantly',
+                walletBalance: _walletNaira,
+                isLoadingBalance: _isLoadingWallet,
+                primaryColor: _accentColor,
               ),
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 260,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Education PIN',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                _isLoadingWallet
-                                    ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Text(
-                                        'Balance: ₦${_formatBalance(_walletNaira)}',
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
 
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
+              // Content
+              Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Select Provider
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      // Exam Type Selector Card
+                      ModernFormWidgets.buildFormCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLabel('Select Provider'),
+                            ModernFormWidgets.buildSectionLabel(
+                              'Select Exam Type',
+                              icon: Icons.school_outlined,
+                              iconColor: _accentColor,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildExamTypeSelector(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Plan Selection (if provider selected)
+                      if (_selectedProvider != null && _availableTypes.isNotEmpty) ...[
+                        ModernFormWidgets.buildFormCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ModernFormWidgets.buildSectionLabel(
+                                'Select Plan',
+                                icon: Icons.list_alt_outlined,
+                                iconColor: _accentColor,
+                              ),
+                              const SizedBox(height: 12),
+                              ModernFormWidgets.buildDropdown<String>(
+                                label: '',
+                                hint: 'Select plan type',
+                                value: _selectedType,
+                                items: _availableTypes.map((t) => t['name'] as String).toList(),
+                                getLabel: (item) => item,
+                                onChanged: _onTypeSelected,
+                                prefixIcon: Icons.assignment_outlined,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // Quantity Selector
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Quantity',
+                              icon: Icons.numbers_outlined,
+                              iconColor: _accentColor,
+                            ),
                             const SizedBox(height: 12),
-                            _buildDropdown(
-                              hint: 'Select a provider',
-                              value: _selectedProvider,
-                              items: _providers
-                                  .map((p) => p['name'] as String)
-                                  .toList(),
-                              onChanged: _onProviderSelected,
+                            _buildQuantitySelector(),
+                            const SizedBox(height: 12),
+                            // Custom quantity input
+                            ModernFormWidgets.buildTextField(
+                              controller: _quantityController,
+                              hintText: 'Or enter custom quantity',
+                              prefixIcon: Icons.edit_outlined,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              onChanged: (value) {
+                                final qty = int.tryParse(value) ?? 1;
+                                setState(() {
+                                  _selectedQuantity = qty;
+                                  _calculateAmount();
+                                });
+                              },
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
-                      // Select Type
-                      _buildLabel('Type'),
-                      const SizedBox(height: 12),
-                      _buildDropdown(
-                        hint: 'Select type',
-                        value: _selectedType,
-                        items: _availableTypes
-                            .map((t) => t['name'] as String)
-                            .toList(),
-                        onChanged: _onTypeSelected,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Phone Number
-                      _buildLabel('Phone Number'),
-                      const SizedBox(height: 12),
-                      _buildTextField(
-                        controller: _phoneController,
-                        hintText: 'Enter phone number',
-                        keyboardType: TextInputType.phone,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Quantity
-                      _buildLabel('Quantity'),
-                      const SizedBox(height: 12),
-                      _buildTextField(
-                        controller: _quantityController,
-                        hintText: 'Enter quantity',
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Amount Display
-                      _buildLabel('Total Amount'),
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '₦${_formatBalance(_calculatedAmount)}',
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
+                      // Amount Display Card
+                      ModernFormWidgets.buildFormCard(
+                        backgroundColor: _accentColor.withOpacity(0.05),
+                        child: Column(
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Total Amount',
+                              icon: Icons.payments_outlined,
+                              iconColor: _accentColor,
                             ),
-                          ),
+                            const SizedBox(height: 16),
+                            Text(
+                              '₦${_formatBalance(_calculatedAmount)}',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: _accentColor,
+                              ),
+                            ),
+                            if (_selectedPrice > 0) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                '₦${_selectedPrice.toStringAsFixed(0)} × $_selectedQuantity PIN(s)',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
+                      const SizedBox(height: 16),
 
-                      if (_selectedPrice > 0) ...[
-                        const SizedBox(height: 8),
-                        Center(
-                          child: Text(
-                            'Price per PIN: ₦${_selectedPrice.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textColor.withOpacity(0.6),
+                      // Phone/Email for delivery
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Delivery Contact',
+                              icon: Icons.phone_android_outlined,
+                              iconColor: _accentColor,
                             ),
-                          ),
-                        ),
-                      ],
-
-                      const SizedBox(height: 40),
-
-                      // Proceed Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _proceedToPin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.textColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                            const SizedBox(height: 12),
+                            ModernFormWidgets.buildTextField(
+                              controller: _phoneController,
+                              hintText: 'Enter phone number (11 digits)',
+                              prefixIcon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(11),
+                              ],
                             ),
-                            elevation: 0,
-                            disabledBackgroundColor: AppColors.lightGrey,
-                          ),
-                          child: const Text(
-                            'Proceed',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          ],
                         ),
                       ),
+                      const SizedBox(height: 16),
+
+                      // Info Card
+                      ModernFormWidgets.buildInfoCard(
+                        message: 'Education PINs will be sent to the phone number provided. '
+                            'Please ensure the number is correct before proceeding.',
+                        icon: Icons.lightbulb_outline,
+                        color: _accentColor,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Buy PIN Button
+                      ModernFormWidgets.buildPrimaryButton(
+                        label: 'Buy PIN',
+                        onPressed: _proceedToPin,
+                        isLoading: _isLoading,
+                        backgroundColor: _accentColor,
+                        icon: Icons.shopping_cart_checkout,
+                      ),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
+            ],
+          ),
+
+          // Loading overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: _accentColor,
+                  strokeWidth: 3,
+                ),
+              ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildDropdown({
-    required String hint,
-    required String? value,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.lightGrey, width: 1),
-      ),
-      child: DropdownButton<String>(
-        value: value,
-        hint: Text(
-          hint,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
+  Widget _buildExamTypeSelector() {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: _providers.map((provider) {
+        final name = provider['name'] as String;
+        final isSelected = _selectedProvider == name;
+        
+        IconData getExamIcon(String examName) {
+          switch (examName.toUpperCase()) {
+            case 'WAEC':
+              return Icons.school;
+            case 'NECO':
+              return Icons.menu_book;
+            case 'NABTEB':
+              return Icons.engineering;
+            case 'JAMB':
+              return Icons.account_balance;
+            default:
+              return Icons.school_outlined;
+          }
+        }
+        
+        return GestureDetector(
+          onTap: () => _onProviderSelected(name),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              color: isSelected ? _accentColor.withOpacity(0.12) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? _accentColor : Colors.grey.shade200,
+                width: isSelected ? 1.5 : 1,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: _accentColor.withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  getExamIcon(name),
+                  size: 24,
+                  color: isSelected ? _accentColor : Colors.grey.shade600,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected ? _accentColor : AppColors.textColor,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        isExpanded: true,
-        underline: const SizedBox(),
-        icon: const Icon(Icons.keyboard_arrow_down),
-        items: items.map((String item) {
-          return DropdownMenuItem<String>(value: item, child: Text(item));
-        }).toList(),
-        onChanged: onChanged,
-      ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textColor,
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.lightGrey, width: 1),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        maxLength: keyboardType == TextInputType.phone ? 11 : null,
-        style: const TextStyle(fontSize: 14, color: AppColors.textColor),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
+  Widget _buildQuantitySelector() {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: _quantityOptions.map((qty) {
+        final isSelected = _selectedQuantity == qty;
+        return GestureDetector(
+          onTap: () => _onQuantitySelected(qty),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? _accentColor : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? _accentColor : Colors.grey.shade200,
+                width: 1,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: _accentColor.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Text(
+              qty.toString(),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : AppColors.textColor,
+              ),
+            ),
           ),
-          border: InputBorder.none,
-          counterText: '',
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
-      ),
+        );
+      }).toList(),
     );
   }
 }

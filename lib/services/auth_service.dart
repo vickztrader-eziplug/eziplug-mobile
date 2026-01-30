@@ -1,6 +1,7 @@
 // lib/services/auth_service.dart
 import 'dart:convert';
 import 'package:cashpoint/core/utils/constants.dart';
+import 'package:cashpoint/core/utils/api_response.dart';
 import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -26,12 +27,18 @@ class AuthService extends ChangeNotifier {
   String? get token => _token;
 
   Map<String, dynamic>? get _userData => _user;
-  String get userName => _userData?['firstName'] ?? 'User';
+  String get userName => _userData?['first_name'] ?? _userData?['firstName'] ?? 'User';
+  String get userLastName => _userData?['last_name'] ?? _userData?['lastName'] ?? '';
+  String get userFullName {
+    final first = userName;
+    final last = userLastName;
+    return last.isNotEmpty ? '$first $last' : first;
+  }
   String get userEmail => _userData?['email'] ?? '';
   String get userPhone => _userData?['phone'] ?? '';
   String? get savedEmail => _user?['email'];
   String get userProfilePicture =>
-      _userData?['profile'] ?? _userData?['avatar'] ?? '';
+      _userData?['profile'] ?? _userData?['avatar'] ?? _userData?['passport'] ?? '';
   double get walletNaira =>
       double.tryParse(_userData?['wallet_naira']?.toString() ?? '0') ?? 0.0;
   double get walletDollar =>
@@ -82,17 +89,18 @@ class AuthService extends ChangeNotifier {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final result = jsonDecode(response.body);
+        final apiResponse = ApiResponse.fromJson(result);
 
         // If registration returns a token, save it
-        if (result.containsKey('token')) {
+        if (apiResponse.token != null) {
           await _saveAuth(result);
         }
 
         return {
-          'success': result['status'] == true,
-          'message': result['message'] ?? 'Registration successful',
-          'token': result['results']['token'],
-          'user': result['results']['user'],
+          'success': apiResponse.success,
+          'message': apiResponse.message.isNotEmpty ? apiResponse.message : 'Registration successful',
+          'token': apiResponse.token,
+          'user': apiResponse.user,
         };
       } else if (response.statusCode == 302) {
         return {
@@ -205,18 +213,20 @@ class AuthService extends ChangeNotifier {
 
       if (statusCode == 200 || statusCode == 201) {
         final result = jsonDecode(body);
+        final apiResponse = ApiResponse.fromJson(result);
         print('Login result: $result');
-        if (result['status'] == true) {
+        
+        if (apiResponse.success) {
           await _saveAuth(result);
           return {
             'success': true,
-            'message': result['message'] ?? 'Login successful',
-            'user': result['user'],
+            'message': apiResponse.message.isNotEmpty ? apiResponse.message : 'Login successful',
+            'user': apiResponse.user,
           };
         } else {
           return {
             'success': false,
-            'message': result['message'] ?? 'Invalid credentials',
+            'message': apiResponse.message.isNotEmpty ? apiResponse.message : 'Invalid credentials',
           };
         }
       }
@@ -295,15 +305,16 @@ class AuthService extends ChangeNotifier {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final result = jsonDecode(response.body);
+        final apiResponse = ApiResponse.fromJson(result);
 
         print('Parsed Result: $result');
-        print('Status: ${result['status']}');
-        print('Message: ${result['message']}');
+        print('Success: ${apiResponse.success}');
+        print('Message: ${apiResponse.message}');
 
         return {
-          'success': result['status'] == true,
-          'message': result['message'] ?? 'Verification successful',
-          'user': result['results']?['user'],
+          'success': apiResponse.success,
+          'message': apiResponse.message.isNotEmpty ? apiResponse.message : 'Verification successful',
+          'user': apiResponse.user,
         };
       } else if (response.statusCode == 401) {
         try {
@@ -380,9 +391,10 @@ class AuthService extends ChangeNotifier {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final result = jsonDecode(response.body);
+        final apiResponse = ApiResponse.fromJson(result);
         return {
-          'success': result['status'] == true,
-          'message': result['message'] ?? 'OTP sent to your email',
+          'success': apiResponse.success,
+          'message': apiResponse.message.isNotEmpty ? apiResponse.message : 'OTP sent to your email',
         };
       } else if (response.statusCode == 422) {
         final result = jsonDecode(response.body);
@@ -433,9 +445,10 @@ class AuthService extends ChangeNotifier {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final result = jsonDecode(response.body);
+        final apiResponse = ApiResponse.fromJson(result);
         return {
-          'success': result['status'] == true,
-          'message': result['message'] ?? 'Password reset successful',
+          'success': apiResponse.success,
+          'message': apiResponse.message.isNotEmpty ? apiResponse.message : 'Password reset successful',
         };
       } else if (response.statusCode == 422) {
         final result = jsonDecode(response.body);
@@ -495,12 +508,13 @@ class AuthService extends ChangeNotifier {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final result = jsonDecode(response.body);
+        final apiResponse = ApiResponse.fromJson(result);
 
         return {
-          'success': result['status'] == true,
-          'message': result['message'] == 'app.otp_resend'
+          'success': apiResponse.success,
+          'message': apiResponse.message == 'app.otp_resend'
               ? 'OTP resent successfully to your email'
-              : result['message'],
+              : (apiResponse.message.isNotEmpty ? apiResponse.message : 'OTP resent successfully'),
         };
       } else if (response.statusCode == 401) {
         return {
@@ -557,8 +571,12 @@ class AuthService extends ChangeNotifier {
   // }
   Future<void> _saveAuth(Map<String, dynamic> payload) async {
     final prefs = await SharedPreferences.getInstance();
-    final token = payload['results']['token'] as String?;
-    final user = payload['user'] as Map<String, dynamic>?;
+    final apiResponse = ApiResponse.fromJson(payload);
+    
+    // Get token from new format (data.token) or old format (results.token)
+    final token = apiResponse.token ?? payload['results']?['token'] as String?;
+    // Get user from new format (data.user) or old format (user)
+    final user = apiResponse.user ?? payload['user'] as Map<String, dynamic>?;
 
     if (token != null) {
       _token = token;

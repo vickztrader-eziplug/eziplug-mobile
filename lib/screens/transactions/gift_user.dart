@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/toast_helper.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
 import '../reusable/pin_entry_screen.dart';
 
@@ -17,6 +20,10 @@ class GiftUserScreen extends StatefulWidget {
 class _GiftUserScreenState extends State<GiftUserScreen> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
+  final TextEditingController noteController = TextEditingController();
+  
+  // Orange accent color for gift screen
+  static const Color _accentColor = Color(0xFFFF5722);
 
   double _walletNaira = 0.0;
   bool _isLoadingWallet = true;
@@ -32,6 +39,7 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
   void dispose() {
     usernameController.dispose();
     amountController.dispose();
+    noteController.dispose();
     super.dispose();
   }
 
@@ -180,6 +188,7 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
         // Clear inputs
         usernameController.clear();
         amountController.clear();
+        noteController.clear();
       } else if (response.statusCode == 401) {
         Navigator.pop(context); // Close PIN screen
         _showSnackBar('Session expired. Please login again', Colors.red);
@@ -298,278 +307,183 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
 
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  String _formatBalance(double balance) {
-    return balance
-        .toStringAsFixed(2)
-        .replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]},',
-        );
+    // Use ToastHelper for consistent top-positioned toasts
+    ToastHelper.showSnackBar(context, message, color);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            if (_isLoading)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
-                  ),
-                ),
+      backgroundColor: Colors.grey.shade50,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Modern Gradient Header
+              ModernFormWidgets.buildGradientHeader(
+                context: context,
+                title: 'Gift User',
+                subtitle: 'Send money to friends & family',
+                walletBalance: _walletNaira,
+                isLoadingBalance: _isLoadingWallet,
+                primaryColor: _accentColor,
               ),
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 260,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Gift User',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                _isLoadingWallet
-                                    ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Text(
-                                        'Balance: ₦${_formatBalance(_walletNaira)}',
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
+              
+              // Content Area
+              Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 30, 24, 30),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Info Banner
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.primary.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
+                      const SizedBox(height: 8),
+                      
+                      // Info Card
+                      ModernFormWidgets.buildInfoCard(
+                        message: 'Send money instantly to any Eziplug user. Just enter their username or email and the amount you want to gift.',
+                        icon: Icons.card_giftcard,
+                        color: _accentColor,
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Recipient Input Section
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(
-                              Icons.info_outline,
-                              color: AppColors.primary,
-                              size: 20,
+                            ModernFormWidgets.buildSectionLabel(
+                              'Recipient Details',
+                              icon: Icons.person_outline,
+                              iconColor: _accentColor,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Send money to another user by entering their username',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textColor.withOpacity(0.7),
-                                  height: 1.4,
+                            const SizedBox(height: 16),
+                            ModernFormWidgets.buildTextField(
+                              controller: usernameController,
+                              hintText: 'Enter username or email',
+                              prefixIcon: Icons.alternate_email,
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Amount Section
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Gift Amount',
+                              icon: Icons.payments_outlined,
+                              iconColor: _accentColor,
+                            ),
+                            const SizedBox(height: 16),
+                            ModernFormWidgets.buildTextField(
+                              controller: amountController,
+                              hintText: 'Enter amount to gift',
+                              prefixIcon: Icons.attach_money,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              suffixWidget: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: _accentColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'NGN',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: _accentColor,
+                                  ),
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Note Section (Optional)
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Add a Note (Optional)',
+                              icon: Icons.message_outlined,
+                              iconColor: _accentColor,
+                            ),
+                            const SizedBox(height: 16),
+                            ModernFormWidgets.buildTextField(
+                              controller: noteController,
+                              hintText: 'Write a message to the recipient...',
+                              prefixIcon: Icons.edit_note,
+                              maxLines: 3,
+                            ),
+                          ],
+                        ),
+                      ),
+                      
                       const SizedBox(height: 24),
-
-                      // Recipient's Username
+                      
+                      // Gift Tips Info Card
+                      ModernFormWidgets.buildInfoCard(
+                        message: 'Tip: Double-check the recipient\'s username before sending. Gifts are processed instantly and cannot be reversed.',
+                        icon: Icons.lightbulb_outline,
+                        color: Colors.amber.shade700,
+                      ),
+                      
+                      const SizedBox(height: 32),
+                      
+                      // Send Gift Button
+                      ModernFormWidgets.buildPrimaryButton(
+                        label: 'Send Gift',
+                        onPressed: _proceedToPin,
+                        isLoading: _isLoading,
+                        backgroundColor: _accentColor,
+                        icon: Icons.card_giftcard,
+                      ),
+                      
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          // Loading Overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black38,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        color: _accentColor,
+                        strokeWidth: 3,
+                      ),
+                      const SizedBox(height: 16),
                       const Text(
-                        "Recipient's Username",
+                        'Processing gift...',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBackground,
-                          borderRadius: BorderRadius.circular(5),
-                          border: Border.all(
-                            color: AppColors.lightGrey,
-                            width: 2,
-                          ),
-                        ),
-                        child: TextField(
-                          controller: usernameController,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textColor,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: "Enter recipient's username",
-                            hintStyle: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textColor.withOpacity(0.5),
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.person_outline,
-                              color: AppColors.textColor.withOpacity(0.5),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Amount
-                      const Text(
-                        'Amount',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBackground,
-                          borderRadius: BorderRadius.circular(5),
-                          border: Border.all(
-                            color: AppColors.lightGrey,
-                            width: 2,
-                          ),
-                        ),
-                        child: TextField(
-                          controller: amountController,
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textColor,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Enter amount to gift',
-                            hintStyle: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textColor.withOpacity(0.5),
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            prefixText: '₦ ',
-                            prefixStyle: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 280),
-
-                      // Proceed Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _proceedToPin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.textColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                            disabledBackgroundColor: AppColors.lightGrey,
-                          ),
-                          child: const Text(
-                            'Proceed',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
                         ),
                       ),
                     ],
@@ -577,8 +491,7 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
                 ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

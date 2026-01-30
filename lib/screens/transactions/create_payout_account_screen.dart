@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/api_response.dart';
 import '../../services/auth_service.dart';
 
 class CreatePayoutAccountScreen extends StatefulWidget {
@@ -218,9 +219,11 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
       print('📦 Verify Account Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final result = jsonDecode(response.body)['result'][0];
-        final accountName =
-            result['account_name'] ?? result['data']?['account_name'];
+        final jsonResult = jsonDecode(response.body);
+        // Handle both old format (result[0]) and new format (data)
+        final responseData = getResponseData(jsonResult);
+        final result = responseData is List ? responseData[0] : responseData;
+        final accountName = result['account_name'];
 
         if (accountName != null) {
           setState(() {
@@ -232,7 +235,7 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
         }
       } else {
         final result = jsonDecode(response.body);
-        _showSnackBar(result['message'] ?? 'Verification failed', Colors.red);
+        _showSnackBar(getResponseMessage(result) ?? 'Verification failed', Colors.red);
       }
     } catch (e) {
       print('Error verifying account: $e');
@@ -277,14 +280,14 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final result = jsonDecode(response.body);
         _showSnackBar(
-          result['message'] ?? 'Payout account created successfully',
+          getResponseMessage(result) ?? 'Payout account created successfully',
           Colors.green,
         );
         Navigator.pop(context, true);
       } else {
         final result = jsonDecode(response.body);
         _showSnackBar(
-          result['message'] ?? 'Failed to create payout account',
+          getResponseMessage(result) ?? 'Failed to create payout account',
           Colors.red,
         );
       }

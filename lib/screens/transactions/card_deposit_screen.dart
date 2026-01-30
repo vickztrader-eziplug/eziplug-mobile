@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/api_response.dart';
+import '../../core/utils/toast_helper.dart';
 import '../../services/auth_service.dart';
 
 class CardDepositScreen extends StatefulWidget {
@@ -95,12 +97,12 @@ class _CardDepositScreenState extends State<CardDepositScreen> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final result = jsonDecode(response.body);
-        final authorizationUrl =
-            result['authorization_url'] ?? result['data']?['authorization_url'];
-        final reference = result['reference'] ?? result['data']?['reference'];
+        final responseData = getResponseData(result);
+        final authorizationUrl = responseData['authorization_url'];
+        final reference = responseData['reference'];
 
         if (authorizationUrl == null || reference == null) {
-          _showSnackBar('Failed to initialize payment', Colors.red);
+          _showSnackBar(getResponseMessage(result) ?? 'Failed to initialize payment', Colors.red);
           return;
         }
 
@@ -123,13 +125,13 @@ class _CardDepositScreenState extends State<CardDepositScreen> {
       } else {
         final result = jsonDecode(response.body);
         _showSnackBar(
-          result['message'] ?? 'Failed to initialize payment',
+          getResponseMessage(result) ?? 'Failed to initialize payment',
           Colors.red,
         );
       }
     } catch (e) {
       print('Error initiating payment: $e');
-      _showSnackBar('Error: $e', Colors.red);
+      _showSnackBar('Network error. Please try again later.', Colors.red);
       setState(() => _isLoading = false);
     }
   }
@@ -159,14 +161,16 @@ class _CardDepositScreenState extends State<CardDepositScreen> {
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
 
-        if (result['status'] == true) {
+        if (isSuccessResponse(result)) {
           // Update user balance
           await authService.refreshUserData();
 
-          _showSuccessDialog(result);
+          // Get response data for the success dialog
+          final responseData = getResponseData(result);
+          _showSuccessDialog(responseData);
         } else {
           _showSnackBar(
-            result['message'] ?? 'Payment verification failed',
+            getResponseMessage(result) ?? 'Payment verification failed',
             Colors.red,
           );
         }
@@ -175,7 +179,7 @@ class _CardDepositScreenState extends State<CardDepositScreen> {
       }
     } catch (e) {
       print('Error verifying payment: $e');
-      _showSnackBar('Error verifying payment: $e', Colors.red);
+      _showSnackBar('Network error. Please try again later.', Colors.red);
       setState(() => _isLoading = false);
     }
   }
@@ -317,13 +321,8 @@ class _CardDepositScreenState extends State<CardDepositScreen> {
 
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Use ToastHelper for consistent top-positioned toasts
+    ToastHelper.showSnackBar(context, message, color);
   }
 
   @override

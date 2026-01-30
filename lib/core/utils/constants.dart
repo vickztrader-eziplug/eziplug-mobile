@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class Constants {
   static const String baseUrl =
-      "https://cashpoint.deovaze.com/api"; //http://127.0.0.1:8006/api
+      // "http://127.0.0.1:8000/api"; // For local testing
+      "https://app.eziplug.app/api"; // Production URL
 
   // App Info
   static const String appName = 'Eziplug';
@@ -62,6 +63,11 @@ class Constants {
   static const giftCardHistory = '$baseUrl/giftcard/history';
   static const cryotoHistory = '$baseUrl/crypto/history';
   
+  // Unified Transactions Endpoint (replaces individual history endpoints)
+  static const transactions = '$baseUrl/transactions';
+  static const transactionDetails = '$baseUrl/transactions'; // Append /{reference}
+  static const transactionsSummary = '$baseUrl/transactions/summary';
+  static const transactionsCategories = '$baseUrl/transactions/categories';
 
   // Betting endpoints
   static const String bettingCategories = '$baseUrl/betting/categories';

@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/api_response.dart';
+import '../../core/utils/toast_helper.dart';
 import '../../services/auth_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -172,8 +174,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
         if (passportResponse.statusCode == 200 ||
             passportResponse.statusCode == 201) {
-          final updatedUser =
-              passportData['results']?['user'] ?? passportData['user'];
+          final responseData = getResponseData(passportData);
+          final updatedUser = responseData['user'] ?? passportData['user'];
           if (updatedUser != null) {
             setState(() {
               _currentPassport = updatedUser['passport'];
@@ -216,13 +218,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Use ToastHelper for consistent top-positioned toasts
+    ToastHelper.showSnackBar(context, message, color);
   }
 
   @override

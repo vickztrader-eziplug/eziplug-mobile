@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/toast_helper.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
 import '../reusable/pin_entry_screen.dart';
 import '../reusable/receipt_screen.dart';
@@ -528,431 +531,8 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
 
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            if (_isLoading)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
-                  ),
-                ),
-              ),
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 260,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Electricity Bill',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                _isLoadingWallet
-                                    ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Text(
-                                        'Balance: ₦${_formatBalance(_walletNaira)}',
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Select Provider - Now with bottom sheet
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildLabel('Select Provider'),
-                            const SizedBox(height: 12),
-                            GestureDetector(
-                              onTap: _showProviderBottomSheet,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.cardBackground,
-                                  borderRadius: BorderRadius.circular(5),
-                                  border: Border.all(
-                                    color: AppColors.lightGrey,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    // Provider Logo (if selected)
-                                    if (_selectedProviderLogo != null) ...[
-                                      _buildProviderLogo(
-                                        _selectedProviderLogo,
-                                        size: 32,
-                                      ),
-                                      const SizedBox(width: 12),
-                                    ],
-                                    Expanded(
-                                      child: Text(
-                                        _selectedProviderName ??
-                                            'Select a provider',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: _selectedProviderName != null
-                                              ? AppColors.textColor
-                                              : AppColors.textColor.withOpacity(
-                                                  0.5,
-                                                ),
-                                        ),
-                                      ),
-                                    ),
-                                    const Icon(
-                                      Icons.keyboard_arrow_down,
-                                      color: AppColors.textColor,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Select Type
-                      _buildLabel('Meter Type'),
-                      const SizedBox(height: 12),
-                      _buildDropdown(
-                        hint: 'Select type',
-                        value: _selectedType,
-                        items: _types,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedType = value;
-                            _customerName = null;
-                            _meterVerificationError = null;
-                            _hasManuallyVerified = false;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Meter Number with Verify Button
-                      _buildLabel('Meter Number'),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              controller: _meterController,
-                              hintText: 'Enter meter number',
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          // Verify Button
-                          SizedBox(
-                            height: 48,
-                            child: ElevatedButton(
-                              onPressed: _canVerifyMeter()
-                                  ? _verifyMeterNumber
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                elevation: 0,
-                                disabledBackgroundColor: AppColors.lightGrey
-                                    .withOpacity(0.5),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                ),
-                              ),
-                              child: _isVerifyingMeter
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Verify',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Verification Status
-                      if (_customerName != null)
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.green, width: 1),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Verified',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.green,
-                                      ),
-                                    ),
-                                    Text(
-                                      _customerName!,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.textColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      if (_meterVerificationError != null &&
-                          _hasManuallyVerified)
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red, width: 1),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.error,
-                                color: Colors.red,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _meterVerificationError!,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      const SizedBox(height: 20),
-
-                      // Phone Number
-                      _buildLabel('Phone Number'),
-                      const SizedBox(height: 12),
-                      _buildTextField(
-                        controller: _phoneController,
-                        hintText: 'Enter phone number',
-                        keyboardType: TextInputType.phone,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Amount Section with Toggle
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildLabel('Amount'),
-                          Row(
-                            children: [
-                              Text(
-                                'Custom',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.textColor.withOpacity(0.7),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Switch(
-                                value: _showCustomAmount,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _showCustomAmount = value;
-                                    if (value) {
-                                      _selectedAmount = null;
-                                    } else {
-                                      _customAmountController.clear();
-                                    }
-                                  });
-                                },
-                                activeColor: AppColors.primary,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: _showCustomAmount
-                            ? _buildTextField(
-                                controller: _customAmountController,
-                                hintText: 'Enter amount',
-                                keyboardType: TextInputType.number,
-                              )
-                            : Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: _amounts.map((amount) {
-                                  return _buildAmountChip(amount);
-                                }).toList(),
-                              ),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      // Proceed Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _proceedToPin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.textColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                            disabledBackgroundColor: AppColors.lightGrey,
-                          ),
-                          child: const Text(
-                            'Proceed',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    // Use ToastHelper for consistent top-positioned toasts
+    ToastHelper.showSnackBar(context, message, color);
   }
 
   String _formatBalance(double balance) {
@@ -964,112 +544,538 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
         );
   }
 
-  Widget _buildDropdown({
-    required String hint,
-    required String? value,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.lightGrey, width: 1),
-      ),
-      child: DropdownButton<String>(
-        value: value,
-        hint: Text(
-          hint,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Gradient Header
+              ModernFormWidgets.buildGradientHeader(
+                context: context,
+                title: 'Electricity Bill',
+                walletBalance: _walletNaira,
+                isLoadingBalance: _isLoadingWallet,
+                primaryColor: AppColors.billsColor,
+              ),
+
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Provider Selection Card
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Select Provider',
+                              icon: Icons.electrical_services,
+                              iconColor: AppColors.billsColor,
+                            ),
+                            const SizedBox(height: 12),
+                            GestureDetector(
+                              onTap: _showProviderBottomSheet,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: Colors.grey.shade200,
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.billsColor.withOpacity(0.06),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    if (_selectedProviderLogo != null) ...[
+                                      _buildProviderLogo(
+                                        _selectedProviderLogo,
+                                        size: 32,
+                                      ),
+                                      const SizedBox(width: 12),
+                                    ] else ...[
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.billsColor.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          Icons.electric_bolt,
+                                          color: AppColors.billsColor,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                    ],
+                                    Expanded(
+                                      child: Text(
+                                        _selectedProviderName ?? 'Select a provider',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: _selectedProviderName != null
+                                              ? AppColors.textColor
+                                              : Colors.grey.shade400,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                      color: AppColors.billsColor,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Meter Type Selection Card
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Meter Type',
+                              icon: Icons.speed,
+                              iconColor: AppColors.billsColor,
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: _types.map((type) {
+                                final isSelected = _selectedType == type;
+                                return Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedType = type;
+                                        _customerName = null;
+                                        _meterVerificationError = null;
+                                        _hasManuallyVerified = false;
+                                      });
+                                    },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      margin: EdgeInsets.only(
+                                        right: type == 'Prepaid' ? 8 : 0,
+                                        left: type == 'Postpaid' ? 8 : 0,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? AppColors.billsColor.withOpacity(0.12)
+                                            : Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? AppColors.billsColor
+                                              : Colors.grey.shade200,
+                                          width: isSelected ? 1.5 : 1,
+                                        ),
+                                        boxShadow: isSelected
+                                            ? [
+                                                BoxShadow(
+                                                  color: AppColors.billsColor
+                                                      .withOpacity(0.15),
+                                                  blurRadius: 8,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            type == 'Prepaid'
+                                                ? Icons.credit_card
+                                                : Icons.receipt_long,
+                                            size: 18,
+                                            color: isSelected
+                                                ? AppColors.billsColor
+                                                : Colors.grey.shade600,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            type,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.w600
+                                                  : FontWeight.w500,
+                                              color: isSelected
+                                                  ? AppColors.billsColor
+                                                  : AppColors.textColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Meter Number Card
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Meter Number',
+                              icon: Icons.numbers,
+                              iconColor: AppColors.billsColor,
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: ModernFormWidgets.buildTextField(
+                                    controller: _meterController,
+                                    hintText: 'Enter meter number',
+                                    prefixIcon: Icons.electric_meter,
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                      LengthLimitingTextInputFormatter(13),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                SizedBox(
+                                  height: 52,
+                                  child: ElevatedButton(
+                                    onPressed: _canVerifyMeter()
+                                        ? _verifyMeterNumber
+                                        : null,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.billsColor,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      elevation: 0,
+                                      disabledBackgroundColor: Colors.grey.shade300,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                      ),
+                                    ),
+                                    child: _isVerifyingMeter
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Verify',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Verification Status
+                            if (_customerName != null)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.green.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.check_circle,
+                                        color: Colors.green,
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            'Verified Successfully',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _customerName!,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.textColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                            if (_meterVerificationError != null && _hasManuallyVerified)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.red.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.error_outline,
+                                        color: Colors.red,
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        _meterVerificationError!,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.red.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Phone Number Card
+                      ModernFormWidgets.buildFormCard(
+                        child: ModernFormWidgets.buildTextField(
+                          controller: _phoneController,
+                          hintText: 'Enter phone number',
+                          label: 'Phone Number',
+                          prefixIcon: Icons.phone_outlined,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(11),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Amount Selection Card
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                ModernFormWidgets.buildSectionLabel(
+                                  'Select Amount',
+                                  icon: Icons.payments_outlined,
+                                  iconColor: AppColors.billsColor,
+                                ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Custom',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Transform.scale(
+                                      scale: 0.8,
+                                      child: Switch(
+                                        value: _showCustomAmount,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _showCustomAmount = value;
+                                            if (value) {
+                                              _selectedAmount = null;
+                                            } else {
+                                              _customAmountController.clear();
+                                            }
+                                          });
+                                        },
+                                        activeColor: AppColors.billsColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            if (_showCustomAmount)
+                              ModernFormWidgets.buildTextField(
+                                controller: _customAmountController,
+                                hintText: 'Enter amount',
+                                prefixIcon: Icons.money,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                              )
+                            else
+                              _buildAmountGrid(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Info Card
+                      ModernFormWidgets.buildInfoCard(
+                        message:
+                            'Ensure your meter number is correct. Token will be sent to your phone number after successful purchase.',
+                        icon: Icons.lightbulb_outline,
+                        color: AppColors.billsColor,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Submit Button
+                      ModernFormWidgets.buildPrimaryButton(
+                        label: 'Proceed to Payment',
+                        onPressed: _isLoading ? null : _proceedToPin,
+                        isLoading: _isLoading,
+                        backgroundColor: AppColors.billsColor,
+                        icon: Icons.flash_on,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        isExpanded: true,
-        underline: const SizedBox(),
-        icon: const Icon(Icons.keyboard_arrow_down),
-        items: items.map((String item) {
-          return DropdownMenuItem<String>(value: item, child: Text(item));
-        }).toList(),
-        onChanged: onChanged,
+
+          // Loading Overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.billsColor,
+                  strokeWidth: 3,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildAmountChip(int amount) {
-    final isSelected = _selectedAmount == amount;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedAmount = amount;
-          _customAmountController.clear();
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.light,
-            width: 1,
+  Widget _buildAmountGrid() {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: _amounts.map((amount) {
+        final isSelected = _selectedAmount == amount;
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedAmount = amount;
+              _customAmountController.clear();
+            });
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.billsColor : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? AppColors.billsColor : Colors.grey.shade200,
+                width: 1,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: AppColors.billsColor.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Text(
+              '₦${_formatAmount(amount)}',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : AppColors.textColor,
+              ),
+            ),
           ),
-        ),
-        child: Text(
-          '₦$amount',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.textColor,
-          ),
-        ),
-      ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textColor,
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.lightGrey, width: 1),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        maxLength: keyboardType == TextInputType.phone ? 11 : null,
-        style: const TextStyle(fontSize: 14, color: AppColors.textColor),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
-          ),
-          border: InputBorder.none,
-          counterText: '',
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
-      ),
-    );
+  String _formatAmount(int amount) {
+    if (amount >= 1000) {
+      return '${(amount / 1000).toStringAsFixed(amount % 1000 == 0 ? 0 : 1)}K';
+    }
+    return amount.toString();
   }
 
   Widget _buildProviderLogo(String? logoPath, {double size = 48}) {
@@ -1090,8 +1096,8 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
 
   Widget _buildLogoImage(String? logoPath) {
     if (logoPath == null || logoPath.isEmpty) {
-      return const Center(
-        child: Icon(Icons.electric_bolt, color: Colors.amber, size: 24),
+      return Center(
+        child: Icon(Icons.electric_bolt, color: AppColors.billsColor, size: 24),
       );
     }
 
@@ -1100,8 +1106,8 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
       return Image.network(
         logoPath,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => const Center(
-          child: Icon(Icons.electric_bolt, color: Colors.amber, size: 24),
+        errorBuilder: (context, error, stackTrace) => Center(
+          child: Icon(Icons.electric_bolt, color: AppColors.billsColor, size: 24),
         ),
       );
     }
@@ -1113,8 +1119,8 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           print('Error loading asset: $logoPath');
-          return const Center(
-            child: Icon(Icons.electric_bolt, color: Colors.amber, size: 24),
+          return Center(
+            child: Icon(Icons.electric_bolt, color: AppColors.billsColor, size: 24),
           );
         },
       );
@@ -1177,81 +1183,81 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
             // Providers List
             Expanded(
               child: _isFetchingProviders
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        color: AppColors.primary,
+                        color: AppColors.billsColor,
                       ),
                     )
                   : _providers.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No providers available',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: _providers.length,
-                      separatorBuilder: (context, index) =>
-                          const Divider(height: 1, indent: 80),
-                      itemBuilder: (context, index) {
-                        final provider = _providers[index];
-                        final isSelected =
-                            _selectedProviderName == provider['name'];
-
-                        return InkWell(
-                          onTap: () {
-                            setState(() {
-                              _selectedProviderId = provider['id'];
-                              _selectedProviderServiceId =
-                                  provider['serviceID'];
-                              _selectedProviderName = provider['name'];
-                              _selectedProviderLogo = provider['logo'];
-                              _customerName = null;
-                              _meterVerificationError = null;
-                              _hasManuallyVerified = false;
-                            });
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 16,
-                            ),
-                            color: isSelected
-                                ? AppColors.primary.withOpacity(0.05)
-                                : Colors.transparent,
-                            child: Row(
-                              children: [
-                                // Provider Logo using helper
-                                _buildProviderLogo(provider['logo']),
-                                const SizedBox(width: 16),
-                                // Provider Name
-                                Expanded(
-                                  child: Text(
-                                    provider['name'],
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
-                                      color: AppColors.textColor,
-                                    ),
-                                  ),
-                                ),
-                                // Check icon for selected
-                                if (isSelected)
-                                  const Icon(
-                                    Icons.check_circle,
-                                    color: AppColors.primary,
-                                    size: 24,
-                                  ),
-                              ],
-                            ),
+                      ? const Center(
+                          child: Text(
+                            'No providers available',
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
                           ),
-                        );
-                      },
-                    ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: _providers.length,
+                          separatorBuilder: (context, index) =>
+                              const Divider(height: 1, indent: 80),
+                          itemBuilder: (context, index) {
+                            final provider = _providers[index];
+                            final isSelected =
+                                _selectedProviderName == provider['name'];
+
+                            return InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _selectedProviderId = provider['id'];
+                                  _selectedProviderServiceId =
+                                      provider['serviceID'];
+                                  _selectedProviderName = provider['name'];
+                                  _selectedProviderLogo = provider['logo'];
+                                  _customerName = null;
+                                  _meterVerificationError = null;
+                                  _hasManuallyVerified = false;
+                                });
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
+                                color: isSelected
+                                    ? AppColors.billsColor.withOpacity(0.08)
+                                    : Colors.transparent,
+                                child: Row(
+                                  children: [
+                                    // Provider Logo using helper
+                                    _buildProviderLogo(provider['logo']),
+                                    const SizedBox(width: 16),
+                                    // Provider Name
+                                    Expanded(
+                                      child: Text(
+                                        provider['name'],
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
+                                          color: AppColors.textColor,
+                                        ),
+                                      ),
+                                    ),
+                                    // Check icon for selected
+                                    if (isSelected)
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: AppColors.billsColor,
+                                        size: 24,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
             ),
           ],
         ),

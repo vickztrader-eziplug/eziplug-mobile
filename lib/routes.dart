@@ -31,9 +31,9 @@ import 'package:cashpoint/screens/transactions/sell_giftcard.dart';
 import 'package:flutter/material.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
-import 'screens/auth/register_screen.dart';
+import 'screens/auth/register_screen_enhanced.dart';
 import 'screens/auth/verification_screen.dart';
-import 'screens/auth/login_screen.dart';
+import 'screens/auth/login_screen_enhanced.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/profile/profile_screen.dart';
 
@@ -83,7 +83,7 @@ class AppRoutes {
       case onboarding:
         return MaterialPageRoute(builder: (_) => const OnboardingScreen());
       case register:
-        return MaterialPageRoute(builder: (_) => RegisterScreen());
+        return MaterialPageRoute(builder: (_) => RegisterScreenEnhanced());
       case forgotPassword:
         return MaterialPageRoute(builder: (_) => ForgotPasswordScreen());
       case verify:
@@ -98,7 +98,7 @@ class AppRoutes {
         // ✅ FIXED: Pass savedEmail to LoginScreen
         final savedEmail = settings.arguments as String?;
         return MaterialPageRoute(
-          builder: (_) => LoginScreen(savedEmail: savedEmail),
+          builder: (_) => LoginScreenEnhanced(savedEmail: savedEmail),
         );
       case main:
         return MaterialPageRoute(builder: (_) => MainScreen());

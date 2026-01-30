@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/api_response.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
 import '../reusable/pin_entry_screen.dart';
 import '../reusable/receipt_screen.dart';
@@ -131,9 +134,10 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (mounted && data['status'] == true) {
+        if (mounted && isSuccessResponse(data)) {
+          final responseData = getResponseData(data);
           setState(() {
-            _conversionRate = data['data']['conversion_rate'] ?? 85;
+            _conversionRate = responseData['conversion_rate'] ?? 85;
           });
         }
       }
@@ -398,233 +402,250 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
         );
   }
 
+  // Purple accent color for airtime swap
+  static const Color _accentColor = Color(0xFF9C27B0);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            if (_isLoading)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
-                  ),
-                ),
+      backgroundColor: Colors.grey.shade50,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Modern Gradient Header
+              ModernFormWidgets.buildGradientHeader(
+                context: context,
+                title: 'Airtime Swap',
+                walletBalance: _walletNaira,
+                isLoadingBalance: _isLoadingWallet,
+                primaryColor: _accentColor,
               ),
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 260,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Airtime Swap',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                _isLoadingWallet
-                                    ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Text(
-                                        'Balance: ₦${_formatBalance(_walletNaira)}',
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
 
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
+              // Content
+              Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 30, 24, 30),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Phone Number
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                      // Info Card
+                      ModernFormWidgets.buildInfoCard(
+                        message: 'Convert your airtime to cash. Send airtime from your phone and receive money in your wallet at $_conversionRate% rate.',
+                        icon: Icons.swap_horiz_rounded,
+                        color: _accentColor,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Network Selection Card
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Select Network',
+                              icon: Icons.cell_tower_rounded,
+                              iconColor: _accentColor,
+                            ),
+                            const SizedBox(height: 14),
+                            ModernFormWidgets.buildNetworkGrid(
+                              networks: _networks,
+                              selectedId: _selectedNetwork,
+                              onSelect: (id, name) {
+                                setState(() {
+                                  _selectedNetwork = id;
+                                  _selectedNetworkName = name;
+                                });
+                              },
+                            ),
+                          ],
                         ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Phone Number Card
+                      ModernFormWidgets.buildFormCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: _buildLabel('Phone Number'),
+                                ModernFormWidgets.buildSectionLabel(
+                                  'Phone Number',
+                                  icon: Icons.phone_android_rounded,
+                                  iconColor: _accentColor,
                                 ),
-                                const SizedBox(width: 80),
-                                Expanded(
-                                  flex: 1,
-                                  child: SizedBox(
-                                    height: 25,
-                                    child: TextButton(
-                                      onPressed: _selectContact,
-                                      style: TextButton.styleFrom(
-                                        backgroundColor: AppColors.primary,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            5,
-                                          ),
-                                          side: const BorderSide(
-                                            color: AppColors.lightGrey,
-                                            width: 2,
-                                          ),
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Select Contact',
-                                        style: TextStyle(
-                                          fontSize: 8,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.light,
-                                        ),
-                                      ),
+                                TextButton.icon(
+                                  onPressed: _selectContact,
+                                  icon: Icon(Icons.contacts_rounded, size: 16, color: _accentColor),
+                                  label: Text(
+                                    'Contacts',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _accentColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    backgroundColor: _accentColor.withOpacity(0.1),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
-                            _buildTextField(
+                            ModernFormWidgets.buildTextField(
                               controller: _phoneController,
-                              hintText: 'Phone Number',
+                              hintText: 'Enter 11-digit phone number',
+                              prefixIcon: Icons.phone_outlined,
                               keyboardType: TextInputType.phone,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(11),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 16),
 
-                      // Select Network
-                      _buildLabel('Select Network'),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: _networks.map((network) {
-                          return _buildNetworkCard(
-                            network['id'],
-                            network['name'],
-                            network['color'],
-                            network['assetPath'],
-                          );
-                        }).toList(),
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      // Airtime Amount
-                      _buildLabel('Airtime Amount'),
-                      const SizedBox(height: 12),
-                      _buildTextField(
-                        controller: _amountController,
-                        hintText: 'Enter airtime amount',
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Min: ₦100 | Max: ₦50,000',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textColor.withOpacity(0.6),
+                      // Amount Card
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Airtime Amount',
+                              icon: Icons.payments_outlined,
+                              iconColor: _accentColor,
+                            ),
+                            const SizedBox(height: 12),
+                            ModernFormWidgets.buildTextField(
+                              controller: _amountController,
+                              hintText: 'Enter airtime amount (₦100 - ₦50,000)',
+                              prefixIcon: Icons.money_rounded,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Min: ₦100 | Max: ₦50,000',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      const SizedBox(height: 16),
 
-                      const SizedBox(height: 30),
-
-                      // Account Details Section (Optional)
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.blue.withOpacity(0.2),
-                            width: 1,
-                          ),
+                      // Rate/Conversion Display
+                      ModernFormWidgets.buildFormCard(
+                        backgroundColor: _accentColor.withOpacity(0.08),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Conversion Rate',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: _accentColor.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '$_conversionRate%',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: _accentColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: _accentColor.withOpacity(0.2)),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'You Will Receive',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '₦${_formatBalance(_cashAmount)}',
+                                    style: TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w700,
+                                      color: _accentColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Will be credited to your wallet',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Bank Details (Optional)
+                      ModernFormWidgets.buildFormCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                Icon(
-                                  Icons.info_outline,
-                                  size: 18,
-                                  color: Colors.blue.shade700,
+                                ModernFormWidgets.buildSectionLabel(
+                                  'Bank Details',
+                                  icon: Icons.account_balance_outlined,
+                                  iconColor: Colors.blue,
                                 ),
                                 const SizedBox(width: 8),
-                                Expanded(
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
                                   child: Text(
-                                    'Account Details (Optional)',
+                                    'Optional',
                                     style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.blue.shade700,
+                                      fontSize: 10,
+                                      color: Colors.grey.shade600,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
@@ -632,106 +653,90 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Provide your bank details if you prefer direct transfer instead of wallet credit',
+                              'Provide your bank details for direct transfer instead of wallet credit',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.textColor.withOpacity(0.7),
+                                color: Colors.grey.shade500,
                               ),
                             ),
-                            const SizedBox(height: 16),
-
-                            // Account Number
-                            _buildLabel('Account Number'),
-                            const SizedBox(height: 8),
-                            _buildTextField(
+                            const SizedBox(height: 14),
+                            ModernFormWidgets.buildTextField(
                               controller: _accountNumberController,
-                              hintText: 'Enter 10-digit account number',
+                              hintText: 'Account number (10 digits)',
+                              prefixIcon: Icons.credit_card_outlined,
                               keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(10),
+                              ],
                             ),
-                            const SizedBox(height: 16),
-
-                            // Account Name
-                            _buildLabel('Account Name'),
-                            const SizedBox(height: 8),
-                            _buildTextField(
+                            const SizedBox(height: 12),
+                            ModernFormWidgets.buildTextField(
                               controller: _accountNameController,
-                              hintText: 'Enter account name',
-                              keyboardType: TextInputType.text,
+                              hintText: 'Account name',
+                              prefixIcon: Icons.person_outline,
+                              keyboardType: TextInputType.name,
                             ),
-                            const SizedBox(height: 16),
-
-                            // Bank Name
-                            _buildLabel('Bank Name'),
-                            const SizedBox(height: 8),
-                            _buildTextField(
+                            const SizedBox(height: 12),
+                            ModernFormWidgets.buildTextField(
                               controller: _bankNameController,
-                              hintText: 'Enter bank name',
+                              hintText: 'Bank name',
+                              prefixIcon: Icons.business_outlined,
                               keyboardType: TextInputType.text,
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(height: 20),
 
+                      // Tips Info Card
+                      ModernFormWidgets.buildInfoCard(
+                        message: 'After submitting, transfer the airtime amount to our designated number. Your swap will be processed after verification.',
+                        icon: Icons.lightbulb_outline_rounded,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Primary Action Button
+                      ModernFormWidgets.buildPrimaryButton(
+                        label: 'Swap Airtime',
+                        onPressed: _proceedToPin,
+                        isLoading: _isLoading,
+                        backgroundColor: _accentColor,
+                        icon: Icons.swap_horiz_rounded,
+                      ),
                       const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
 
-                      // You're getting
-                      _buildLabel("Expected Amount ($_conversionRate% rate)"),
-                      const SizedBox(height: 8),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '₦${_cashAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
+          // Loading Overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        color: _accentColor,
+                        strokeWidth: 3,
                       ),
-
-                      const SizedBox(height: 8),
-                      Center(
-                        child: Text(
-                          'Request will be verified before payment',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.orange.shade700,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      // Proceed Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _proceedToPin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.textColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                            disabledBackgroundColor: AppColors.lightGrey,
-                          ),
-                          child: const Text(
-                            'Proceed',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Processing...',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -739,132 +744,7 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textColor,
-      ),
-    );
-  }
-
-  Widget _buildNetworkCard(
-  String id,
-  String name,
-  Color color,
-  String assetPath,
-) {
-  final isSelected = _selectedNetwork == id;
-
-  return Expanded(
-    child: GestureDetector(
-      onTap: () {
-          setState(() {
-            _selectedNetwork = id;
-            _selectedNetworkName = name;
-          });
-        },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primary
-                : AppColors.lightGrey.withOpacity(0.5),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white.withOpacity(0.2)
-                    : color.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Image.asset(
-                  assetPath,
-                  width: 24,
-                  height: 24,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.phone_android,
-                      color: Colors.white,
-                      size: 24,
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              name,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.textColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    // Determine max length based on hint text
-    int? maxLength;
-    if (keyboardType == TextInputType.phone) {
-      maxLength = 11;
-    } else if (hintText.contains('account number')) {
-      maxLength = 10;
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.lightGrey, width: 1),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        maxLength: maxLength,
-        style: const TextStyle(fontSize: 14, color: AppColors.textColor),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
-          ),
-          border: InputBorder.none,
-          counterText: '',
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
+        ],
       ),
     );
   }

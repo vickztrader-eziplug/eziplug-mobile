@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/toast_helper.dart';
 import '../../models/bet_event.dart';
 import '../../models/bet_odd.dart';
 import '../../services/betting_service.dart';
@@ -60,27 +60,18 @@ class _BetDetailScreenState extends State<BetDetailScreen> {
 
   Future<void> _placeBet() async {
     if (_selectedOdd == null) {
-      Fluttertoast.showToast(
-        msg: 'Please select an odd',
-        backgroundColor: Colors.orange,
-      );
+      ToastHelper.showWarning('Please select an odd');
       return;
     }
 
     if (_amount < 100) {
-      Fluttertoast.showToast(
-        msg: 'Minimum bet amount is ₦100',
-        backgroundColor: Colors.red,
-      );
+      ToastHelper.showError('Minimum bet amount is ₦100');
       return;
     }
 
     final authService = Provider.of<AuthService>(context, listen: false);
     if (_amount > authService.walletNaira) {
-      Fluttertoast.showToast(
-        msg: 'Insufficient balance',
-        backgroundColor: Colors.red,
-      );
+      ToastHelper.showError('Insufficient balance');
       return;
     }
 
@@ -142,10 +133,7 @@ class _BetDetailScreenState extends State<BetDetailScreen> {
       // Update balance in auth service
       await authService.refreshUserData();
 
-      Fluttertoast.showToast(
-        msg: result['message'] ?? 'Bet placed successfully',
-        backgroundColor: Colors.green,
-      );
+      ToastHelper.showSuccess(result['message'] ?? 'Bet placed successfully');
 
       // Show success dialog
       showDialog(
@@ -193,10 +181,7 @@ class _BetDetailScreenState extends State<BetDetailScreen> {
         ),
       );
     } else {
-      Fluttertoast.showToast(
-        msg: result['message'] ?? 'Failed to place bet',
-        backgroundColor: Colors.red,
-      );
+      ToastHelper.showError(result['message'] ?? 'Failed to place bet');
     }
   }
 

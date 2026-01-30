@@ -1,10 +1,14 @@
 import 'package:cashpoint/screens/transactions/GiftCardConfirmationScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/api_response.dart';
+import '../../core/utils/toast_helper.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
 
 class BuyGiftCardScreen extends StatefulWidget {
@@ -68,13 +72,14 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // Handle different response structures
+        // Handle different response structures using helper
+        final responseData = getResponseData(data);
         List<dynamic> giftCardsData = [];
 
-        if (data['results'] != null && data['results']['data'] != null) {
-          giftCardsData = data['results']['data'];
-        } else if (data is List) {
-          giftCardsData = data;
+        if (responseData is List) {
+          giftCardsData = responseData;
+        } else if (responseData['data'] != null && responseData['data'] is List) {
+          giftCardsData = responseData['data'];
         }
 
         print('Parsed gift cards: ${giftCardsData.length}');
@@ -202,268 +207,271 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
 
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Use ToastHelper for consistent top-positioned toasts
+    ToastHelper.showSnackBar(context, message, color);
   }
+
+  // Theme color for Buy Giftcard
+  static const Color _themeColor = Color(0xFFFF6B6B);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            // Header Section with Curved Design
-            Container(
-              width: double.infinity,
-              height: 220,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          const Expanded(
-                            child: Text(
-                              'Buy Gift Card',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          // Modern Gradient Header
+          ModernFormWidgets.buildGradientHeader(
+            context: context,
+            title: 'Buy Giftcard',
+            subtitle: 'Purchase gift cards instantly',
+            primaryColor: _themeColor,
+          ),
 
-            // Content Section with Curved Top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                        ),
-                      )
-                    : _giftCards.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.card_giftcard,
-                              size: 64,
-                              color: AppColors.lightGrey,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'No gift cards available',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: AppColors.darkGrey,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            TextButton(
-                              onPressed: _fetchGiftCards,
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      )
+          // Content
+          Expanded(
+            child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(color: _themeColor),
+                  )
+                : _giftCards.isEmpty
+                    ? _buildEmptyState()
                     : SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                        padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Gift Card Selection
-                            _buildLabel('Select Gift Card'),
-                            const SizedBox(height: 12),
-                            _buildGiftCardGrid(),
-                            const SizedBox(height: 24),
+                            // Gift Card Selection Section
+                            ModernFormWidgets.buildFormCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ModernFormWidgets.buildSectionLabel(
+                                    'Select Gift Card',
+                                    icon: Icons.card_giftcard,
+                                    iconColor: _themeColor,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildGiftCardGrid(),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
 
                             if (_selectedGiftCard != null) ...[
                               // Country Selection
-                              _buildLabel('Select Country'),
-                              const SizedBox(height: 12),
-                              _buildCountryGrid(),
-                              const SizedBox(height: 24),
+                              ModernFormWidgets.buildFormCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ModernFormWidgets.buildSectionLabel(
+                                      'Select Country',
+                                      icon: Icons.public,
+                                      iconColor: _themeColor,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildCountryGrid(),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
                             ],
 
                             if (_selectedCountry != null) ...[
-                              // Category Selection
-                              _buildLabel('Category'),
-                              const SizedBox(height: 12),
-                              _buildCategorySelector(),
-                              const SizedBox(height: 24),
-
-                              // Price Range Selection
-                              _buildLabel('Select Price Range'),
-                              const SizedBox(height: 12),
-                              _buildPriceRangeList(),
-                              const SizedBox(height: 24),
-
-                              // Amount in USD
-                              _buildLabel('Amount (USD)'),
-                              const SizedBox(height: 8),
-                              _buildTextField(
-                                controller: _amountUsdController,
-                                hintText: 'Enter amount in USD',
-                                keyboardType: TextInputType.number,
-                                prefix: '\$',
-                                onChanged: (value) => _calculateNairaAmount(),
+                              // Category & Price Range
+                              ModernFormWidgets.buildFormCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ModernFormWidgets.buildSectionLabel(
+                                      'Category',
+                                      icon: Icons.category,
+                                      iconColor: _themeColor,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _buildCategorySelector(),
+                                    const SizedBox(height: 20),
+                                    ModernFormWidgets.buildSectionLabel(
+                                      'Select Price Range',
+                                      icon: Icons.attach_money,
+                                      iconColor: _themeColor,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _buildPriceRangeList(),
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: 16),
 
-                              // Quantity
-                              _buildLabel('Quantity'),
-                              const SizedBox(height: 8),
-                              _buildTextField(
-                                controller: _quantityController,
-                                hintText: 'Enter quantity',
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) => _calculateNairaAmount(),
+                              // Amount & Quantity Section
+                              ModernFormWidgets.buildFormCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ModernFormWidgets.buildSectionLabel(
+                                      'Card Details',
+                                      icon: Icons.info_outline,
+                                      iconColor: _themeColor,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ModernFormWidgets.buildTextField(
+                                      controller: _amountUsdController,
+                                      hintText: 'Enter amount in USD',
+                                      label: 'Amount (USD)',
+                                      prefixIcon: Icons.attach_money,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                                      ],
+                                      onChanged: (value) => _calculateNairaAmount(),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ModernFormWidgets.buildTextField(
+                                      controller: _quantityController,
+                                      hintText: 'Enter quantity',
+                                      label: 'Quantity',
+                                      prefixIcon: Icons.numbers,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                      ],
+                                      onChanged: (value) => _calculateNairaAmount(),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 16),
 
                               // Amount Preview
                               if (_amountNgn > 0) ...[
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          const Text(
-                                            'Rate:',
-                                            style: TextStyle(fontSize: 14),
-                                          ),
-                                          Text(
-                                            '₦${_rate.toStringAsFixed(2)}/\$1',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const Divider(height: 20),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          const Text(
-                                            'You will pay:',
-                                            style: TextStyle(fontSize: 14),
-                                          ),
-                                          Text(
-                                            '₦${_amountNgn.toStringAsFixed(2)}',
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppColors.primary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 30),
+                                _buildAmountPreview(),
+                                const SizedBox(height: 16),
                               ],
 
-                              // Proceed Button
-                              SizedBox(
-                                width: double.infinity,
-                                height: 56,
-                                child: ElevatedButton(
-                                  onPressed: _amountNgn > 0
-                                      ? _proceedToConfirmation
-                                      : null,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    disabledBackgroundColor:
-                                        AppColors.lightGrey,
-                                  ),
-                                  child: const Text(
-                                    'Continue',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
+                              // Tips Card
+                              ModernFormWidgets.buildInfoCard(
+                                message: 'Gift cards are delivered instantly to your email after payment confirmation.',
+                                icon: Icons.lightbulb_outline,
+                                color: _themeColor,
                               ),
+                              const SizedBox(height: 24),
+
+                              // Buy Button
+                              ModernFormWidgets.buildPrimaryButton(
+                                label: 'Buy Giftcard',
+                                onPressed: _amountNgn > 0 ? _proceedToConfirmation : null,
+                                backgroundColor: _themeColor,
+                                icon: Icons.shopping_cart,
+                              ),
+                              const SizedBox(height: 20),
                             ],
                           ],
                         ),
                       ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textColor,
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: _themeColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.card_giftcard,
+              size: 64,
+              color: _themeColor,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'No gift cards available',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Please check back later',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 24),
+          TextButton.icon(
+            onPressed: _fetchGiftCards,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            style: TextButton.styleFrom(
+              foregroundColor: _themeColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAmountPreview() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _themeColor.withOpacity(0.1),
+            _themeColor.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _themeColor.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Exchange Rate',
+                style: TextStyle(fontSize: 14, color: AppColors.textColor),
+              ),
+              Text(
+                '₦${_rate.toStringAsFixed(2)}/\$1',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          Divider(height: 24, color: _themeColor.withOpacity(0.2)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'You will pay',
+                style: TextStyle(fontSize: 14, color: AppColors.textColor),
+              ),
+              Text(
+                '₦${_amountNgn.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: _themeColor,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -485,33 +493,62 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
 
         return GestureDetector(
           onTap: () => _onGiftCardSelected(giftCard),
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              color: isSelected ? _themeColor.withOpacity(0.1) : Colors.white,
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isSelected ? AppColors.primary : AppColors.lightGrey,
+                color: isSelected ? _themeColor : Colors.grey.shade200,
                 width: isSelected ? 2 : 1,
               ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: _themeColor.withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 giftCard['logo_url'] != null
-                    ? Image.network(
-                        giftCard['logo_url'],
-                        height: 50,
-                        width: 50,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.card_giftcard,
-                          size: 50,
-                          color: AppColors.primary,
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          giftCard['logo_url'],
+                          height: 50,
+                          width: 50,
+                          errorBuilder: (_, __, ___) => Container(
+                            height: 50,
+                            width: 50,
+                            decoration: BoxDecoration(
+                              color: _themeColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.card_giftcard,
+                              size: 30,
+                              color: _themeColor,
+                            ),
+                          ),
                         ),
                       )
-                    : const Icon(
-                        Icons.card_giftcard,
-                        size: 50,
-                        color: AppColors.primary,
+                    : Container(
+                        height: 50,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          color: _themeColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.card_giftcard,
+                          size: 30,
+                          color: _themeColor,
+                        ),
                       ),
                 const SizedBox(height: 8),
                 Padding(
@@ -519,9 +556,10 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
                   child: Text(
                     giftCard['name'] ?? '',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected ? _themeColor : AppColors.textColor,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -541,9 +579,9 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.8,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.85,
       ),
       itemCount: _countries.length,
       itemBuilder: (context, index) {
@@ -553,39 +591,53 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
 
         return GestureDetector(
           onTap: () => _onCountrySelected(country),
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isSelected ? _themeColor.withOpacity(0.1) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected ? AppColors.primary : AppColors.lightGrey,
+                color: isSelected ? _themeColor : Colors.grey.shade200,
                 width: isSelected ? 2 : 1,
               ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: _themeColor.withOpacity(0.15),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 countryData['flag_url'] != null
-                    ? Image.network(
-                        countryData['flag_url'],
-                        height: 32,
-                        width: 32,
-                        errorBuilder: (_, __, ___) => Text(
-                          countryData['code'] ?? '',
-                          style: const TextStyle(fontSize: 24),
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.network(
+                          countryData['flag_url'],
+                          height: 28,
+                          width: 28,
+                          errorBuilder: (_, __, ___) => Text(
+                            countryData['code'] ?? '',
+                            style: const TextStyle(fontSize: 20),
+                          ),
                         ),
                       )
                     : Text(
                         countryData['code'] ?? '',
-                        style: const TextStyle(fontSize: 24),
+                        style: const TextStyle(fontSize: 20),
                       ),
                 const SizedBox(height: 6),
                 Text(
                   countryData['code'] ?? '',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected ? _themeColor : AppColors.textColor,
                   ),
                 ),
               ],
@@ -618,22 +670,44 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
           _selectedPriceRange = null;
         });
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(8),
+          color: isSelected ? _themeColor : Colors.white,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.lightGrey,
+            color: isSelected ? _themeColor : Colors.grey.shade200,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: _themeColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
-        child: Text(
-          category,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textColor,
-            fontWeight: FontWeight.w600,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              category == 'E-code' ? Icons.qr_code : Icons.credit_card,
+              size: 18,
+              color: isSelected ? Colors.white : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              category,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -646,15 +720,22 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
 
     if (filteredRanges.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(8),
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
         ),
-        child: const Text(
-          'No price ranges available for this category',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.darkGrey),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.info_outline, color: Colors.grey.shade400, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'No price ranges available',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+          ],
         ),
       );
     }
@@ -666,37 +747,49 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
           padding: const EdgeInsets.only(bottom: 8),
           child: GestureDetector(
             onTap: () => _onPriceRangeSelected(range),
-            child: Container(
-              padding: const EdgeInsets.all(16),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary.withOpacity(0.1)
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(8),
+                color: isSelected ? _themeColor.withOpacity(0.1) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.lightGrey,
-                  width: isSelected ? 2 : 1,
+                  color: isSelected ? _themeColor : Colors.grey.shade200,
+                  width: isSelected ? 1.5 : 1,
                 ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: _themeColor.withOpacity(0.1),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
               child: Row(
                 children: [
-                  Icon(
-                    isSelected
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
-                    color: isSelected ? AppColors.primary : AppColors.lightGrey,
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: isSelected ? _themeColor : Colors.grey.shade200,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isSelected ? Icons.check : Icons.radio_button_unchecked,
+                      color: isSelected ? Colors.white : Colors.grey.shade400,
+                      size: 16,
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    range['display_text'] ?? '',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.textColor,
+                  Expanded(
+                    child: Text(
+                      range['display_text'] ?? '',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected ? _themeColor : AppColors.textColor,
+                      ),
                     ),
                   ),
                 ],
@@ -705,41 +798,6 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
           ),
         );
       }).toList(),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-    String? prefix,
-    Function(String)? onChanged,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.lightGrey),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        onChanged: onChanged,
-        style: const TextStyle(fontSize: 14, color: AppColors.textColor),
-        decoration: InputDecoration(
-          hintText: hintText,
-          prefixText: prefix,
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
-      ),
     );
   }
 }

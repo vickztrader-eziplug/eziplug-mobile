@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
 import '../reusable/pin_entry_screen.dart';
 import '../reusable/receipt_screen.dart';
@@ -16,6 +17,9 @@ class BettingScreen extends StatefulWidget {
 }
 
 class _BettingScreenState extends State<BettingScreen> {
+  // Betting theme color
+  static const Color _accentColor = Color(0xFF00BCD4);
+  
   final TextEditingController _bettingIdController = TextEditingController();
 
   List<Map<String, dynamic>> _providers = [];
@@ -295,307 +299,181 @@ class _BettingScreenState extends State<BettingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            if (_isLoading)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
-                  ),
-                ),
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Modern Gradient Header
+              ModernFormWidgets.buildGradientHeader(
+                context: context,
+                title: 'Betting',
+                walletBalance: _walletNaira,
+                isLoadingBalance: _isLoadingWallet,
+                primaryColor: _accentColor,
               ),
-
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 260,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Bet Purchase',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                _isLoadingWallet
-                                    ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Text(
-                                        'Balance: ₦${_formatBalance(_walletNaira)}',
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
+              
+              // Content
+              Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Provider Icons (Top Row)
-                      if (_isFetchingProviders)
-                        const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primary,
-                          ),
-                        )
-                      else if (_providers.isNotEmpty)
-                        SizedBox(
-                          height: 80,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _providers.length > 4
-                                ? 4
-                                : _providers.length,
-                            itemBuilder: (context, index) {
-                              final provider = _providers[index];
-                              final isSelected =
-                                  _selectedProvider?['id'] == provider['id'];
-
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() => _selectedProvider = provider);
-                                },
-                                child: Container(
-                                  width: 70,
-                                  margin: const EdgeInsets.only(right: 12),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? AppColors.primary.withOpacity(0.2)
-                                        : AppColors.lightGrey.withOpacity(0.3),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? AppColors.primary
-                                          : Colors.transparent,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.sports_esports,
-                                        color: isSelected
-                                            ? AppColors.primary
-                                            : Colors.grey[600],
-                                        size: 28,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        provider['name']
-                                                ?.toString()
-                                                .substring(0, 3)
-                                                .toUpperCase() ??
-                                            '---',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: isSelected
-                                              ? AppColors.primary
-                                              : Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-
-                      const SizedBox(height: 30),
-
-                      // Select Provider
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.lightGrey.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      // Provider Selection Card
+                      ModernFormWidgets.buildFormCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLabel('Select Provider'),
+                            ModernFormWidgets.buildSectionLabel(
+                              'Select Provider',
+                              icon: Icons.sports_esports,
+                              iconColor: _accentColor,
+                            ),
                             const SizedBox(height: 12),
-                            DropdownButtonFormField<Map<String, dynamic>>(
-                              value: _selectedProvider,
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                filled: true,
-                                fillColor: AppColors.cardBackground,
-                              ),
-                              hint: const Text('Select a provider'),
-                              items: _providers.map((provider) {
-                                return DropdownMenuItem(
-                                  value: provider,
-                                  child: Text(provider['name'] ?? ''),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() => _selectedProvider = value);
+                            _isFetchingProviders
+                                ? const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: _accentColor,
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(color: Colors.grey.shade200),
+                                    ),
+                                    child: DropdownButtonFormField<Map<String, dynamic>>(
+                                      value: _selectedProvider,
+                                      isExpanded: true,
+                                      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: _accentColor),
+                                      decoration: InputDecoration(
+                                        prefixIcon: const Icon(Icons.casino, color: _accentColor, size: 20),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(14),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                      ),
+                                      hint: Text(
+                                        'Select a betting provider',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade400,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      items: _providers.map((provider) {
+                                        return DropdownMenuItem<Map<String, dynamic>>(
+                                          value: provider,
+                                          child: Text(
+                                            provider['name'] ?? '',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() => _selectedProvider = value);
+                                      },
+                                    ),
+                                  ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Betting ID Input Card
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Betting ID',
+                              icon: Icons.confirmation_number,
+                              iconColor: _accentColor,
+                            ),
+                            const SizedBox(height: 12),
+                            ModernFormWidgets.buildTextField(
+                              controller: _bettingIdController,
+                              hintText: 'Enter your betting account ID',
+                              prefixIcon: Icons.person_outline,
+                              keyboardType: TextInputType.text,
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Amount Selection Card
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Select Amount',
+                              icon: Icons.payments,
+                              iconColor: _accentColor,
+                            ),
+                            const SizedBox(height: 12),
+                            ModernFormWidgets.buildAmountGrid(
+                              amounts: _amounts,
+                              selectedAmount: _selectedAmount,
+                              onSelect: (amount) {
+                                setState(() => _selectedAmount = amount);
                               },
                             ),
                           ],
                         ),
                       ),
-
-                      const SizedBox(height: 30),
-
-                      // Betting ID
-                      _buildLabel('Betting ID'),
-                      const SizedBox(height: 12),
-                      _buildTextField(
-                        controller: _bettingIdController,
-                        hintText: 'Enter betting number',
-                        keyboardType: TextInputType.text,
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Info Card
+                      ModernFormWidgets.buildInfoCard(
+                        message: 'Fund your betting wallet instantly. Ensure your betting ID is correct before proceeding.',
+                        icon: Icons.lightbulb_outline,
+                        color: _accentColor,
                       ),
-
-                      const SizedBox(height: 30),
-
-                      // Select Amount
-                      _buildLabel('Select an Amount'),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _amounts.map((amount) {
-                            return _buildAmountChip(amount);
-                          }).toList(),
-                        ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Primary Action Button
+                      ModernFormWidgets.buildPrimaryButton(
+                        label: 'Fund Betting Account',
+                        onPressed: _proceedToPin,
+                        isLoading: _isLoading,
+                        backgroundColor: _accentColor,
+                        icon: Icons.send,
                       ),
-
-                      const SizedBox(height: 40),
-
-                      // Proceed Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _proceedToPin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.textColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                            disabledBackgroundColor: AppColors.lightGrey,
-                          ),
-                          child: const Text(
-                            'Proceed',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
+                      
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
               ),
+            ],
+          ),
+          
+          // Loading Overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: _accentColor,
+                  strokeWidth: 3,
+                ),
+              ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAmountChip(int amount) {
-    final isSelected = _selectedAmount == amount;
-    return GestureDetector(
-      onTap: () {
-        setState(() => _selectedAmount = amount);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.light,
-            width: 1,
-          ),
-        ),
-        child: Text(
-          '₦$amount',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.textColor,
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -607,47 +485,5 @@ class _BettingScreenState extends State<BettingScreen> {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]},',
         );
-  }
-
-  Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textColor,
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.lightGrey, width: 1),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(fontSize: 14, color: AppColors.textColor),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
-      ),
-    );
   }
 }

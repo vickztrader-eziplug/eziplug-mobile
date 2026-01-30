@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/toast_helper.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../routes.dart';
@@ -101,24 +101,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       setState(() => _loading = false);
 
       if (result['success'] == true) {
-        Fluttertoast.showToast(
-          msg: result['message'] ?? "Login successful",
-          backgroundColor: Colors.green,
-        );
+        ToastHelper.showSuccess(result['message'] ?? "Login successful");
         Navigator.pushReplacementNamed(context, AppRoutes.main);
       } else {
-        Fluttertoast.showToast(
-          msg: result['message'] ?? "Invalid credentials",
-          backgroundColor: Colors.red,
-        );
+        ToastHelper.showError(result['message'] ?? "Invalid credentials");
       }
     } catch (e) {
       setState(() => _loading = false);
       print('Unexpected error: $e');
-      Fluttertoast.showToast(
-        msg: "Something went wrong, please try again.",
-        backgroundColor: Colors.red,
-      );
+      ToastHelper.showError("Network error. Please try again later.");
     }
   }
 

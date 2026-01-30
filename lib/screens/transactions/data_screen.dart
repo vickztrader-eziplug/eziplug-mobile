@@ -3,7 +3,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/api_response.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/toast_helper.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
 import '../reusable/pin_entry_screen.dart';
 import '../reusable/receipt_screen.dart';
@@ -136,8 +139,8 @@ class _DataScreenState extends State<DataScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // Handle different response structures
-        final networksData = data['results']?['data'] ?? data['data'] ?? data;
+        // Handle different response structures using helper
+        final networksData = getResponseData(data);
 
         if (mounted) {
           setState(() {
@@ -218,12 +221,13 @@ class _DataScreenState extends State<DataScreen> {
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
+        final plansData = getResponseData(result);
 
-        if (result['results'] != null) {
+        if (plansData != null) {
           if (mounted) {
             setState(() {
               _dataPlans = List<Map<String, dynamic>>.from(
-                result['results']['data'] ?? [],
+                plansData is List ? plansData : (plansData['data'] ?? plansData ?? []),
               );
               print('✅ Loaded ${_dataPlans.length} data plans');
             });
@@ -374,8 +378,8 @@ class _DataScreenState extends State<DataScreen> {
         return;
       }
 
-      // Check if the API response has success field
-      final isSuccess = responseData['success'] == true;
+      // Check if the API response has success field (handles both formats)
+      final isSuccess = isSuccessResponse(responseData);
 
       if (isSuccess) {
         // Success: Close PIN screen and show receipt
@@ -459,13 +463,8 @@ class _DataScreenState extends State<DataScreen> {
 
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Use ToastHelper for consistent top-positioned toasts
+    ToastHelper.showSnackBar(context, message, color);
   }
 
   String _formatBalance(double balance) {
@@ -480,228 +479,101 @@ class _DataScreenState extends State<DataScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            if (_isLoading)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
-                  ),
-                ),
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Modern Gradient Header
+              ModernFormWidgets.buildGradientHeader(
+                context: context,
+                title: 'Buy Data',
+                walletBalance: _walletNaira,
+                isLoadingBalance: _isLoadingWallet,
+                primaryColor: AppColors.dataColor,
               ),
-
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 260,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Data Purchase',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                _isLoadingWallet
-                                    ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Text(
-                                        'Balance: ₦${_formatBalance(_walletNaira)}',
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
+              
+              // Content Section
+              Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Phone Number
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
+                      // Network Selection
+                      ModernFormWidgets.buildSectionLabel('Select Network', icon: Icons.sim_card_outlined, iconColor: AppColors.dataColor),
+                      const SizedBox(height: 12),
+                      ModernFormWidgets.buildNetworkGrid(
+                        networks: _networks,
+                        selectedId: _selectedNetworkId,
+                        onSelect: (id, name) {
+                          setState(() {
+                            _selectedNetworkId = id;
+                            _selectedNetworkName = name;
+                          });
+                          _fetchDataPlans(id);
+                        },
+                        isLoading: _isFetchingNetworks,
+                      ),
+                      
+                      const SizedBox(height: 24),
+
+                      // Phone Number Input
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        flex: 2,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            _buildLabel('Phone Number'),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 80),
-                                      Expanded(
-                                        flex: 1,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            SizedBox(
-                                              height: 25,
-                                              child: TextButton(
-                                                onPressed: _selectContact,
-                                                style: TextButton.styleFrom(
-                                                  backgroundColor:
-                                                      AppColors.primary,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          5,
-                                                        ),
-                                                    side: const BorderSide(
-                                                      color:
-                                                          AppColors.lightGrey,
-                                                      width: 2,
-                                                    ),
-                                                  ),
-                                                ),
-                                                child: const Text(
-                                                  'Select Contact',
-                                                  style: TextStyle(
-                                                    fontSize: 8,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: AppColors.light,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                ModernFormWidgets.buildSectionLabel('Phone Number', icon: Icons.phone_android, iconColor: AppColors.dataColor),
+                                TextButton.icon(
+                                  onPressed: _selectContact,
+                                  icon: Icon(Icons.contacts, size: 16, color: AppColors.dataColor),
+                                  label: Text(
+                                    'Contacts',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.dataColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  _buildTextField(
-                                    controller: _phoneController,
-                                    hintText: 'Phone Number',
-                                    keyboardType: TextInputType.phone,
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    backgroundColor: AppColors.dataColor.withOpacity(0.1),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            ModernFormWidgets.buildTextField(
+                              controller: _phoneController,
+                              hintText: 'Enter phone number',
+                              prefixIcon: Icons.phone,
+                              keyboardType: TextInputType.phone,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      
+                      const SizedBox(height: 24),
 
-                      // Select Network
-                      _buildLabel('Select Network'),
-                      const SizedBox(height: 12),
-                      _isFetchingNetworks
-                          ? const Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.primary,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: _networks.map((network) {
-                                return _buildNetworkCard(
-                                  network['id'],
-                                  network['name'],
-                                  network['color'],
-                                  network['assetPath'],
-                                );
-                              }).toList(),
-                            ),
-                      const SizedBox(height: 30),
-
-                      // Select Data Plan
-                      _buildLabel('Select Data Plan'),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.lightGrey.withOpacity(0.5),
-                            width: 1,
-                          ),
-                        ),
-                        child: _isFetchingPlans
-                            ? const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(20.0),
+                      // Data Plan Selection
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel('Select Data Plan', icon: Icons.wifi_rounded, iconColor: AppColors.dataColor),
+                            const SizedBox(height: 14),
+                            _isFetchingPlans
+                                ? const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(20.0),
                                   child: CircularProgressIndicator(
-                                    color: AppColors.primary,
+                                    color: AppColors.dataColor,
                                   ),
                                 ),
                               )
@@ -715,7 +587,7 @@ class _DataScreenState extends State<DataScreen> {
                                         : 'No data plans available',
                                     style: TextStyle(
                                       color: Colors.grey[600],
-                                      fontSize: 14,
+                                      fontSize: 13,
                                     ),
                                   ),
                                 ),
@@ -727,225 +599,52 @@ class _DataScreenState extends State<DataScreen> {
                                   return _buildDataPlanChip(plan);
                                 }).toList(),
                               ),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      // Proceed Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _proceedToPin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.textColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                            disabledBackgroundColor: AppColors.lightGrey,
-                          ),
-                          child: const Text(
-                            'Proceed',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          ],
                         ),
                       ),
+
+                      const SizedBox(height: 16),
+
+                      // Info tip
+                      ModernFormWidgets.buildInfoCard(
+                        message: 'Data will be credited instantly to the phone number provided.',
+                        icon: Icons.info_outline,
+                        color: AppColors.dataColor,
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Proceed Button
+                      ModernFormWidgets.buildPrimaryButton(
+                        label: 'Buy Data',
+                        onPressed: _proceedToPin,
+                        isLoading: _isLoading,
+                        backgroundColor: AppColors.dataColor,
+                        icon: Icons.send_rounded,
+                      ),
+
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNetworkCard(
-    String id,
-    String name,
-    Color color,
-    String assetPath,
-  ) {
-    final isSelected = _selectedNetworkId == id;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedNetworkId = id;
-            _selectedNetworkName = name;
-          });
-          // Fetch data plans when network is selected
-          _fetchDataPlans(id);
-        },
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.primary
-                  : AppColors.lightGrey.withOpacity(0.5),
-              width: isSelected ? 2 : 1,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.white.withOpacity(0.2)
-                      : color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Image.asset(
-                    assetPath,
-                    width: 24,
-                    height: 24,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.sim_card,
-                        color: isSelected ? Colors.white : color,
-                        size: 24,
-                      );
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                name,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : AppColors.textColor,
-                ),
-              ),
             ],
           ),
-        ),
+          
+          // Loading overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black38,
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  // Widget _buildDataPlanChip(Map<String, dynamic> plan) {
-  //   // Use a unique identifier for comparison
-  //   final planId = plan['id']?.toString() ?? plan['plan_id']?.toString() ?? '';
-  //   final selectedPlanId =
-  //       _selectedPlan?['id']?.toString() ??
-  //       _selectedPlan?['plan_id']?.toString() ??
-  //       '';
-
-  //   final isSelected = planId.isNotEmpty && planId == selectedPlanId;
-
-  //   return GestureDetector(
-  //     onTap: () {
-  //       setState(() {
-  //         _selectedPlan = plan;
-  //       });
-  //       print('✅ Selected plan: ${plan['data']} - ID: $planId');
-  //     },
-  //     child: Container(
-  //       // Fixed width for consistent sizing
-  //       width: 85,
-  //       // Fixed height for consistent sizing
-  //       height: 90,
-  //       padding: const EdgeInsets.all(8),
-  //       decoration: BoxDecoration(
-  //         color: isSelected ? AppColors.primary : Colors.white,
-  //         borderRadius: BorderRadius.circular(8),
-  //         border: Border.all(
-  //           color: isSelected ? AppColors.primary : Colors.grey.shade300,
-  //           width: isSelected ? 2 : 1,
-  //         ),
-  //         boxShadow: [
-  //           BoxShadow(
-  //             color: isSelected
-  //                 ? AppColors.primary.withOpacity(0.3)
-  //                 : Colors.grey.withOpacity(0.1),
-  //             blurRadius: isSelected ? 8 : 4,
-  //             offset: Offset(0, isSelected ? 4 : 2),
-  //           ),
-  //         ],
-  //       ),
-  //       child: Column(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         crossAxisAlignment: CrossAxisAlignment.center,
-  //         children: [
-  //           // Data amount with fixed height
-  //           SizedBox(
-  //             height: 32,
-  //             child: Center(
-  //               child: Text(
-  //                 plan['data']?.toString() ??
-  //                     plan['plan_name']?.toString() ??
-  //                     'N/A',
-  //                 style: TextStyle(
-  //                   fontSize: 10,
-  //                   fontWeight: FontWeight.bold,
-  //                   color: isSelected ? Colors.white : Colors.black87,
-  //                   height: 1.2,
-  //                 ),
-  //                 textAlign: TextAlign.center,
-  //                 maxLines: 2,
-  //                 overflow: TextOverflow.ellipsis,
-  //               ),
-  //             ),
-  //           ),
-  //           const SizedBox(height: 4),
-  //           // Price
-  //           Text(
-  //             '₦${plan['amount']?.toString() ?? plan['price']?.toString() ?? '0'}',
-  //             style: TextStyle(
-  //               fontSize: 11,
-  //               color: isSelected ? Colors.white : Colors.green,
-  //               fontWeight: FontWeight.w600,
-  //             ),
-  //             maxLines: 1,
-  //             overflow: TextOverflow.ellipsis,
-  //           ),
-  //           const SizedBox(height: 2),
-  //           // Validity with fixed height
-  //           SizedBox(
-  //             height: 18,
-  //             child: Text(
-  //               plan['validity']?.toString() ?? '',
-  //               style: TextStyle(
-  //                 fontSize: 8,
-  //                 color: isSelected ? Colors.white70 : Colors.black54,
-  //               ),
-  //               textAlign: TextAlign.center,
-  //               maxLines: 1,
-  //               overflow: TextOverflow.ellipsis,
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
   Widget _buildDataPlanChip(Map<String, dynamic> plan) {
-    // Use a unique identifier for comparison
     final planId = plan['id']?.toString() ?? plan['plan_id']?.toString() ?? '';
     final selectedPlanId =
         _selectedPlan?['id']?.toString() ??
@@ -959,116 +658,68 @@ class _DataScreenState extends State<DataScreen> {
         setState(() {
           _selectedPlan = plan;
         });
-        print(
-          '✅ Selected plan: ${plan['data'] ?? plan['plan_name']} - ID: $planId - Amount: ${plan['amount'] ?? plan['price']}',
-        );
       },
-      child: Container(
-        // Fixed dimensions
-        width: 85,
-        height: 92,
-        padding: const EdgeInsets.all(6),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 90,
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(8),
+          color: isSelected ? AppColors.dataColor : Colors.white,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
+            color: isSelected ? AppColors.dataColor : Colors.grey.shade200,
+            width: isSelected ? 1.5 : 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? AppColors.primary.withOpacity(0.3)
-                  : Colors.grey.withOpacity(0.1),
-              blurRadius: isSelected ? 8 : 4,
-              offset: Offset(0, isSelected ? 4 : 2),
-            ),
-          ],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.dataColor.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Data amount
             Text(
-              plan['data']?.toString() ??
-                  plan['plan_name']?.toString() ??
-                  'N/A',
+              plan['data']?.toString() ?? plan['plan_name']?.toString() ?? 'N/A',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : Colors.black87,
+                color: isSelected ? Colors.white : AppColors.text,
                 height: 1.1,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            // Price
+            const SizedBox(height: 4),
             Text(
               '₦${plan['amount']?.toString() ?? plan['price']?.toString() ?? '0'}',
               style: TextStyle(
                 fontSize: 11,
-                color: isSelected ? Colors.white : Colors.green,
+                color: isSelected ? Colors.white : AppColors.success,
                 fontWeight: FontWeight.w600,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            // Validity
-            Text(
-              plan['validity']?.toString() ?? '',
-              style: TextStyle(
-                fontSize: 8,
-                color: isSelected ? Colors.white70 : Colors.black54,
+            if (plan['validity'] != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                plan['validity'].toString(),
+                style: TextStyle(
+                  fontSize: 8,
+                  color: isSelected ? Colors.white70 : Colors.grey.shade500,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            ],
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textColor,
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.lightGrey, width: 1),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(fontSize: 14, color: AppColors.textColor),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
         ),
       ),
     );

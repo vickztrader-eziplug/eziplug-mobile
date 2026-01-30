@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:async';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/toast_helper.dart';
 import '../../services/auth_service.dart';
 
 class SellCryptoScreen extends StatefulWidget {
@@ -184,13 +185,8 @@ class _SellCryptoScreenState extends State<SellCryptoScreen> {
 
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Use ToastHelper for consistent top-positioned toasts
+    ToastHelper.showSnackBar(context, message, color);
   }
 
   @override

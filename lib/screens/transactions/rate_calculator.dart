@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
 
 class RateCalculatorScreen extends StatefulWidget {
@@ -16,6 +17,9 @@ class RateCalculatorScreen extends StatefulWidget {
 }
 
 class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
+  // Cyan/Teal color for Rate Calculator (AppColors.calculatorColor)
+  static const Color _primaryColor = Color(0xFF26C6DA);
+
   bool isGiftcardRate = true;
   String? selectedGiftcard;
   String? selectedCoin;
@@ -23,7 +27,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
   final TextEditingController rateController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   final TextEditingController totalController = TextEditingController(
-    text: 'N0.00',
+    text: '₦0.00',
   );
   final TextEditingController cryptoRateController = TextEditingController(
     text: '\$0.00',
@@ -303,7 +307,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
     final amount = double.tryParse(amountController.text) ?? 0;
     final total = rate * amount;
     setState(() {
-      totalController.text = 'N${total.toStringAsFixed(2)}';
+      totalController.text = '₦${_formatAmount(total)}';
     });
   }
 
@@ -326,6 +330,15 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
     }
   }
 
+  String _formatAmount(double amount) {
+    return amount
+        .toStringAsFixed(2)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+  }
+
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -333,6 +346,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
         content: Text(message),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -340,63 +354,37 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ===== Header =====
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Spacer(),
-                  const Text(
-                    'Rate Calculator',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white),
-                    onPressed: () {
-                      if (isGiftcardRate) {
-                        _fetchGiftcardRates();
-                      } else {
-                        _fetchCryptoRates();
-                      }
-                      _showSnackBar('Refreshing rates...', AppColors.primary);
-                    },
-                  ),
-                ],
-              ),
-            ),
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          // Modern Gradient Header
+          ModernFormWidgets.buildGradientHeader(
+            context: context,
+            title: 'Rate Calculator',
+            subtitle: 'Calculate giftcard & crypto rates',
+            primaryColor: _primaryColor,
+          ),
 
-            // ===== Toggle Buttons =====
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 40.0,
-                vertical: 16,
-              ),
+          // Toggle Buttons
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: ModernFormWidgets.buildFormCard(
+              padding: const EdgeInsets.all(6),
               child: Row(
                 children: [
                   Expanded(
-                    child: _buildToggleButton(
+                    child: _buildToggleTab(
                       'Giftcard Rate',
+                      Icons.card_giftcard,
                       isGiftcardRate,
                       () => setState(() => isGiftcardRate = true),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 6),
                   Expanded(
-                    child: _buildToggleButton(
+                    child: _buildToggleTab(
                       'Crypto Rate',
+                      Icons.currency_bitcoin,
                       !isGiftcardRate,
                       () => setState(() => isGiftcardRate = false),
                     ),
@@ -404,24 +392,61 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
                 ],
               ),
             ),
+          ),
 
-            // ===== White Content Card =====
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(top: 8),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+          // Content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              child: isGiftcardRate
+                  ? _buildGiftcardRateContent()
+                  : _buildCryptoRateContent(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleTab(
+    String label,
+    IconData icon,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? _primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: _primaryColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: isGiftcardRate
-                      ? _buildGiftcardRateContent()
-                      : _buildCryptoRateContent(),
-                ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.white : AppColors.textColor.withOpacity(0.5),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textColor.withOpacity(0.6),
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
           ],
@@ -433,10 +458,25 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
   // ===== Giftcard Rate Section =====
   Widget _buildGiftcardRateContent() {
     if (_isLoadingGiftcards) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: AppColors.primary),
+          padding: const EdgeInsets.all(60),
+          child: Column(
+            children: [
+              const CircularProgressIndicator(
+                color: _primaryColor,
+                strokeWidth: 2,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Loading giftcard rates...',
+                style: TextStyle(
+                  color: AppColors.textColor.withOpacity(0.6),
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -444,71 +484,107 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel("Select Giftcards"),
-        _buildDropdown(
-          value: selectedGiftcard,
-          items: _giftcards.map((g) => g['name'] as String).toList(),
-          hint: "Select gift card",
-          onChanged: (v) {
-            setState(() {
-              selectedGiftcard = v;
-              final rate = _giftcardRates[v]?.toStringAsFixed(2) ?? "0.00";
-              rateController.text = rate;
-              _calculateGiftcardTotal();
-            });
-          },
+        // Info Card
+        ModernFormWidgets.buildInfoCard(
+          message: 'Select a gift card and enter the amount to calculate your payout in Naira.',
+          icon: Icons.info_outline,
+          color: _primaryColor,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel("Rate (₦)"),
-        _buildTextField(
-          rateController,
-          "Rate per dollar",
-          readOnly: true,
-          isLight: true,
-        ),
-        const SizedBox(height: 16),
-
-        _buildLabel("Amount (\$)"),
-        _buildTextField(
-          amountController,
-          "Enter amount in USD",
-          onChanged: (_) => _calculateGiftcardTotal(),
-        ),
-        const SizedBox(height: 16),
-
-        _buildLabel("Total (₦)"),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: Text(
-              totalController.text,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+        // Form Card
+        ModernFormWidgets.buildFormCard(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ModernFormWidgets.buildDropdown<String>(
+                label: 'Select Giftcard',
+                hint: 'Choose a gift card',
+                value: selectedGiftcard,
+                items: _giftcards.map((g) => g['name'] as String).toList(),
+                getLabel: (item) => item,
+                onChanged: (v) {
+                  setState(() {
+                    selectedGiftcard = v;
+                    final rate = _giftcardRates[v]?.toStringAsFixed(2) ?? "0.00";
+                    rateController.text = rate;
+                    _calculateGiftcardTotal();
+                  });
+                },
+                prefixIcon: Icons.card_giftcard,
               ),
+              const SizedBox(height: 20),
+
+              ModernFormWidgets.buildSectionLabel(
+                'Rate (₦ per \$1)',
+                icon: Icons.monetization_on_outlined,
+                iconColor: _primaryColor,
+              ),
+              const SizedBox(height: 10),
+              _buildReadOnlyField(
+                controller: rateController,
+                placeholder: 'Rate per dollar',
+              ),
+              const SizedBox(height: 20),
+
+              ModernFormWidgets.buildTextField(
+                controller: amountController,
+                hintText: 'Enter amount in USD',
+                label: 'Amount (\$)',
+                prefixIcon: Icons.attach_money,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => _calculateGiftcardTotal(),
+              ),
+              const SizedBox(height: 24),
+
+              // Result Card
+              ModernFormWidgets.buildSectionLabel(
+                'You will receive',
+                icon: Icons.account_balance_wallet_outlined,
+                iconColor: _primaryColor,
+              ),
+              const SizedBox(height: 10),
+              _buildResultCard(totalController.text),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Calculate Button
+        ModernFormWidgets.buildPrimaryButton(
+          label: 'Calculate',
+          onPressed: () {
+            if (selectedGiftcard == null) {
+              _showSnackBar('Please select a giftcard', Colors.red);
+              return;
+            }
+            if (amountController.text.isEmpty) {
+              _showSnackBar('Please enter an amount', Colors.red);
+              return;
+            }
+            _calculateGiftcardTotal();
+          },
+          backgroundColor: _primaryColor,
+          icon: Icons.calculate_outlined,
+        ),
+
+        const SizedBox(height: 16),
+
+        // Refresh Button
+        Center(
+          child: TextButton.icon(
+            onPressed: () {
+              _fetchGiftcardRates();
+              _showSnackBar('Refreshing rates...', _primaryColor);
+            },
+            icon: const Icon(Icons.refresh, size: 18, color: _primaryColor),
+            label: const Text(
+              'Refresh Rates',
+              style: TextStyle(color: _primaryColor, fontSize: 13),
             ),
           ),
         ),
-
-        const SizedBox(height: 32),
-
-        _buildButton("Calculate", () {
-          if (selectedGiftcard == null) {
-            _showSnackBar('Please select a giftcard', Colors.red);
-            return;
-          }
-          if (amountController.text.isEmpty) {
-            _showSnackBar('Please enter an amount', Colors.red);
-            return;
-          }
-          _calculateGiftcardTotal();
-        }),
       ],
     );
   }
@@ -516,10 +592,25 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
   // ===== Crypto Rate Section =====
   Widget _buildCryptoRateContent() {
     if (_isLoadingCrypto) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: AppColors.primary),
+          padding: const EdgeInsets.all(60),
+          child: Column(
+            children: [
+              const CircularProgressIndicator(
+                color: _primaryColor,
+                strokeWidth: 2,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Loading crypto rates...',
+                style: TextStyle(
+                  color: AppColors.textColor.withOpacity(0.6),
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -527,191 +618,181 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel("Select Coins"),
-        _buildDropdown(
-          value: selectedCoin,
-          items: _cryptos.map((c) => c['name'] as String).toList(),
-          hint: "Select coin",
-          onChanged: (v) {
-            setState(() {
-              selectedCoin = v;
-              cryptoRateController.text =
-                  '${_cryptoRates[v]?.toStringAsFixed(2) ?? '0.00'}';
-              _calculateCryptoAmount();
-            });
-          },
+        // Info Card
+        ModernFormWidgets.buildInfoCard(
+          message: 'Select a cryptocurrency and enter the USD amount to see the equivalent crypto value.',
+          icon: Icons.info_outline,
+          color: _primaryColor,
         ),
-        const SizedBox(height: 25),
+        const SizedBox(height: 20),
 
-        _buildLabel("Rate (\$)"),
-        _buildTextField(
-          cryptoRateController,
-          "Rate in USD",
-          readOnly: true,
-          isLight: true,
-        ),
-        const SizedBox(height: 25),
-
-        _buildLabel("Amount (\$)"),
-        _buildTextField(
-          cryptoAmountInputController,
-          "Enter amount in USD",
-          onChanged: (_) => _calculateCryptoAmount(),
-        ),
-        const SizedBox(height: 30),
-
-        _buildLabel("Crypto Amount"),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: Text(
-              cryptoAmountController.text,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+        // Form Card
+        ModernFormWidgets.buildFormCard(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ModernFormWidgets.buildDropdown<String>(
+                label: 'Select Cryptocurrency',
+                hint: 'Choose a coin',
+                value: selectedCoin,
+                items: _cryptos.map((c) => c['name'] as String).toList(),
+                getLabel: (item) => item,
+                onChanged: (v) {
+                  setState(() {
+                    selectedCoin = v;
+                    cryptoRateController.text =
+                        '\$${_cryptoRates[v]?.toStringAsFixed(2) ?? '0.00'}';
+                    _calculateCryptoAmount();
+                  });
+                },
+                prefixIcon: Icons.currency_bitcoin,
               ),
+              const SizedBox(height: 20),
+
+              ModernFormWidgets.buildSectionLabel(
+                'Current Rate (USD)',
+                icon: Icons.show_chart,
+                iconColor: _primaryColor,
+              ),
+              const SizedBox(height: 10),
+              _buildReadOnlyField(
+                controller: cryptoRateController,
+                placeholder: 'Rate in USD',
+              ),
+              const SizedBox(height: 20),
+
+              ModernFormWidgets.buildTextField(
+                controller: cryptoAmountInputController,
+                hintText: 'Enter amount in USD',
+                label: 'Amount (\$)',
+                prefixIcon: Icons.attach_money,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => _calculateCryptoAmount(),
+              ),
+              const SizedBox(height: 24),
+
+              // Result Card
+              ModernFormWidgets.buildSectionLabel(
+                'Crypto Amount',
+                icon: Icons.currency_exchange,
+                iconColor: _primaryColor,
+              ),
+              const SizedBox(height: 10),
+              _buildResultCard(cryptoAmountController.text),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Calculate Button
+        ModernFormWidgets.buildPrimaryButton(
+          label: 'Calculate',
+          onPressed: () {
+            if (selectedCoin == null) {
+              _showSnackBar('Please select a coin', Colors.red);
+              return;
+            }
+            if (cryptoAmountInputController.text.isEmpty) {
+              _showSnackBar('Please enter an amount', Colors.red);
+              return;
+            }
+            _calculateCryptoAmount();
+          },
+          backgroundColor: _primaryColor,
+          icon: Icons.calculate_outlined,
+        ),
+
+        const SizedBox(height: 16),
+
+        // Refresh Button
+        Center(
+          child: TextButton.icon(
+            onPressed: () {
+              _fetchCryptoRates();
+              _showSnackBar('Refreshing rates...', _primaryColor);
+            },
+            icon: const Icon(Icons.refresh, size: 18, color: _primaryColor),
+            label: const Text(
+              'Refresh Rates',
+              style: TextStyle(color: _primaryColor, fontSize: 13),
             ),
           ),
         ),
-
-        const SizedBox(height: 32),
-
-        _buildButton("Calculate", () {
-          if (selectedCoin == null) {
-            _showSnackBar('Please select a coin', Colors.red);
-            return;
-          }
-          if (cryptoAmountInputController.text.isEmpty) {
-            _showSnackBar('Please enter an amount', Colors.red);
-            return;
-          }
-          _calculateCryptoAmount();
-        }),
       ],
     );
   }
 
-  // ===== Reusable Widgets =====
-
-  Widget _buildLabel(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: Colors.black87,
-      ),
-    ),
-  );
-
-  Widget _buildTextField(
-    TextEditingController controller,
-    String hint, {
-    bool readOnly = false,
-    bool isLight = false,
-    void Function(String)? onChanged,
+  Widget _buildReadOnlyField({
+    required TextEditingController controller,
+    required String placeholder,
   }) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: isLight ? AppColors.light : AppColors.lightGrey.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(5),
+        color: _primaryColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _primaryColor.withOpacity(0.2)),
       ),
-      child: TextField(
-        controller: controller,
-        readOnly: readOnly,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
+      child: Row(
+        children: [
+          Icon(
+            Icons.lock_outline,
+            size: 18,
+            color: _primaryColor.withOpacity(0.6),
           ),
-        ),
-        style: const TextStyle(fontSize: 14, color: Colors.black87),
-      ),
-    );
-  }
-
-  Widget _buildDropdown({
-    required String? value,
-    required List<String> items,
-    required String hint,
-    required void Function(String?) onChanged,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.lightGrey.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: DropdownButtonFormField<String>(
-        value: value,
-        items: items
-            .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-            .toList(),
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildButton(String text, VoidCallback onPressed) => SizedBox(
-    width: double.infinity,
-    height: 56,
-    child: ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.black87,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      ),
-    ),
-  );
-
-  Widget _buildToggleButton(String label, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.black87 : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? Colors.black87 : Colors.white.withOpacity(0.5),
-            width: 1,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.white.withOpacity(0.9),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              controller.text.isNotEmpty ? controller.text : placeholder,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: controller.text.isNotEmpty
+                    ? AppColors.textColor
+                    : AppColors.textColor.withOpacity(0.4),
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultCard(String value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _primaryColor.withOpacity(0.15),
+            _primaryColor.withOpacity(0.08),
+          ],
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _primaryColor.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.account_balance_wallet,
+            size: 32,
+            color: _primaryColor.withOpacity(0.7),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: _primaryColor,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

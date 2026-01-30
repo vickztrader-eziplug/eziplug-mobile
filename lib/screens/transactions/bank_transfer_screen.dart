@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/api_response.dart';
+import '../../core/utils/toast_helper.dart';
 import '../../services/auth_service.dart';
 
 class BankTransferScreen extends StatefulWidget {
@@ -153,10 +155,11 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
+        final accountData = getResponseData(result);
 
         if (mounted) {
           setState(() {
-            _virtualAccount = result['account'] ?? result['data'];
+            _virtualAccount = accountData is Map ? accountData : (result['account'] ?? accountData);
             _isCreatingAccount = false;
           });
 
@@ -184,13 +187,8 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
 
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Use ToastHelper for consistent top-positioned toasts
+    ToastHelper.showSnackBar(context, message, color);
   }
 
   @override

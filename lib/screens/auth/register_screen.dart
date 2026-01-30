@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // ignore: depend_on_referenced_packages
 import 'package:provider/provider.dart';
-// ignore: depend_on_referenced_packages
-import 'package:fluttertoast/fluttertoast.dart';
+import '../../core/utils/toast_helper.dart';
 import '../../services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/api_response.dart';
 import '../../routes.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -187,25 +187,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       print('Registration result: $result');
 
-      // Check if registration was successful using 'success' field (from AuthService)
-      if (result['success'] == true) {
-        // Extract token directly (not nested)
-        final token = result['token'] ?? '';
+      // Check if registration was successful using helper (handles both 'success' and 'status')
+      if (isSuccessResponse(result)) {
+        // Extract token from response data (handles both formats)
+        final responseData = getResponseData(result);
+        final token = responseData['token'] ?? result['token'] ?? '';
         final email = _emailController.text.trim();
 
         print('Token extracted: $token');
         print('Email: $email');
 
         // Show success toast with GREEN background
-        await Fluttertoast.showToast(
-          msg:
-              result['message'] ??
-              "Registration successful! Please verify your email.",
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 16.0,
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.TOP,
+        ToastHelper.showSuccess(
+          getResponseMessage(result).isNotEmpty
+              ? getResponseMessage(result)
+              : "Registration successful! Please verify your email.",
         );
 
         // Small delay to let toast show
@@ -226,27 +222,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         print('Navigation completed');
       } else {
         // Registration failed
-        await Fluttertoast.showToast(
-          msg: result['message'] ?? "Registration failed.",
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.TOP,
+        ToastHelper.showError(
+          getResponseMessage(result).isNotEmpty
+              ? getResponseMessage(result)
+              : "Registration failed.",
         );
       }
     } catch (e) {
       print('Registration error: $e');
       if (!mounted) return;
       setState(() => _loading = false);
-      await Fluttertoast.showToast(
-        msg: "Something went wrong: $e",
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.TOP,
-      );
+      ToastHelper.showError("Network error. Please try again later.");
     }
   }
 

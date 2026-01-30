@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
 import '../reusable/pin_entry_screen.dart';
 import 'lock_fund.dart';
@@ -16,6 +17,9 @@ class SaveAndEarnScreen extends StatefulWidget {
 }
 
 class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
+  // Green color for Save & Earn
+  static const Color _primaryColor = Color(0xFF4CAF50);
+
   final TextEditingController _withdrawAmountController =
       TextEditingController();
 
@@ -156,18 +160,20 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(25),
-          topRight: Radius.circular(25),
-        ),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return Padding(
+        return Container(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -184,88 +190,65 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Withdraw Funds',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textColor,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Available: ₦${_formatBalance(_lockedBalance)}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textColor.withOpacity(0.6),
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: _primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        color: _primaryColor,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Withdraw Funds',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Available: ₦${_formatBalance(_lockedBalance)}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textColor.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
 
-                // Amount Input
-                const Text(
-                  'Amount',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textColor,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(color: AppColors.lightGrey, width: 2),
-                  ),
-                  child: TextField(
-                    controller: _withdrawAmountController,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textColor,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Enter amount to withdraw',
-                      hintStyle: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textColor.withOpacity(0.5),
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                  ),
+                // Amount Input using ModernFormWidgets
+                ModernFormWidgets.buildTextField(
+                  controller: _withdrawAmountController,
+                  hintText: 'Enter amount to withdraw',
+                  label: 'Amount',
+                  prefixIcon: Icons.monetization_on_outlined,
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 24),
 
                 // Confirm Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Close modal
-                      _proceedToWithdrawPin();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.textColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Confirm Withdrawal',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                ModernFormWidgets.buildPrimaryButton(
+                  label: 'Confirm Withdrawal',
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _proceedToWithdrawPin();
+                  },
+                  backgroundColor: _primaryColor,
+                  icon: Icons.check_circle_outline,
                 ),
                 const SizedBox(height: 16),
               ],
@@ -433,23 +416,23 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
           ),
           contentPadding: const EdgeInsets.all(24),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 64,
-                height: 64,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: _primaryColor.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.check_circle,
-                  color: Colors.green,
-                  size: 40,
+                  color: _primaryColor,
+                  size: 48,
                 ),
               ),
               const SizedBox(height: 20),
@@ -474,9 +457,9 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
               Text(
                 '₦${amount.toStringAsFixed(2)}',
                 style: const TextStyle(
-                  fontSize: 24,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                  color: _primaryColor,
                 ),
               ),
               const SizedBox(height: 8),
@@ -488,28 +471,10 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Close dialog
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: const Text(
-                    'Done',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+              ModernFormWidgets.buildPrimaryButton(
+                label: 'Done',
+                onPressed: () => Navigator.pop(context),
+                backgroundColor: _primaryColor,
               ),
             ],
           ),
@@ -525,6 +490,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
         content: Text(message),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -542,20 +508,20 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
     try {
       final date = DateTime.parse(dateString);
       final months = [
-        'January',
-        'February',
-        'March',
-        'April',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
         'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
-      return '${months[date.month - 1]} ${date.day} ${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}';
+      return '${months[date.month - 1]} ${date.day}, ${date.year}';
     } catch (e) {
       return dateString;
     }
@@ -564,344 +530,299 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            if (_isLoading)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
-                  ),
-                ),
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Modern Gradient Header
+              ModernFormWidgets.buildGradientHeader(
+                context: context,
+                title: 'Save & Earn',
+                walletBalance: _walletNaira,
+                isLoadingBalance: _isLoadingWallet,
+                primaryColor: _primaryColor,
               ),
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 320,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          const Expanded(
-                            child: Text(
-                              'Save & Earn',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                    _isLoadingWallet
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : Text(
-                            'Balance: ₦${_formatBalance(_walletNaira)}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.white,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                    const SizedBox(height: 20),
-                    // Lock Funds Button
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LockFundScreen(),
-                          ),
-                        ).then((_) {
-                          // Refresh when coming back
-                          _fetchWalletAndLockedBalance();
-                          _fetchLockHistory();
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(
-                              Icons.lock_outline,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Lock Funds',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
 
-            // Content Section with curved top
-            Positioned(
-              top: 160,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
+              // Content
+              Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Stats Cards
+                      // Lock Funds Action Card
+                      ModernFormWidgets.buildFormCard(
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LockFundScreen(),
+                              ),
+                            ).then((_) {
+                              _fetchWalletAndLockedBalance();
+                              _fetchLockHistory();
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: _primaryColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.lock_outline,
+                                  color: _primaryColor,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Lock Funds',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Lock your funds and earn interest',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textColor.withOpacity(0.6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                color: _primaryColor.withOpacity(0.6),
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Stats Cards Row
                       Row(
                         children: [
                           Expanded(
-                            child: _buildStatCard(
+                            child: _buildModernStatCard(
                               'Amount Saved',
                               '₦${_formatBalance(_lockedBalance)}',
+                              Icons.savings_outlined,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: _buildStatCard(
+                            child: _buildModernStatCard(
                               'Total Interest',
                               '₦${_formatBalance(_totalInterestBal)}',
+                              Icons.trending_up,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
 
-                      // Info Banner
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.lightGrey.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'Earn interest on your locked savings',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textColor.withOpacity(0.7),
-                          ),
+                      // Info Card
+                      ModernFormWidgets.buildInfoCard(
+                        message: 'Lock your funds for a period of time to earn interest. The longer you lock, the more you earn!',
+                        icon: Icons.lightbulb_outline,
+                        color: _primaryColor,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // History Section
+                      ModernFormWidgets.buildFormCard(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                ModernFormWidgets.buildSectionLabel(
+                                  'Lock History',
+                                  icon: Icons.history,
+                                  iconColor: _primaryColor,
+                                ),
+                                if (_lockHistory.isNotEmpty)
+                                  TextButton(
+                                    onPressed: () {
+                                      // View all activities
+                                    },
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'View all',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: _primaryColor,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.chevron_right,
+                                          size: 16,
+                                          color: _primaryColor,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // History Items
+                            if (_isLoadingHistory)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(24),
+                                  child: CircularProgressIndicator(
+                                    color: _primaryColor,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              )
+                            else if (_lockHistory.isEmpty)
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: _primaryColor.withOpacity(0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.history,
+                                          size: 36,
+                                          color: _primaryColor.withOpacity(0.5),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No lock history yet',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.textColor.withOpacity(0.6),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Start locking funds to see your history',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.textColor.withOpacity(0.4),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else
+                              ...List.generate(
+                                _lockHistory.length > 5 ? 5 : _lockHistory.length,
+                                (index) {
+                                  final item = _lockHistory[index];
+                                  return Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: index < _lockHistory.length - 1 ? 12 : 0,
+                                    ),
+                                    child: _buildModernActivityItem(
+                                      'Locked Funds',
+                                      _formatDate(item['date']),
+                                      '₦${_formatBalance(item['amount'])}',
+                                      item['status'],
+                                    ),
+                                  );
+                                },
+                              ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      // Lock Histories Header
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'History',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textColor,
-                            ),
-                          ),
-                          if (_lockHistory.isNotEmpty)
-                            GestureDetector(
-                              onTap: () {
-                                // View all activities
-                              },
-                              child: Row(
-                                children: [
-                                  Text(
-                                    'View all',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.textColor.withOpacity(
-                                        0.6,
-                                      ),
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.chevron_right,
-                                    size: 18,
-                                    color: AppColors.textColor.withOpacity(0.6),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // History Items
-                      if (_isLoadingHistory)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(20),
-                            child: CircularProgressIndicator(
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        )
-                      else if (_lockHistory.isEmpty)
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.history,
-                                  size: 48,
-                                  color: AppColors.textColor.withOpacity(0.3),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'No lock history yet',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.textColor.withOpacity(0.6),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      else
-                        ...List.generate(
-                          _lockHistory.length > 5 ? 5 : _lockHistory.length,
-                          (index) {
-                            final item = _lockHistory[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _buildActivityItem(
-                                'Locked Funds',
-                                _formatDate(item['date']),
-                                '₦${_formatBalance(item['amount'])}',
-                                item['status'],
-                              ),
-                            );
-                          },
-                        ),
-
-                      const SizedBox(height: 40),
-
                       // Withdraw Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _lockedBalance > 0
-                              ? _showWithdrawModal
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.textColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                            disabledBackgroundColor: AppColors.lightGrey,
-                          ),
-                          child: const Text(
-                            'Withdraw',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                      ModernFormWidgets.buildPrimaryButton(
+                        label: 'Withdraw Savings',
+                        onPressed: _lockedBalance > 0 ? _showWithdrawModal : null,
+                        backgroundColor: _primaryColor,
+                        icon: Icons.account_balance_wallet_outlined,
                       ),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
+            ],
+          ),
+
+          // Loading Overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: _primaryColor,
+                  strokeWidth: 3,
+                ),
+              ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildStatCard(String label, String value) {
-    return Container(
+  Widget _buildModernStatCard(String label, String value, IconData icon) {
+    return ModernFormWidgets.buildFormCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: _primaryColor, size: 18),
+              ),
+              const Spacer(),
+            ],
+          ),
+          const SizedBox(height: 12),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 12,
               color: AppColors.textColor.withOpacity(0.6),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppColors.textColor,
             ),
@@ -913,31 +834,45 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
     );
   }
 
-  Widget _buildActivityItem(
+  Widget _buildModernActivityItem(
     String title,
     String date,
     String amount,
     String status,
   ) {
-    Color statusColor = Colors.green;
-    if (status == 'pending') statusColor = Colors.orange;
-    if (status == 'expired') statusColor = Colors.red;
+    Color statusColor = _primaryColor;
+    IconData statusIcon = Icons.check_circle;
+    if (status == 'pending') {
+      statusColor = Colors.orange;
+      statusIcon = Icons.pending;
+    }
+    if (status == 'expired') {
+      statusColor = Colors.red;
+      statusIcon = Icons.cancel;
+    }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade100),
       ),
       child: Row(
         children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.lock_outline,
+              color: _primaryColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -956,19 +891,26 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
-                        vertical: 2,
+                        vertical: 3,
                       ),
                       decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: statusColor,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(statusIcon, size: 10, color: statusColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            status,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -978,7 +920,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                   date,
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textColor.withOpacity(0.6),
+                    color: AppColors.textColor.withOpacity(0.5),
                   ),
                 ),
               ],
@@ -989,7 +931,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: _primaryColor,
             ),
           ),
         ],

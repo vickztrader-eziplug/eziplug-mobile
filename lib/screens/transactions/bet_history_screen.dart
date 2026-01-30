@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/toast_helper.dart';
 import '../../models/bet_transaction.dart';
 import '../../services/betting_service.dart';
 import 'package:intl/intl.dart';
@@ -57,10 +57,7 @@ class _BetHistoryScreenState extends State<BetHistoryScreen>
       });
     } else {
       setState(() => _loading = false);
-      Fluttertoast.showToast(
-        msg: allResult['message'] ?? 'Failed to load history',
-        backgroundColor: Colors.red,
-      );
+      ToastHelper.showError(allResult['message'] ?? 'Failed to load history');
     }
   }
 

@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/api_response.dart';
+import '../../core/utils/toast_helper.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
 import '../reusable/pin_entry_screen.dart';
 import '../reusable/receipt_screen.dart';
@@ -125,12 +128,13 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body)['results']['data'];
+        final responseJson = jsonDecode(response.body);
+        final data = getResponseData(responseJson);
 
         if (mounted) {
           setState(() {
             // Assuming API returns: {networks: [{id: "1", name: "MTN", ...}]}
-            _networks = (data['networks'] ?? data['data'] ?? [])
+            _networks = (data['networks'] ?? data['data'] ?? data ?? [])
                 .map<Map<String, dynamic>>(
                   (network) => {
                     'id': network['id']?.toString() ?? '',
@@ -418,423 +422,193 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
 
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    // Use ToastHelper for consistent top-positioned toasts
+    ToastHelper.showSnackBar(context, message, color);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            if (_isLoading)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
-                  ),
-                ),
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Modern Gradient Header
+              ModernFormWidgets.buildGradientHeader(
+                context: context,
+                title: 'Buy Airtime',
+                walletBalance: _walletNaira,
+                isLoadingBalance: _isLoadingWallet,
+                primaryColor: AppColors.airtimeColor,
               ),
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 260,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Airtime Purchase',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                _isLoadingWallet
-                                    ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Text(
-                                        'Balance: ₦${_formatBalance(_walletNaira)}',
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
+              
+              // Content Section
+              Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Phone Number
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
+                      // Network Selection
+                      ModernFormWidgets.buildSectionLabel('Select Network', icon: Icons.sim_card_outlined, iconColor: AppColors.airtimeColor),
+                      const SizedBox(height: 12),
+                      ModernFormWidgets.buildNetworkGrid(
+                        networks: _networks,
+                        selectedId: _selectedNetworkId,
+                        onSelect: (id, name) {
+                          setState(() {
+                            _selectedNetworkId = id;
+                            _selectedNetworkName = name;
+                          });
+                        },
+                        isLoading: _isFetchingNetworks,
+                      ),
+                      
+                      const SizedBox(height: 24),
+
+                      // Phone Number Input
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        flex: 2,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            _buildLabel('Phone Number'),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 80),
-                                      Expanded(
-                                        flex: 1,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            SizedBox(
-                                              height: 25,
-                                              child: TextButton(
-                                                onPressed: _selectContact,
-                                                style: TextButton.styleFrom(
-                                                  backgroundColor:
-                                                      AppColors.primary,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          5,
-                                                        ),
-                                                    side: const BorderSide(
-                                                      color:
-                                                          AppColors.lightGrey,
-                                                      width: 2,
-                                                    ),
-                                                  ),
-                                                ),
-                                                child: const Text(
-                                                  'Select Contact',
-                                                  style: TextStyle(
-                                                    fontSize: 8,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: AppColors.light,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                ModernFormWidgets.buildSectionLabel('Phone Number', icon: Icons.phone_android, iconColor: AppColors.airtimeColor),
+                                TextButton.icon(
+                                  onPressed: _selectContact,
+                                  icon: Icon(Icons.contacts, size: 16, color: AppColors.airtimeColor),
+                                  label: Text(
+                                    'Contacts',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.airtimeColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  _buildTextField(
-                                    controller: _phoneController,
-                                    hintText: 'Phone Number',
-                                    keyboardType: TextInputType.phone,
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    backgroundColor: AppColors.airtimeColor.withOpacity(0.1),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            ModernFormWidgets.buildTextField(
+                              controller: _phoneController,
+                              hintText: 'Enter phone number',
+                              prefixIcon: Icons.phone,
+                              keyboardType: TextInputType.phone,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      
+                      const SizedBox(height: 24),
 
-                      // Select Network
-                      _buildLabel('Select Network'),
-                      const SizedBox(height: 12),
-                      _isFetchingNetworks
-                          ? const Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.primary,
-                              ),
-                            )
-                          : Row(
+                      // Amount Selection
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: _networks.map((network) {
-                                return _buildNetworkCard(
-                                  network['id'],
-                                  network['name'],
-                                  network['color'],
-                                  network['assetPath'],
-                                );
-                              }).toList(),
-                            ),
-                      const SizedBox(height: 30),
-
-                      // Select or Input
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildLabel('Select /Input Amount'),
-                          Row(
-                            children: [
-                              Text(
-                                'Custom',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.textColor.withOpacity(0.7),
+                              children: [
+                                ModernFormWidgets.buildSectionLabel('Select Amount', icon: Icons.payments_outlined, iconColor: AppColors.airtimeColor),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Custom',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Transform.scale(
+                                      scale: 0.8,
+                                      child: Switch(
+                                        value: _showCustomAmount,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _showCustomAmount = value;
+                                            if (value) {
+                                              _selectedAmount = null;
+                                            } else {
+                                              _customAmountController.clear();
+                                            }
+                                          });
+                                        },
+                                        activeColor: AppColors.airtimeColor,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Switch(
-                                value: _showCustomAmount,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _showCustomAmount = value;
-                                    if (value) {
-                                      _selectedAmount =
-                                          null; // Clear preset selection
-                                    } else {
-                                      _customAmountController
-                                          .clear(); // Clear custom input
-                                    }
-                                  });
-                                },
-                                activeColor: AppColors.primary,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(25),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            _showCustomAmount
+                                ? ModernFormWidgets.buildTextField(
+                                    controller: _customAmountController,
+                                    hintText: 'Enter amount',
+                                    prefixIcon: Icons.monetization_on_outlined,
+                                    keyboardType: TextInputType.number,
+                                  )
+                                : ModernFormWidgets.buildAmountGrid(
+                                    amounts: _amounts,
+                                    selectedAmount: _selectedAmount,
+                                    onSelect: (amount) {
+                                      setState(() {
+                                        _selectedAmount = amount;
+                                        _customAmountController.clear();
+                                      });
+                                    },
+                                  ),
+                          ],
                         ),
-                        child: _showCustomAmount
-                            ? _buildTextField(
-                                controller: _customAmountController,
-                                hintText: 'Enter custom amount',
-                                keyboardType: TextInputType.number,
-                              )
-                            : Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: _amounts.map((amount) {
-                                  return _buildAmountChip(amount);
-                                }).toList(),
-                              ),
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 16),
+
+                      // Info tip
+                      ModernFormWidgets.buildInfoCard(
+                        message: 'Airtime will be credited instantly to the phone number provided.',
+                        icon: Icons.info_outline,
+                        color: AppColors.airtimeColor,
+                      ),
+
+                      const SizedBox(height: 24),
 
                       // Proceed Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _proceedToPin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.textColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                            disabledBackgroundColor: AppColors.lightGrey,
-                          ),
-                          child: const Text(
-                            'Proceed',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                      ModernFormWidgets.buildPrimaryButton(
+                        label: 'Buy Airtime',
+                        onPressed: _proceedToPin,
+                        isLoading: _isLoading,
+                        backgroundColor: AppColors.airtimeColor,
+                        icon: Icons.send_rounded,
                       ),
+
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNetworkCard(
-    String id,
-    String name,
-    Color color,
-    String assetPath,
-  ) {
-    final isSelected = _selectedNetworkId == id;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedNetworkId = id;
-            _selectedNetworkName = name;
-          });
-        },
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.primary
-                  : AppColors.lightGrey.withOpacity(0.5),
-              width: isSelected ? 2 : 1,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.white.withOpacity(0.2)
-                      : color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Image.asset(
-                    assetPath,
-                    width: 24,
-                    height: 24,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.sim_card,
-                        color: isSelected ? Colors.white : color,
-                        size: 24,
-                      );
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                name,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : AppColors.textColor,
-                ),
-              ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAmountChip(int amount) {
-    final isSelected = _selectedAmount == amount;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedAmount = amount;
-          _customAmountController
-              .clear(); // Clear custom input when chip is selected
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.light,
-            width: 1,
-          ),
-        ),
-        child: Text(
-          '₦$amount',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.textColor,
-          ),
-        ),
+          
+          // Loading overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black38,
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -846,47 +620,5 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]},',
         );
-  }
-
-  Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textColor,
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.lightGrey, width: 1),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(fontSize: 14, color: AppColors.textColor),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
-      ),
-    );
   }
 }
