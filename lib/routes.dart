@@ -1,4 +1,4 @@
-import 'package:cashpoint/screens/auth/forgot_password_screen.dart';
+import 'package:cashpoint/screens/auth/forgot_password_screen_enhanced.dart';
 import 'package:cashpoint/screens/home/main_screen.dart';
 import 'package:cashpoint/screens/profile/about_screen.dart';
 import 'package:cashpoint/screens/profile/change_password.dart';
@@ -28,11 +28,12 @@ import 'package:cashpoint/screens/transactions/rate_calculator.dart';
 import 'package:cashpoint/screens/transactions/save_and_earn.dart';
 import 'package:cashpoint/screens/transactions/sell_crypto.dart';
 import 'package:cashpoint/screens/transactions/sell_giftcard.dart';
+import 'package:cashpoint/pages/debug_logs_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/auth/register_screen_enhanced.dart';
-import 'screens/auth/verification_screen.dart';
+import 'screens/auth/verification_screen_enhanced.dart';
 import 'screens/auth/login_screen_enhanced.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/profile/profile_screen.dart';
@@ -42,6 +43,7 @@ class AppRoutes {
   static const onboarding = '/onboarding';
   static const register = '/register';
   static const verify = '/verify';
+  static const emailVerify = '/email-verify';
   static const login = '/login';
   static const forgotPassword = '/forgot-password';
   static const home = '/home';
@@ -75,23 +77,36 @@ class AppRoutes {
   static const lockFund = '/lockFund';
   static const notification = '/notification';
   static const kyc = '/kyc';
+  static const debugLogs = '/debug-logs';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
+      case debugLogs:
+        return MaterialPageRoute(builder: (_) => const DebugLogsScreen());
       case onboarding:
         return MaterialPageRoute(builder: (_) => const OnboardingScreen());
       case register:
         return MaterialPageRoute(builder: (_) => RegisterScreenEnhanced());
       case forgotPassword:
-        return MaterialPageRoute(builder: (_) => ForgotPasswordScreen());
+        return MaterialPageRoute(builder: (_) => const ForgotPasswordScreenEnhanced());
       case verify:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => VerificationScreen(
+          builder: (_) => VerificationScreenEnhanced(
             email: args?['email'] ?? '',
             token: args?['token'] ?? '',
+            isEmailVerification: false,
+          ),
+        );
+      case emailVerify:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => VerificationScreenEnhanced(
+            email: args?['email'] ?? '',
+            token: args?['token'] ?? '',
+            isEmailVerification: true,
           ),
         );
       case login:

@@ -140,8 +140,25 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
       setState(() => _loading = false);
 
       if (result['success'] == true) {
-        ToastHelper.showSuccess(result['message'] ?? "Login successful");
-        Navigator.pushReplacementNamed(context, AppRoutes.main);
+        // Check if email is verified
+        final isEmailVerified = result['isEmailVerified'] as bool? ?? true;
+        
+        if (!isEmailVerified) {
+          // Email not verified - redirect to verification screen
+          ToastHelper.showInfo(result['message'] ?? "Please verify your email to continue");
+          Navigator.pushReplacementNamed(
+            context,
+            AppRoutes.emailVerify,
+            arguments: {
+              'email': _emailController.text.trim(),
+              'token': result['token'] ?? '',
+            },
+          );
+        } else {
+          // Email verified - proceed to main screen
+          ToastHelper.showSuccess(result['message'] ?? "Login successful");
+          Navigator.pushReplacementNamed(context, AppRoutes.main);
+        }
       } else {
         final statusCode = result['statusCode'] as int?;
         if (statusCode != null && statusCode >= 500) {
@@ -159,8 +176,13 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
         }
       }
     } catch (e) {
+      debugPrint('Login UI error: $e');
       setState(() => _loading = false);
-      ToastHelper.showError("Network error. Please try again later.");
+      if (e.toString().contains('TimeoutException')) {
+        ToastHelper.showError("Request timed out. Please check your internet connection.");
+      } else {
+        ToastHelper.showError("Network error: ${e.toString()}");
+      }
     }
   }
 
@@ -314,26 +336,31 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
                   padding: EdgeInsets.fromLTRB(24, sh * 0.05, 24, 40),
                   child: Column(
                     children: [
-                      // Logo
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          height: 60,
-                          width: 60,
-                          color: Colors.white,
-                          colorBlendMode: BlendMode.srcIn,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.bolt,
-                              size: 50,
-                              color: Colors.white,
-                            );
-                          },
+                      // Logo - Long press to open debug logs
+                      GestureDetector(
+                        onLongPress: () {
+                          Navigator.pushNamed(context, AppRoutes.debugLogs);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            height: 60,
+                            width: 60,
+                            color: Colors.white,
+                            colorBlendMode: BlendMode.srcIn,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.bolt,
+                                size: 50,
+                                color: Colors.white,
+                              );
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),

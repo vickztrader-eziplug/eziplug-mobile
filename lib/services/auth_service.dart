@@ -2,8 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:cashpoint/core/utils/constants.dart';
-import 'package:cashpoint/core/utils/api_response.dart';
-import 'package:flutter/material.dart';
+import 'package:cashpoint/core/utils/api_response.dart';import 'package:cashpoint/services/debug_logger.dart';import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // ignore: depend_on_referenced_packages
@@ -87,15 +86,21 @@ class AuthService extends ChangeNotifier {
     final url = Uri.parse('$baseUrl/register');
 
     try {
+      await debugLogger.log('HTTP', 'Register request to: $url');
+      await debugLogger.log('HTTP', 'Register data: ${data.keys.join(', ')}', showToast: false);
+      
       final response = await http.post(
         url,
         headers: {'Accept': 'application/json'},
         body: data,
-      );
+      ).timeout(const Duration(seconds: 60));
+
+      await debugLogger.log('HTTP', 'Register status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final result = jsonDecode(response.body);
         final apiResponse = ApiResponse.fromJson(result);
+        await debugLogger.log('SUCCESS', 'Register successful');
 
         // If registration returns a token, save it
         if (apiResponse.token != null) {
@@ -109,6 +114,7 @@ class AuthService extends ChangeNotifier {
           'user': apiResponse.user,
         };
       } else if (response.statusCode == 302) {
+        await debugLogger.log('WARNING', 'Register 302 redirect');
         return {
           'success': false,
           'message': 'Email or phone number already exists.',
@@ -117,22 +123,33 @@ class AuthService extends ChangeNotifier {
         final result = jsonDecode(response.body);
         final errors = result['errors'] ?? {};
         final message = result['message'] ?? 'Validation failed';
+        await debugLogger.log('ERROR', 'Register 422: $message');
 
-        // Combine field-specific errors
-        String combinedErrors = errors.entries
-            .map((e) => '${e.key}: ${e.value.join(', ')}')
-            .join('\n');
-
-        return {'success': false, 'message': '$message\n$combinedErrors'};
+        // Return errors separately so UI can display them inline
+        return {
+          'success': false, 
+          'message': message,
+          'errors': errors,
+        };
+      } else if (response.statusCode == 401) {
+        final result = jsonDecode(response.body);
+        await debugLogger.log('ERROR', 'Register 401: Unauthorized');
+        return {
+          'success': false,
+          'message': result['message'] ?? 'Unauthorized',
+        };
       } else {
+        await debugLogger.log('ERROR', 'Register unexpected: ${response.statusCode}');
         return {
           'success': false,
           'message':
               'Unexpected response (${response.statusCode}): ${response.body}',
         };
       }
-    } catch (e) {
-      return {'success': false, 'message': 'Server error: $e'};
+    } catch (e, stackTrace) {
+      await debugLogger.log('ERROR', 'Register exception: $e');
+      debugPrint('Stack trace: $stackTrace');
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 
@@ -208,28 +225,51 @@ class AuthService extends ChangeNotifier {
     final url = Uri.parse('$baseUrl/login');
 
     try {
+      await debugLogger.log('HTTP', 'Login request to: $url');
+      
       final response = await http.post(
         url,
         headers: {'Accept': 'application/json'},
         body: data,
-      );
+      ).timeout(const Duration(seconds: 60));
 
       final statusCode = response.statusCode;
       final body = response.body;
+      
+      await debugLogger.log('HTTP', 'Login status: $statusCode');
 
       if (statusCode == 200 || statusCode == 201) {
         final result = jsonDecode(body);
         final apiResponse = ApiResponse.fromJson(result);
-        print('Login result: $result');
+        await debugLogger.log('SUCCESS', 'Login parsed, success: ${apiResponse.success}');
         
         if (apiResponse.success) {
           await _saveAuth(result);
+          
+          // Check if email is verified - handle both formats
+          Map<String, dynamic>? userData = apiResponse.user;
+          
+          // If user is null, the data might BE the user (single element extraction)
+          if (userData == null && apiResponse.data is Map<String, dynamic>) {
+            final dataMap = apiResponse.data as Map<String, dynamic>;
+            if (dataMap.containsKey('email') && dataMap.containsKey('id')) {
+              // Data is the user object itself
+              userData = dataMap;
+            }
+          }
+          
+          final isEmailVerified = userData?['email_verified_at'] != null;
+          await debugLogger.log('SUCCESS', 'Email verified: $isEmailVerified');
+          
           return {
             'success': true,
             'message': apiResponse.message.isNotEmpty ? apiResponse.message : 'Login successful',
-            'user': apiResponse.user,
+            'user': userData,
+            'token': apiResponse.token,
+            'isEmailVerified': isEmailVerified,
           };
         } else {
+          await debugLogger.log('WARNING', 'Login failed: ${apiResponse.message}');
           return {
             'success': false,
             'message': apiResponse.message.isNotEmpty ? apiResponse.message : 'Invalid credentials',
@@ -239,29 +279,44 @@ class AuthService extends ChangeNotifier {
       // Handle Laravel validation errors (422)
       else if (statusCode == 422) {
         final result = jsonDecode(body);
+        await debugLogger.log('ERROR', 'Login 422: Validation error');
         final errors = result['errors'] ?? {};
         final message = result['message'] ?? 'Validation failed';
-
         // Combine field-specific errors
         String combinedErrors = errors.entries
             .map((e) => '${e.key}: ${e.value.join(', ')}')
             .join('\n');
 
-        return {'success': false, 'message': '$message\n$combinedErrors'};
+        return {
+          'success': false, 
+          'message': '$message\n$combinedErrors',
+          'errors': errors,
+        };
+      } else if (statusCode == 401) {
+        final result = jsonDecode(body);
+        await debugLogger.log('ERROR', 'Login 401: Invalid credentials');
+        return {
+          'success': false,
+          'message': result['message'] ?? 'Invalid credentials',
+        };
       } else if (statusCode == 302) {
+        await debugLogger.log('ERROR', 'Login 302: Unexpected redirect');
         return {
           'success': false,
           'message':
               'Unexpected redirect (302). Confirm your API routes use api.php, not web.php.',
         };
       } else {
+        await debugLogger.log('ERROR', 'Login unexpected: $statusCode');
         return {
           'success': false,
           'message': 'Unexpected response ($statusCode): $body',
         };
       }
-    } catch (e) {
-      return {'success': false, 'message': 'Server error: $e'};
+    } catch (e, stackTrace) {
+      await debugLogger.log('ERROR', 'Login exception: $e');
+      debugPrint('Stack trace: $stackTrace');
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 

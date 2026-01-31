@@ -1,4 +1,4 @@
-import 'package:cashpoint/screens/auth/verification_screen.dart';
+import 'package:cashpoint/screens/auth/verification_screen_enhanced.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -206,7 +206,11 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
 
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => VerificationScreen(email: email, token: token),
+            builder: (context) => VerificationScreenEnhanced(
+              email: email,
+              token: token,
+              isEmailVerification: false,
+            ),
           ),
         );
       } else {
@@ -228,10 +232,14 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
         );
       }
     } catch (e) {
-      print('Registration error: $e');
+      debugPrint('Registration UI error: $e');
       if (!mounted) return;
       setState(() => _loading = false);
-      ToastHelper.showError("Network error. Please try again later.");
+      if (e.toString().contains('TimeoutException')) {
+        ToastHelper.showError("Request timed out. Please check your internet connection.");
+      } else {
+        ToastHelper.showError("Network error: ${e.toString()}");
+      }
     }
   }
 
