@@ -1,8 +1,12 @@
 // lib/services/auth_service.dart
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:cashpoint/core/utils/constants.dart';
-import 'package:cashpoint/core/utils/api_response.dart';import 'package:cashpoint/services/debug_logger.dart';import 'package:flutter/material.dart';
+import 'package:cashpoint/core/utils/api_response.dart';
+import 'package:cashpoint/services/debug_logger.dart';
+import 'package:cashpoint/services/api_client.dart';
+import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // ignore: depend_on_referenced_packages
@@ -227,11 +231,13 @@ class AuthService extends ChangeNotifier {
     try {
       await debugLogger.log('HTTP', 'Login request to: $url');
       
-      final response = await http.post(
+      // Use the robust API client instead of raw http
+      final response = await apiClient.post(
         url,
         headers: {'Accept': 'application/json'},
         body: data,
-      ).timeout(const Duration(seconds: 60));
+        timeout: const Duration(seconds: 60),
+      );
 
       final statusCode = response.statusCode;
       final body = response.body;
@@ -313,10 +319,19 @@ class AuthService extends ChangeNotifier {
           'message': 'Unexpected response ($statusCode): $body',
         };
       }
+    } on SocketException catch (e) {
+      await debugLogger.log('ERROR', 'Login socket error: $e');
+      return {'success': false, 'message': 'No internet connection: $e'};
+    } on HandshakeException catch (e) {
+      await debugLogger.log('ERROR', 'Login SSL error: $e');
+      return {'success': false, 'message': 'SSL/TLS error: $e'};
+    } on TimeoutException catch (e) {
+      await debugLogger.log('ERROR', 'Login timeout: $e');
+      return {'success': false, 'message': 'Request timed out. Please try again.'};
     } catch (e, stackTrace) {
-      await debugLogger.log('ERROR', 'Login exception: $e');
+      await debugLogger.log('ERROR', 'Login exception: ${e.runtimeType}: $e');
       debugPrint('Stack trace: $stackTrace');
-      return {'success': false, 'message': 'Network error: $e'};
+      return {'success': false, 'message': 'Network error (${e.runtimeType}): $e'};
     }
   }
 

@@ -35,6 +35,10 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
   // Individual field errors for inline display
   String? _emailError;
   String? _passwordError;
+  
+  // Hidden debug access - tap title 5 times to open debug logs
+  int _debugTapCount = 0;
+  DateTime? _lastDebugTap;
 
   @override
   void initState() {
@@ -119,6 +123,21 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
       _passwordError = _validatePassword(_passwordController.text);
     });
   }
+  
+  void _onDebugTap() {
+    final now = DateTime.now();
+    if (_lastDebugTap != null && now.difference(_lastDebugTap!).inSeconds > 2) {
+      // Reset if more than 2 seconds between taps
+      _debugTapCount = 0;
+    }
+    _lastDebugTap = now;
+    _debugTapCount++;
+    
+    if (_debugTapCount >= 5) {
+      _debugTapCount = 0;
+      Navigator.pushNamed(context, AppRoutes.debugLogs);
+    }
+  }
 
   void _login() async {
     _validateFields();
@@ -135,10 +154,30 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
       "password": _passwordController.text.trim(),
     };
 
+    Map<String, dynamic>? result;
+    
     try {
-      final result = await auth.login(data);
-      setState(() => _loading = false);
+      result = await auth.login(data);
+    } catch (e, stackTrace) {
+      debugPrint('Login exception: $e');
+      debugPrint('Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() => _loading = false);
+        // Show detailed error in release
+        ToastHelper.showError("Connection error: ${e.runtimeType}");
+      }
+      return;
+    }
+    
+    if (!mounted) return;
+    setState(() => _loading = false);
+    
+    if (result == null) {
+      ToastHelper.showError("No response from server");
+      return;
+    }
 
+    try {
       if (result['success'] == true) {
         // Check if email is verified
         final isEmailVerified = result['isEmailVerified'] as bool? ?? true;
@@ -176,13 +215,7 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
         }
       }
     } catch (e) {
-      debugPrint('Login UI error: $e');
-      setState(() => _loading = false);
-      if (e.toString().contains('TimeoutException')) {
-        ToastHelper.showError("Request timed out. Please check your internet connection.");
-      } else {
-        ToastHelper.showError("Network error: ${e.toString()}");
-      }
+      ToastHelper.showError("Error processing response: $e");
     }
   }
 
@@ -389,12 +422,15 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Welcome Back!',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        GestureDetector(
+                          onTap: _onDebugTap,
+                          child: const Text(
+                            'Welcome Back!',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -406,12 +442,15 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
                           ),
                         ),
                       ] else ...[
-                        const Text(
-                          'Welcome Back',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        GestureDetector(
+                          onTap: _onDebugTap,
+                          child: const Text(
+                            'Welcome Back',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
