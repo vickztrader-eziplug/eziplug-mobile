@@ -10,6 +10,15 @@
 -keep class io.flutter.embedding.** { *; }
 
 # ============================================
+# GOOGLE PLAY CORE (Required for Flutter)
+# ============================================
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.** { *; }
+-keep class com.google.android.play.core.splitcompat.** { *; }
+-keep class com.google.android.play.core.splitinstall.** { *; }
+-keep class com.google.android.play.core.tasks.** { *; }
+
+# ============================================
 # HTTP/NETWORKING - CRITICAL FOR API CALLS
 # ============================================
 # Apache HTTP (legacy)
