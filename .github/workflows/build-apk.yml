@@ -27,11 +27,13 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
       
-      - name: Build Release APK
-        run: flutter build apk --release
+      # Build Debug APK during development (no R8/ProGuard issues)
+      # TODO: Switch to --release for production
+      - name: Build Debug APK
+        run: flutter build apk --debug
       
-      - name: Upload Release APK
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: eziplug-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: eziplug-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk

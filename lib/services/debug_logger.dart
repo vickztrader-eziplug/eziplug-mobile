@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// A simple debug logger that:
-/// 1. Shows toast messages on screen
+/// 1. Shows toast messages on screen (only in debug mode or for errors)
 /// 2. Writes logs to a file on the device
 /// 3. Keeps logs in memory for viewing in a debug screen
 class DebugLogger {
@@ -19,8 +19,9 @@ class DebugLogger {
   final List<String> _logs = [];
   List<String> get logs => List.unmodifiable(_logs);
 
-  // Enable/disable visual toasts (set to false in production)
-  static bool showToasts = true;
+  // Only show debug toasts in debug mode (not release)
+  // Errors will always show toasts through ToastHelper
+  static bool showToasts = kDebugMode;
 
   /// Log a message with optional toast display
   Future<void> log(String tag, String message, {bool showToast = true}) async {
