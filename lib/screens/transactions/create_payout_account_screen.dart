@@ -20,151 +20,44 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
   final TextEditingController _accountNumberController =
       TextEditingController();
   final TextEditingController _accountNameController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   Map<String, dynamic>? _selectedBank;
   bool _isLoading = false;
   bool _isVerifyingAccount = false;
   bool _showBankList = false;
+  List<Map<String, dynamic>> _filteredBanks = [];
 
   // Nigerian Banks with their codes
   final List<Map<String, dynamic>> _nigerianBanks = [
-    {
-      'name': 'Access Bank',
-      'code': '044',
-      'logo': 'assets/images/banks/access.png',
-      'color': Color(0xFFFF6B00),
-    },
-    {
-      'name': 'GTBank',
-      'code': '058',
-      'logo': 'assets/images/banks/gtbank.png',
-      'color': Color(0xFFFF6600),
-    },
-    {
-      'name': 'Zenith Bank',
-      'code': '057',
-      'logo': 'assets/images/banks/zenith.png',
-      'color': Color(0xFFE2001A),
-    },
-    {
-      'name': 'First Bank',
-      'code': '011',
-      'logo': 'assets/images/banks/firstbank.png',
-      'color': Color(0xFF003366),
-    },
-    {
-      'name': 'UBA',
-      'code': '033',
-      'logo': 'assets/images/banks/uba.png',
-      'color': Color(0xFFE31E24),
-    },
-    {
-      'name': 'Ecobank',
-      'code': '050',
-      'logo': 'assets/images/banks/ecobank.png',
-      'color': Color(0xFF003DA5),
-    },
-    {
-      'name': 'Fidelity Bank',
-      'code': '070',
-      'logo': 'assets/images/banks/fidelity.png',
-      'color': Color(0xFF6B3FA0),
-    },
-    {
-      'name': 'Union Bank',
-      'code': '032',
-      'logo': 'assets/images/banks/union.png',
-      'color': Color(0xFF003366),
-    },
-    {
-      'name': 'FCMB',
-      'code': '214',
-      'logo': 'assets/images/banks/fcmb.png',
-      'color': Color(0xFFD4AF37),
-    },
-    {
-      'name': 'Sterling Bank',
-      'code': '232',
-      'logo': 'assets/images/banks/sterling.png',
-      'color': Color(0xFFE31E24),
-    },
-    {
-      'name': 'Stanbic IBTC',
-      'code': '221',
-      'logo': 'assets/images/banks/stanbic.png',
-      'color': Color(0xFF003DA5),
-    },
-    {
-      'name': 'Polaris Bank',
-      'code': '076',
-      'logo': 'assets/images/banks/polaris.png',
-      'color': Color(0xFF00539F),
-    },
-    {
-      'name': 'Wema Bank',
-      'code': '035',
-      'logo': 'assets/images/banks/wema.png',
-      'color': Color(0xFF5F259F),
-    },
-    {
-      'name': 'Keystone Bank',
-      'code': '082',
-      'logo': 'assets/images/banks/keystone.png',
-      'color': Color(0xFF008080),
-    },
-    {
-      'name': 'Heritage Bank',
-      'code': '030',
-      'logo': 'assets/images/banks/heritage.png',
-      'color': Color(0xFFFF6B00),
-    },
-    {
-      'name': 'Unity Bank',
-      'code': '215',
-      'logo': 'assets/images/banks/unity.png',
-      'color': Color(0xFF0066CC),
-    },
-    {
-      'name': 'Providus Bank',
-      'code': '101',
-      'logo': 'assets/images/banks/providus.png',
-      'color': Color(0xFF000080),
-    },
-    {
-      'name': 'Jaiz Bank',
-      'code': '301',
-      'logo': 'assets/images/banks/jaiz.png',
-      'color': Color(0xFF008000),
-    },
-    {
-      'name': 'Kuda Bank',
-      'code': '090267',
-      'logo': 'assets/images/banks/kuda.png',
-      'color': Color(0xFF40196D),
-    },
-    {
-      'name': 'Opay',
-      'code': '999992',
-      'logo': 'assets/images/banks/opay.png',
-      'color': Color(0xFF00C853),
-    },
-    {
-      'name': 'PalmPay',
-      'code': '999991',
-      'logo': 'assets/images/banks/palmpay.png',
-      'color': Color(0xFF6C3FC1),
-    },
-    {
-      'name': 'Moniepoint',
-      'code': '50515',
-      'logo': 'assets/images/banks/moniepoint.png',
-      'color': Color(0xFF1E88E5),
-    },
+    {'name': 'Access Bank', 'code': '044', 'color': Color(0xFFFF6B00)},
+    {'name': 'GTBank', 'code': '058', 'color': Color(0xFFFF6600)},
+    {'name': 'Zenith Bank', 'code': '057', 'color': Color(0xFFE2001A)},
+    {'name': 'First Bank', 'code': '011', 'color': Color(0xFF003366)},
+    {'name': 'UBA', 'code': '033', 'color': Color(0xFFE31E24)},
+    {'name': 'Ecobank', 'code': '050', 'color': Color(0xFF003DA5)},
+    {'name': 'Fidelity Bank', 'code': '070', 'color': Color(0xFF6B3FA0)},
+    {'name': 'Union Bank', 'code': '032', 'color': Color(0xFF003366)},
+    {'name': 'FCMB', 'code': '214', 'color': Color(0xFFD4AF37)},
+    {'name': 'Sterling Bank', 'code': '232', 'color': Color(0xFFE31E24)},
+    {'name': 'Stanbic IBTC', 'code': '221', 'color': Color(0xFF003DA5)},
+    {'name': 'Polaris Bank', 'code': '076', 'color': Color(0xFF00539F)},
+    {'name': 'Wema Bank', 'code': '035', 'color': Color(0xFF5F259F)},
+    {'name': 'Keystone Bank', 'code': '082', 'color': Color(0xFF008080)},
+    {'name': 'Heritage Bank', 'code': '030', 'color': Color(0xFFFF6B00)},
+    {'name': 'Unity Bank', 'code': '215', 'color': Color(0xFF0066CC)},
+    {'name': 'Providus Bank', 'code': '101', 'color': Color(0xFF000080)},
+    {'name': 'Jaiz Bank', 'code': '301', 'color': Color(0xFF008000)},
+    {'name': 'Kuda Bank', 'code': '090267', 'color': Color(0xFF40196D)},
+    {'name': 'Opay', 'code': '999992', 'color': Color(0xFF00C853)},
+    {'name': 'PalmPay', 'code': '999991', 'color': Color(0xFF6C3FC1)},
+    {'name': 'Moniepoint', 'code': '50515', 'color': Color(0xFF1E88E5)},
   ];
 
   @override
   void initState() {
     super.initState();
+    _filteredBanks = _nigerianBanks;
     _checkAuth();
   }
 
@@ -172,7 +65,21 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
   void dispose() {
     _accountNumberController.dispose();
     _accountNameController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  void _filterBanks(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredBanks = _nigerianBanks;
+      } else {
+        _filteredBanks = _nigerianBanks
+            .where((bank) =>
+                bank['name'].toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
   }
 
   Future<void> _checkAuth() async {
@@ -180,7 +87,6 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
     final token = await authService.getToken();
 
     if ((token == null || token.isEmpty) && mounted) {
-      print('Not authenticated: $token');
       Navigator.pushReplacementNamed(context, '/login');
     }
   }
@@ -215,12 +121,8 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
         }),
       );
 
-      print('📡 Verify Account Status: ${response.statusCode}');
-      print('📦 Verify Account Body: ${response.body}');
-
       if (response.statusCode == 200) {
         final jsonResult = jsonDecode(response.body);
-        // Handle both old format (result[0]) and new format (data)
         final responseData = getResponseData(jsonResult);
         final result = responseData is List ? responseData[0] : responseData;
         final accountName = result['account_name'];
@@ -235,10 +137,10 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
         }
       } else {
         final result = jsonDecode(response.body);
-        _showSnackBar(getResponseMessage(result) ?? 'Verification failed', Colors.red);
+        _showSnackBar(
+            getResponseMessage(result) ?? 'Verification failed', Colors.red);
       }
     } catch (e) {
-      print('Error verifying account: $e');
       _showSnackBar('Error: $e', Colors.red);
     } finally {
       setState(() => _isVerifyingAccount = false);
@@ -274,25 +176,21 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
         }),
       );
 
-      print('📡 Create Payout Account Status: ${response.statusCode}');
-      print('📦 Create Payout Account Body: ${response.body}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final result = jsonDecode(response.body);
         _showSnackBar(
-          getResponseMessage(result) ?? 'Payout account created successfully',
+          getResponseMessage(result) ?? 'Account added successfully!',
           Colors.green,
         );
         Navigator.pop(context, true);
       } else {
         final result = jsonDecode(response.body);
         _showSnackBar(
-          getResponseMessage(result) ?? 'Failed to create payout account',
+          getResponseMessage(result) ?? 'Failed to add account',
           Colors.red,
         );
       }
     } catch (e) {
-      print('Error creating payout account: $e');
       _showSnackBar('Error: $e', Colors.red);
     } finally {
       setState(() => _isLoading = false);
@@ -306,6 +204,195 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
         content: Text(message),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hintText, {bool isReadOnly = false}) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      filled: true,
+      fillColor: isReadOnly ? Colors.grey[100] : Colors.white,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+    );
+  }
+
+  void _showBankSelector() {
+    _searchController.clear();
+    _filteredBanks = _nigerianBanks;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.75,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Title
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      const Text(
+                        'Select Bank',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                ),
+                // Search field
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search bank...',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      prefixIcon:
+                          Icon(Icons.search, color: Colors.grey[400]),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setModalState(() {
+                        if (value.isEmpty) {
+                          _filteredBanks = _nigerianBanks;
+                        } else {
+                          _filteredBanks = _nigerianBanks
+                              .where((bank) => bank['name']
+                                  .toLowerCase()
+                                  .contains(value.toLowerCase()))
+                              .toList();
+                        }
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Bank list
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: _filteredBanks.length,
+                    itemBuilder: (context, index) {
+                      final bank = _filteredBanks[index];
+                      final isSelected =
+                          _selectedBank?['code'] == bank['code'];
+
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primary.withOpacity(0.08)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: isSelected
+                              ? Border.all(
+                                  color: AppColors.primary.withOpacity(0.3))
+                              : null,
+                        ),
+                        child: ListTile(
+                          onTap: () {
+                            setState(() {
+                              _selectedBank = bank;
+                              _accountNameController.clear();
+                            });
+                            Navigator.pop(context);
+                          },
+                          leading: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: (bank['color'] as Color).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text(
+                                bank['name'].substring(0, 2).toUpperCase(),
+                                style: TextStyle(
+                                  color: bank['color'],
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            bank['name'],
+                            style: TextStyle(
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Colors.black87,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? const Icon(Icons.check_circle,
+                                  color: AppColors.primary)
+                              : null,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -313,423 +400,313 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            if (_isLoading)
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Add Bank Account',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Info card
               Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withOpacity(0.1),
+                      AppColors.primary.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(0.2),
                   ),
                 ),
-              ),
-
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 260,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
+                child: Row(
                   children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.info_outline,
+                        color: AppColors.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          const Expanded(
-                            child: Text(
-                              'Add Bank Account',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
+                          const Text(
+                            'Secure Bank Linking',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(width: 48),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Your bank details are encrypted and secured.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
-            ),
-
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+              const SizedBox(height: 28),
+              // Select Bank
+              _buildLabel('Select Bank'),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: _showBankSelector,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Row(
+                    children: [
+                      if (_selectedBank != null) ...[
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: (_selectedBank!['color'] as Color)
+                                .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(
+                            child: Text(
+                              _selectedBank!['name']
+                                  .substring(0, 2)
+                                  .toUpperCase(),
+                              style: TextStyle(
+                                color: _selectedBank!['color'],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            _selectedBank!['name'],
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ] else
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Icon(Icons.account_balance_outlined,
+                                  color: Colors.grey[400], size: 22),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Tap to select a bank',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
+                    ],
                   ),
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Select Bank Section
-                        _buildLabel('Select Bank'),
-                        const SizedBox(height: 12),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() => _showBankList = !_showBankList);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColors.cardBackground,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.lightGrey,
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                if (_selectedBank != null) ...[
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: _selectedBank!['color']
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.account_balance,
-                                        color: _selectedBank!['color'],
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _selectedBank!['name'],
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Code: ${_selectedBank!['code']}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ] else
-                                  Expanded(
-                                    child: Text(
-                                      'Tap to select a bank',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ),
-                                Icon(
-                                  _showBankList
-                                      ? Icons.keyboard_arrow_up
-                                      : Icons.keyboard_arrow_down,
-                                  color: AppColors.primary,
-                                ),
-                              ],
-                            ),
-                          ),
+              ),
+              const SizedBox(height: 24),
+              // Account Number
+              _buildLabel('Account Number'),
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _accountNumberController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 10,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      decoration: _inputDecoration(
+                        'Enter 10-digit account number',
+                      ).copyWith(counterText: ''),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Account number is required';
+                        }
+                        if (value.length != 10) {
+                          return 'Must be 10 digits';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        if (value.length == 10) {
+                          _verifyAccountNumber();
+                        } else {
+                          setState(() {
+                            _accountNameController.clear();
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed:
+                          _isVerifyingAccount ? null : _verifyAccountNumber,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-
-                        // Bank List (Expandable)
-                        if (_showBankList) ...[
-                          const SizedBox(height: 16),
-                          Container(
-                            constraints: const BoxConstraints(maxHeight: 400),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.lightGrey.withOpacity(0.5),
+                        elevation: 0,
+                      ),
+                      child: _isVerifyingAccount
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
                               ),
-                            ),
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: _nigerianBanks.length,
-                              itemBuilder: (context, index) {
-                                final bank = _nigerianBanks[index];
-                                final isSelected =
-                                    _selectedBank?['code'] == bank['code'];
-
-                                return InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedBank = bank;
-                                      _showBankList = false;
-                                      _accountNameController.clear();
-                                    });
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? AppColors.primary.withOpacity(0.05)
-                                          : Colors.transparent,
-                                      border: Border(
-                                        bottom: BorderSide(
-                                          color: AppColors.lightGrey
-                                              .withOpacity(0.3),
-                                          width: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 8,
-                                          ),
-                                      leading: Container(
-                                        width: 50,
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                          color: bank['color'].withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.account_balance,
-                                            color: bank['color'],
-                                            size: 24,
-                                          ),
-                                        ),
-                                      ),
-                                      title: Text(
-                                        bank['name'],
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: isSelected
-                                              ? FontWeight.w600
-                                              : FontWeight.w500,
-                                          color: isSelected
-                                              ? AppColors.primary
-                                              : Colors.black87,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        'Code: ${bank['code']}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                      trailing: isSelected
-                                          ? const Icon(
-                                              Icons.check_circle,
-                                              color: AppColors.primary,
-                                            )
-                                          : null,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                            )
+                          : const Icon(Icons.search, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Account Name
+              _buildLabel('Account Name'),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _accountNameController,
+                readOnly: true,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+                decoration: _inputDecoration(
+                  'Account name will appear here',
+                  isReadOnly: true,
+                ).copyWith(
+                  prefixIcon: _accountNameController.text.isNotEmpty
+                      ? const Icon(Icons.check_circle,
+                          color: Colors.green, size: 20)
+                      : null,
+                ),
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please verify account number first'
+                    : null,
+              ),
+              const SizedBox(height: 40),
+              // Submit Button
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _createPayoutAccount,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                    disabledBackgroundColor: Colors.grey[300],
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
                           ),
-                        ],
-
-                        const SizedBox(height: 24),
-
-                        // Account Number
-                        _buildLabel('Account Number'),
-                        const SizedBox(height: 12),
-                        Row(
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _accountNumberController,
-                                keyboardType: TextInputType.number,
-                                maxLength: 10,
-                                decoration: InputDecoration(
-                                  hintText: 'Enter 10-digit account number',
-                                  counterText: '',
-                                  filled: true,
-                                  fillColor: AppColors.cardBackground,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(5),
-                                    borderSide: BorderSide(
-                                      color: AppColors.lightGrey,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(5),
-                                    borderSide: BorderSide(
-                                      color: AppColors.lightGrey,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(5),
-                                    borderSide: const BorderSide(
-                                      color: AppColors.primary,
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Account number is required';
-                                  }
-                                  if (value.length != 10) {
-                                    return 'Account number must be 10 digits';
-                                  }
-                                  return null;
-                                },
-                                onChanged: (value) {
-                                  if (value.length == 10) {
-                                    _verifyAccountNumber();
-                                  } else {
-                                    setState(() {
-                                      _accountNameController.clear();
-                                    });
-                                  }
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 50,
-                              height: 50,
-                              child: ElevatedButton(
-                                onPressed: _isVerifyingAccount
-                                    ? null
-                                    : _verifyAccountNumber,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  padding: EdgeInsets.zero,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                ),
-                                child: _isVerifyingAccount
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.search,
-                                        color: Colors.white,
-                                      ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Account Name
-                        _buildLabel('Account Name'),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _accountNameController,
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            hintText: 'Account name will appear here',
-                            filled: true,
-                            fillColor: Colors.grey[100],
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(5),
-                              borderSide: BorderSide(
-                                color: AppColors.lightGrey,
-                                width: 1,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(5),
-                              borderSide: BorderSide(
-                                color: AppColors.lightGrey,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Please verify account number first'
-                              : null,
-                        ),
-
-                        const SizedBox(height: 40),
-
-                        // Submit Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _createPayoutAccount,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.textColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                              disabledBackgroundColor: AppColors.lightGrey,
-                            ),
-                            child: const Text(
-                              'Add Account',
+                            Icon(Icons.add_circle_outline,
+                                color: Colors.white, size: 20),
+                            SizedBox(width: 10),
+                            Text(
+                              'Add Bank Account',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              // Security badge
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.lock_outline, size: 14, color: Colors.grey[500]),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Your data is protected with bank-level encryption',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -740,8 +717,8 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
       label,
       style: const TextStyle(
         fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textColor,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
       ),
     );
   }
