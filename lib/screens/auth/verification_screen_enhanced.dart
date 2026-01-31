@@ -215,27 +215,29 @@ class _VerificationScreenEnhancedState extends State<VerificationScreenEnhanced>
   }
 
   Widget _buildOtpBox(int index) {
+    final isFilled = _otpControllers[index].text.isNotEmpty;
+    
     return Container(
-      width: 50,
-      height: 60,
+      width: 46,
+      height: 56,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _otpControllers[index].text.isNotEmpty
+          color: isFilled
               ? AppColors.primary
               : _otpError != null
                   ? Colors.red.shade400
                   : Colors.grey.shade300,
-          width: _otpControllers[index].text.isNotEmpty ? 2 : 1.5,
+          width: isFilled ? 2 : 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: _otpControllers[index].text.isNotEmpty
-                ? AppColors.primary.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: isFilled
+                ? AppColors.primary.withOpacity(0.15)
+                : Colors.grey.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -246,13 +248,14 @@ class _VerificationScreenEnhancedState extends State<VerificationScreenEnhanced>
         keyboardType: TextInputType.number,
         maxLength: 1,
         style: TextStyle(
-          fontSize: 24,
+          fontSize: 22,
           fontWeight: FontWeight.bold,
           color: AppColors.primary,
         ),
         decoration: const InputDecoration(
           counterText: '',
           border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
         ),
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         onChanged: (value) {
@@ -398,7 +401,7 @@ class _VerificationScreenEnhancedState extends State<VerificationScreenEnhanced>
 
                     // OTP Input Boxes
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: List.generate(6, (index) => _buildOtpBox(index)),
                     ),
 

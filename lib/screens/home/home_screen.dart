@@ -67,8 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _advertPageController = PageController(viewportFraction: 0.85);
-    _walletPageController = PageController(viewportFraction: 0.9);
+    _advertPageController = PageController(viewportFraction: 0.92);
+    _walletPageController = PageController(viewportFraction: 1.0); // Full width
     _startAutoScroll();
     _fetchUserData();
   }
@@ -198,8 +198,8 @@ class _HomeScreenState extends State<HomeScreen> {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.05,
-              vertical: screenHeight * 0.012,
+              horizontal: 16,
+              vertical: 12,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         children: [
                           CircleAvatar(
-                            radius: screenWidth * 0.055,
+                            radius: 22,
                             backgroundColor: AppColors.primary.withOpacity(0.2),
                             backgroundImage: _userProfilePicture.isNotEmpty
                                 ? NetworkImage(_userProfilePicture)
@@ -222,23 +222,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                     _userName.isNotEmpty
                                         ? _userName[0].toUpperCase()
                                         : 'U',
-                                    style: TextStyle(
-                                      fontSize: screenWidth * 0.05,
+                                    style: const TextStyle(
+                                      fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.primary,
                                     ),
                                   )
                                 : null,
                           ),
-                          SizedBox(width: screenWidth * 0.025),
+                          const SizedBox(width: 10),
                           Flexible(
                             child: RichText(
                               overflow: TextOverflow.ellipsis,
                               text: TextSpan(
                                 text: 'Welcome, ',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.black,
-                                  fontSize: screenWidth * 0.04,
+                                  fontSize: 15,
                                 ),
                                 children: [
                                   TextSpan(
@@ -266,30 +266,30 @@ class _HomeScreenState extends State<HomeScreen> {
                               AppRoutes.notification,
                             );
                           },
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.notifications_none_rounded,
-                            size: screenWidth * 0.065,
+                            size: 26,
                           ),
                         ),
                         Positioned(
-                          right: screenWidth * 0.015,
-                          top: screenHeight * 0.01,
+                          right: 6,
+                          top: 8,
                           child: Container(
-                            padding: EdgeInsets.all(screenWidth * 0.01),
+                            padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
                               color: Colors.red,
                               shape: BoxShape.circle,
                             ),
-                            constraints: BoxConstraints(
-                              minWidth: screenWidth * 0.045,
-                              minHeight: screenWidth * 0.045,
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
                             ),
-                            child: Center(
+                            child: const Center(
                               child: Text(
                                 '3',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: screenWidth * 0.025,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -301,16 +301,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
 
-                SizedBox(height: screenHeight * 0.025),
+                const SizedBox(height: 20),
 
-                // Balance Cards with PageView and Indicator
+                // Balance Cards - Full Width, Swipeable
                 _isLoadingUserData
-                    ? Center(
+                    ? const Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.05,
-                          ),
-                          child: const CircularProgressIndicator(
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: CircularProgressIndicator(
                             color: AppColors.primary,
                           ),
                         ),
@@ -318,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     : Column(
                         children: [
                           SizedBox(
-                            height: screenHeight * 0.2,
+                            height: 160,
                             child: PageView(
                               controller: _walletPageController,
                               onPageChanged: (index) {
@@ -330,37 +328,33 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _balanceCard(
                                   context,
                                   currency: '₦',
+                                  currencyLabel: 'Naira Balance',
                                   balance: _formatBalance(_walletNaira),
                                 ),
                                 _balanceCard(
                                   context,
                                   currency: '\$',
+                                  currencyLabel: 'Dollar Balance',
                                   balance: _formatBalance(_walletDollar),
                                 ),
                               ],
                             ),
                           ),
-                          SizedBox(height: screenHeight * 0.015),
+                          const SizedBox(height: 12),
                           // Wallet Indicator Dots
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(
                               2,
                               (index) => Container(
-                                margin: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.01,
-                                ),
-                                width: _currentWalletPage == index
-                                    ? screenWidth * 0.05
-                                    : screenWidth * 0.02,
-                                height: screenWidth * 0.02,
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                width: _currentWalletPage == index ? 24 : 8,
+                                height: 8,
                                 decoration: BoxDecoration(
                                   color: _currentWalletPage == index
                                       ? AppColors.primary
                                       : AppColors.primary.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(
-                                    screenWidth * 0.01,
-                                  ),
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
                             ),
@@ -368,77 +362,68 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
 
-                SizedBox(height: screenHeight * 0.025),
+                const SizedBox(height: 24),
 
-                Text(
-                  'Quick Links',
+                const Text(
+                  'Quick Actions',
                   style: TextStyle(
-                    fontSize: screenWidth * 0.045,
-                    fontWeight: FontWeight.w400,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),
                 ),
 
-                SizedBox(height: screenHeight * 0.006),
+                const SizedBox(height: 12),
 
-                // Quick Links Grid
-                Column(
+                // Quick Actions Grid - 2 per row, larger cards
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.1,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _quickLinkCard(
-                            context,
-                            Icons.card_giftcard,
-                            'Trade Giftcard',
-                            'Enjoy sweet rates with swift payment',
-                            const SellGiftCardScreen(),
-                          ),
-                        ),
-                        SizedBox(width: screenWidth * 0.03),
-                        Expanded(
-                          child: _quickLinkCard(
-                            context,
-                            Icons.currency_bitcoin,
-                            'Trade Crypto',
-                            'Trade BTC, ETH, BNB & More for instant cash',
-                            const TradeCryptoScreen(),
-                          ),
-                        ),
-                      ],
+                    _quickActionCard(
+                      context,
+                      icon: Icons.card_giftcard_rounded,
+                      title: 'Trade Giftcard',
+                      subtitle: 'Best rates, instant pay',
+                      color: const Color(0xFF6C5CE7),
+                      destination: const SellGiftCardScreen(),
                     ),
-                    SizedBox(height: screenWidth * 0.03),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _quickLinkCard(
-                            context,
-                            Icons.calculate_outlined,
-                            'Use Rate Calculator',
-                            'Use rate calculate to preview currency rate',
-                            const RateCalculatorScreen(),
-                          ),
-                        ),
-                        SizedBox(width: screenWidth * 0.03),
-                        Expanded(
-                          child: _quickLinkCard(
-                            context,
-                            Icons.apps_rounded,
-                            'More Service',
-                            'Buy data, purchase airtime and utilities',
-                            const MoreServicesScreen(),
-                          ),
-                        ),
-                      ],
+                    _quickActionCard(
+                      context,
+                      icon: Icons.currency_bitcoin_rounded,
+                      title: 'Trade Crypto',
+                      subtitle: 'BTC, ETH & more',
+                      color: const Color(0xFFF39C12),
+                      destination: const TradeCryptoScreen(),
+                    ),
+                    _quickActionCard(
+                      context,
+                      icon: Icons.calculate_rounded,
+                      title: 'Rate Calculator',
+                      subtitle: 'Check live rates',
+                      color: const Color(0xFF00B894),
+                      destination: const RateCalculatorScreen(),
+                    ),
+                    _quickActionCard(
+                      context,
+                      icon: Icons.grid_view_rounded,
+                      title: 'More Services',
+                      subtitle: 'Bills, airtime & data',
+                      color: const Color(0xFFE84393),
+                      destination: const MoreServicesScreen(),
                     ),
                   ],
                 ),
 
-                SizedBox(height: screenHeight * 0.012),
+                const SizedBox(height: 20),
 
                 // Dynamic Auto-Scrolling Adverts
                 SizedBox(
-                  height: screenHeight * 0.15,
+                  height: 110,
                   child: PageView.builder(
                     controller: _advertPageController,
                     onPageChanged: (index) {
@@ -449,9 +434,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemCount: _adverts.length,
                     itemBuilder: (context, index) {
                       return Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: screenWidth * 0.015,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
                         child: _advertCard(
                           context,
                           _adverts[index]['title']!,
@@ -463,7 +446,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                SizedBox(height: screenHeight * 0.015),
+                const SizedBox(height: 12),
 
                 // Indicator Dots
                 Row(
@@ -471,24 +454,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: List.generate(
                     _adverts.length,
                     (index) => Container(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: screenWidth * 0.01,
-                      ),
-                      width: _currentAdvertPage == index
-                          ? screenWidth * 0.05
-                          : screenWidth * 0.02,
-                      height: screenWidth * 0.02,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: _currentAdvertPage == index ? 20 : 6,
+                      height: 6,
                       decoration: BoxDecoration(
                         color: _currentAdvertPage == index
                             ? AppColors.primary
                             : AppColors.primary.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(screenWidth * 0.01),
+                        borderRadius: BorderRadius.circular(3),
                       ),
                     ),
                   ),
                 ),
 
-                SizedBox(height: screenHeight * 0.025),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -504,6 +483,72 @@ class _HomeScreenState extends State<HomeScreen> {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]},',
         );
+  }
+
+  /// New Quick Action Card - larger, more appealing
+  Widget _quickActionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required Widget destination,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => destination),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: color.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _quickLinkCard(
@@ -571,63 +616,46 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _balanceCard(
     BuildContext context, {
     required String currency,
+    required String currencyLabel,
     required String balance,
   }) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Container(
-      width: screenWidth * 0.85,
-      margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.02),
-      padding: EdgeInsets.all(screenWidth * 0.04),
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(screenWidth * 0.05),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: currency == '₦' 
+              ? [AppColors.primary, AppColors.primary.withOpacity(0.8)]
+              : [const Color(0xFF2D3436), const Color(0xFF636E72)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: (currency == '₦' ? AppColors.primary : Colors.grey).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Available Balance',
-                style: TextStyle(
+                currencyLabel,
+                style: const TextStyle(
                   color: Colors.white70,
-                  fontSize: screenWidth * 0.035,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              // if (_isRefreshing)
-              //   SizedBox(
-              //     width: screenWidth * 0.04,
-              //     height: screenWidth * 0.04,
-              //     child: const CircularProgressIndicator(
-              //       color: Colors.white,
-              //       strokeWidth: 2,
-              //     ),
-              //   ),
-            ],
-          ),
-          SizedBox(height: screenHeight * 0.01),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Flexible(
-                child: Text(
-                  _isBalanceVisible ? '$currency $balance' : '$currency ••••••',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: screenWidth * 0.07,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              SizedBox(width: screenWidth * 0.02),
-              Column(
-                mainAxisSize: MainAxisSize.min,
+              Row(
                 children: [
                   GestureDetector(
                     onTap: () {
@@ -639,11 +667,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       _isBalanceVisible
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      color: Colors.white,
-                      size: screenWidth * 0.055,
+                      color: Colors.white70,
+                      size: 20,
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.008),
+                  const SizedBox(width: 12),
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -654,17 +682,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     },
                     child: Container(
-                      padding: EdgeInsets.all(screenWidth * 0.01),
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(
-                          screenWidth * 0.015,
-                        ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(
-                        Icons.add_circle_outline,
+                      child: const Icon(
+                        Icons.add,
                         color: Colors.white,
-                        size: screenWidth * 0.055,
+                        size: 18,
                       ),
                     ),
                   ),
@@ -672,60 +698,59 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          SizedBox(height: screenHeight * 0.01),
-          Wrap(
-            spacing: screenWidth * 0.02,
-            runSpacing: screenHeight * 0.008,
+          const SizedBox(height: 8),
+          Text(
+            _isBalanceVisible ? '$currency$balance' : '$currency••••••',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const Spacer(),
+          Row(
             children: [
-              TextButton(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.white24,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: screenWidth * 0.03,
-                    vertical: screenHeight * 0.006,
-                  ),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(screenWidth * 0.02),
-                  ),
-                ),
-                child: Text(
-                  'View Bonus',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: screenWidth * 0.028,
-                  ),
-                ),
+              _balanceActionButton(
+                label: 'View Bonus',
+                onTap: () {},
+                filled: true,
               ),
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.saveAndEarn);
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white, width: 1),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: screenWidth * 0.03,
-                    vertical: screenHeight * 0.006,
-                  ),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(screenWidth * 0.02),
-                  ),
-                ),
-                child: Text(
-                  'Save and Earn',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: screenWidth * 0.028,
-                  ),
-                ),
+              const SizedBox(width: 10),
+              _balanceActionButton(
+                label: 'Save & Earn',
+                onTap: () => Navigator.pushNamed(context, AppRoutes.saveAndEarn),
+                filled: false,
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _balanceActionButton({
+    required String label,
+    required VoidCallback onTap,
+    required bool filled,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: filled ? Colors.white24 : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: filled ? null : Border.all(color: Colors.white54, width: 1),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ),
     );
   }
@@ -736,17 +761,13 @@ class _HomeScreenState extends State<HomeScreen> {
     String description,
     String imagePath,
   ) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final cardHeight = screenHeight * 0.15;
-
     return Container(
       width: double.infinity,
-      height: cardHeight,
-      padding: EdgeInsets.all(screenWidth * 0.04),
+      height: 100,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF4F2FF),
-        borderRadius: BorderRadius.circular(screenWidth * 0.04),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -758,19 +779,19 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: screenWidth * 0.035,
+                    fontSize: 14,
                     color: Colors.black,
                   ),
                 ),
-                SizedBox(height: screenHeight * 0.005),
+                const SizedBox(height: 4),
                 Text(
                   description,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.black54,
-                    fontSize: screenWidth * 0.03,
-                    height: 1.4,
+                    fontSize: 12,
+                    height: 1.3,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -778,8 +799,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          SizedBox(width: screenWidth * 0.03),
-          Image.asset(imagePath, height: cardHeight * 0.5, fit: BoxFit.contain),
+          const SizedBox(width: 12),
+          Image.asset(imagePath, height: 50, fit: BoxFit.contain),
         ],
       ),
     );

@@ -546,12 +546,14 @@ class AuthService extends ChangeNotifier {
     final url = Uri.parse('$baseUrl/resend');
 
     try {
+      await debugLogger.log('HTTP', 'Resend OTP to: $email');
+      
       final headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       };
 
-      if (token != null) {
+      if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
 
@@ -559,17 +561,14 @@ class AuthService extends ChangeNotifier {
         url,
         headers: headers,
         body: jsonEncode({'email': email, 'type': 'verification'}),
-      );
+      ).timeout(const Duration(seconds: 30));
 
-      print(
-        'Resend OTP Request: ${jsonEncode({'email': email, 'type': 'verification'})}',
-      );
-      print('Resend OTP Response Status: ${response.statusCode}');
-      print('Resend OTP Response Body: ${response.body}');
+      await debugLogger.log('HTTP', 'Resend OTP status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final result = jsonDecode(response.body);
         final apiResponse = ApiResponse.fromJson(result);
+        await debugLogger.log('SUCCESS', 'OTP resent successfully');
 
         return {
           'success': apiResponse.success,
@@ -578,23 +577,27 @@ class AuthService extends ChangeNotifier {
               : (apiResponse.message.isNotEmpty ? apiResponse.message : 'OTP resent successfully'),
         };
       } else if (response.statusCode == 401) {
+        await debugLogger.log('ERROR', 'Resend OTP 401: Session expired');
         return {
           'success': false,
           'message': 'Session expired. Please register again.',
         };
       } else if (response.statusCode == 422) {
         final result = jsonDecode(response.body);
+        await debugLogger.log('ERROR', 'Resend OTP 422: ${result['message']}');
         return {
           'success': false,
           'message': result['message'] ?? 'Failed to resend OTP',
         };
       } else if (response.statusCode == 429) {
+        await debugLogger.log('WARNING', 'Resend OTP 429: Too many requests');
         return {
           'success': false,
           'message': 'Too many requests. Please try again later.',
         };
       } else {
         final result = jsonDecode(response.body);
+        await debugLogger.log('ERROR', 'Resend OTP failed: ${response.statusCode}');
         return {
           'success': false,
           'message':
@@ -603,7 +606,7 @@ class AuthService extends ChangeNotifier {
         };
       }
     } catch (e) {
-      print('Resend OTP Error: $e');
+      await debugLogger.log('ERROR', 'Resend OTP exception: $e');
       return {'success': false, 'message': 'Server error: $e'};
     }
   }
