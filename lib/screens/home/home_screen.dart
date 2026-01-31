@@ -92,14 +92,14 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final userData = data;
+        final responseData = jsonDecode(response.body);
+        final userData = responseData['data'] ?? responseData;
 
         if (mounted) {
           setState(() {
-            _userName = userData['firstName'] ?? 'User';
+            _userName = userData['first_name'] ?? userData['firstName'] ?? 'User';
             _userProfilePicture =
-                userData['profile'] ?? userData['avatar'] ?? '';
+                userData['profile'] ?? userData['avatar'] ?? userData['passport'] ?? '';
             _walletNaira =
                 double.tryParse(userData['wallet_naira']?.toString() ?? '0') ??
                 0.0;

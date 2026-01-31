@@ -119,7 +119,12 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
       
       // Also try to refresh from API
       final token = await authService.getToken();
-      if (token == null || token.isEmpty) return;
+      if (token == null || token.isEmpty) {
+        debugPrint('Home: No token found');
+        return;
+      }
+
+      debugPrint('Home: Fetching user from ${Constants.user}');
 
       final response = await http.get(
         Uri.parse(Constants.user),
@@ -128,6 +133,9 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
           'Accept': 'application/json',
         },
       );
+
+      debugPrint('Home: Response status ${response.statusCode}');
+      debugPrint('Home: Response body ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -143,6 +151,8 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
           userData = responseData;
         }
         
+        debugPrint('Home: wallet_naira from API = ${userData['wallet_naira']}');
+        
         if (mounted) {
           setState(() {
             final firstName = userData['first_name'] ?? userData['firstName'] ?? '';
@@ -152,6 +162,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
             _walletNaira = double.tryParse(userData['wallet_naira']?.toString() ?? '') ?? _walletNaira;
             _walletDollar = double.tryParse(userData['wallet_usd']?.toString() ?? '') ?? _walletDollar;
           });
+          debugPrint('Home: Wallet set to $_walletNaira');
         }
       }
     } catch (e) {
@@ -365,35 +376,11 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                               shape: BoxShape.circle,
                               color: Colors.white,
                             ),
-                            clipBehavior: Clip.antiAlias,
-                            child: _userProfilePicture.isNotEmpty
-                                ? Image.network(
-                                    _userProfilePicture,
-                                    fit: BoxFit.cover,
-                                    width: sw * 0.09,
-                                    height: sw * 0.09,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset(
-                                        'assets/images/user.jpg',
-                                        fit: BoxFit.cover,
-                                        width: sw * 0.09,
-                                        height: sw * 0.09,
-                                      );
-                                    },
-                                  )
-                                : Image.asset(
-                                    'assets/images/user.jpg',
-                                    fit: BoxFit.cover,
-                                    width: sw * 0.09,
-                                    height: sw * 0.09,
-                                    errorBuilder: (context, error, stackTrace) {
-                                        return Icon(
-                                          Icons.person,
-                                          size: sw * 0.05,
-                                          color: AppColors.primary,
-                                        );
-                                      },
-                                    ),
+                            child: Icon(
+                              Icons.person,
+                              size: sw * 0.055,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
                         SizedBox(width: sw * 0.03),
@@ -410,7 +397,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                                 ),
                               ),
                               Text(
-                                _userName.split(' ').first,
+                                _userName,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: sw * 0.045,
@@ -499,7 +486,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
   }
 
   Widget _buildWalletSection(double sw, double sh) {
-    final cardHeight = sh * 0.24; // Increased height for enhanced card design
+    final cardHeight = sh * 0.235; // Adjusted for perfect fit
     
     return Column(
       children: [
@@ -570,14 +557,6 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
           end: Alignment.bottomRight,
           colors: gradientColors,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: cardColor.withOpacity(0.4),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-            spreadRadius: 0,
-          ),
-        ],
       ),
       child: Stack(
         children: [
@@ -608,9 +587,10 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
           ),
           // Card content
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min, // Don't expand to fill height
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -657,7 +637,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
@@ -673,7 +653,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                     ),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 8), // Reduced gap before buttons
                 Row(
                   children: [
                     _buildCardButton(
@@ -929,13 +909,6 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                   end: Alignment.bottomRight,
                   colors: advert['gradient'] as List<Color>,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: (advert['gradient'] as List<Color>)[0].withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
               ),
               child: Stack(
                 children: [

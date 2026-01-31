@@ -129,11 +129,15 @@ class _CardDepositScreenState extends State<CardDepositScreen> {
           _showSuccessDialog(responseData);
         } else if (paymentResult == true) {
           // Mobile platform - need to verify on backend
+          print('✅ WebView returned TRUE - calling _verifyPayment with reference: $reference');
           await _verifyPayment(reference);
         } else if (paymentResult is Map && paymentResult['success'] == false) {
+          print('❌ WebView returned error map: $paymentResult');
           _showSnackBar(paymentResult['message'] ?? 'Payment failed', Colors.red);
+        } else {
+          // Payment was cancelled or returned unexpected value
+          print('⚠️ WebView returned unexpected value: $paymentResult (type: ${paymentResult.runtimeType})');
         }
-        // else: payment was cancelled, do nothing
       } else {
         final result = jsonDecode(response.body);
         _showSnackBar(

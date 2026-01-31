@@ -28,6 +28,7 @@ import 'package:cashpoint/screens/transactions/rate_calculator.dart';
 import 'package:cashpoint/screens/transactions/save_and_earn.dart';
 import 'package:cashpoint/screens/transactions/sell_crypto.dart';
 import 'package:cashpoint/screens/transactions/sell_giftcard.dart';
+import 'package:cashpoint/screens/transactions/payout_screen.dart';
 import 'package:cashpoint/pages/debug_logs_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/splash/splash_screen.dart';
@@ -77,6 +78,7 @@ class AppRoutes {
   static const lockFund = '/lockFund';
   static const notification = '/notification';
   static const kyc = '/kyc';
+  static const payoutAccounts = '/payoutAccounts';
   static const debugLogs = '/debug-logs';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -181,6 +183,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const NotificationScreen());
       case kyc:
         return MaterialPageRoute(builder: (_) => const KYCTier1Screen());
+      case payoutAccounts:
+        return MaterialPageRoute(builder: (_) => const PayoutScreen());
 
       default:
         return MaterialPageRoute(

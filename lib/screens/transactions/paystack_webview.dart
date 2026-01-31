@@ -28,6 +28,7 @@ class _PaystackWebViewState extends State<PaystackWebView> {
   WebViewController? _controller;
   bool _isLoading = true;
   bool _isPolling = false;
+  bool _hasNavigatedBack = false; // Guard to prevent multiple pops
   Timer? _pollingTimer;
   int _pollCount = 0;
   static const int _maxPolls = 60; // 5 minutes max (60 * 5 seconds)
@@ -149,11 +150,16 @@ class _PaystackWebViewState extends State<PaystackWebView> {
           onPageFinished: (String url) {
             setState(() => _isLoading = false);
             print('✅ Page finished: $url');
+            // Also check on page finish - this is more reliable
+            _checkForCallback(url);
           },
           onNavigationRequest: (NavigationRequest request) {
             print('🔄 Navigation request: ${request.url}');
             _checkForCallback(request.url);
             return NavigationDecision.navigate;
+          },
+          onWebResourceError: (WebResourceError error) {
+            print('❌ WebView error: ${error.description}');
           },
         ),
       )
@@ -161,10 +167,31 @@ class _PaystackWebViewState extends State<PaystackWebView> {
   }
 
   void _checkForCallback(String url) {
-    // Check if payment was successful or cancelled
-    if (url.contains('callback') || url.contains('success') || url.contains('trxref=')) {
+    print('🔍 Checking URL for callback: $url');
+    
+    // Guard against multiple navigation
+    if (_hasNavigatedBack) {
+      print('⚠️ Already navigated back, skipping');
+      return;
+    }
+    
+    // Paystack callback patterns
+    final isSuccess = url.contains('callback') || 
+                      url.contains('success') || 
+                      url.contains('trxref=') ||
+                      url.contains('reference=');
+    
+    final isCancelled = url.contains('cancel') || 
+                        url.contains('close') ||
+                        url.contains('cancelled');
+    
+    if (isSuccess) {
+      print('✅ Payment callback detected - success');
+      _hasNavigatedBack = true;
       Navigator.pop(context, true); // Payment completed, verify on backend
-    } else if (url.contains('cancel') || url.contains('close')) {
+    } else if (isCancelled) {
+      print('❌ Payment callback detected - cancelled');
+      _hasNavigatedBack = true;
       Navigator.pop(context, false); // Payment cancelled
     }
   }

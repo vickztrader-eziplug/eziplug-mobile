@@ -105,12 +105,14 @@ class _CableScreenState extends State<CableScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
+        // API returns: { "success": true, "data": { wallet_naira: ... } }
+        final userData = responseData['data'] ?? responseData;
 
         if (mounted) {
           setState(() {
             _walletNaira =
-                double.tryParse(data['wallet_naira']?.toString() ?? '0') ?? 0.0;
+                double.tryParse(userData['wallet_naira']?.toString() ?? '0') ?? 0.0;
             _isLoadingWallet = false;
           });
         }

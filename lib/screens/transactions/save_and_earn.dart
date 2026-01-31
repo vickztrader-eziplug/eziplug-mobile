@@ -64,17 +64,18 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
+        final userData = responseData['data'] ?? responseData;
 
         if (mounted) {
           setState(() {
             _walletNaira =
-                double.tryParse(data['wallet_naira']?.toString() ?? '0') ?? 0.0;
+                double.tryParse(userData['wallet_naira']?.toString() ?? '0') ?? 0.0;
             _lockedBalance =
-                double.tryParse(data['locked_balance']?.toString() ?? '0') ??
+                double.tryParse(userData['locked_balance']?.toString() ?? '0') ??
                 0.0;
             _totalInterestBal =
-                double.tryParse(data['interest']?.toString() ?? '0') ?? 0.0;
+                double.tryParse(userData['interest']?.toString() ?? '0') ?? 0.0;
             _isLoadingWallet = false;
           });
         }

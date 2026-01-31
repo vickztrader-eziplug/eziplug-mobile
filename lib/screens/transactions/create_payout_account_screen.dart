@@ -124,12 +124,19 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
       if (response.statusCode == 200) {
         final jsonResult = jsonDecode(response.body);
         final responseData = getResponseData(jsonResult);
-        final result = responseData is List ? responseData[0] : responseData;
-        final accountName = result['account_name'];
+        
+        // Handle the response - account_name is directly in data now
+        String? accountName;
+        if (responseData is Map) {
+          accountName = responseData['account_name'];
+        } else if (responseData is List && responseData.isNotEmpty) {
+          final firstItem = responseData[0];
+          accountName = firstItem is Map ? firstItem['account_name'] : null;
+        }
 
-        if (accountName != null) {
+        if (accountName != null && accountName.isNotEmpty) {
           setState(() {
-            _accountNameController.text = accountName;
+            _accountNameController.text = accountName!;
           });
           _showSnackBar('Account verified successfully', Colors.green);
         } else {

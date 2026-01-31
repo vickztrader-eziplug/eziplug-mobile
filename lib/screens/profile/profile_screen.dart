@@ -17,7 +17,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Optionally refresh user data when screen loads
     _refreshUserData();
   }
 
@@ -28,420 +27,285 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isRefreshing = false);
   }
 
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, top: 16, bottom: 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
-        ),
-      ),
-    );
-  }
-
-  Widget profileItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    bool showDivider = true,
-  }) {
-    return Column(
-      children: [
-        ListTile(
-          onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 4,
-          ),
-          leading: Container(
-            width: 45,
-            height: 45,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 22),
-          ),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 14,
-              color: Colors.black87,
-            ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.black.withOpacity(0.5),
-            ),
-          ),
-          trailing: const Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: Colors.black38,
-          ),
-        ),
-        if (showDivider)
-          Divider(
-            color: AppColors.lightGrey.withOpacity(0.3),
-            height: 0,
-            thickness: 1,
-            indent: 76,
-            endIndent: 16,
-          ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final sw = MediaQuery.of(context).size.width;
+    final sh = MediaQuery.of(context).size.height;
+
     return Consumer<AuthService>(
       builder: (context, authService, child) {
-        final userName = authService.userName;
+        final userFullName = authService.userFullName;
+        final userEmail = authService.userEmail;
         final userProfilePicture = authService.userProfilePicture;
-        final walletNaira = authService.walletNaira;
-        final walletDollar = authService.walletDollar;
 
         return Scaffold(
-          backgroundColor: AppColors.primary,
-          body: SafeArea(
-            child: Column(
-              children: [
-                // Header Section
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 25,
-                        backgroundColor: Colors.white,
-                        child: ClipOval(
-                          child: userProfilePicture.isNotEmpty
-                              ? Image.network(
-                                  userProfilePicture,
-                                  fit: BoxFit.cover,
-                                  width: 50,
-                                  height: 50,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(
-                                      Icons.person,
-                                      color: AppColors.primary,
-                                    );
-                                  },
-                                )
-                              : Image.asset(
-                                  'assets/images/user.jpg',
-                                  fit: BoxFit.cover,
-                                  width: 50,
-                                  height: 50,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(
-                                      Icons.person,
-                                      color: AppColors.primary,
-                                    );
-                                  },
-                                ),
-                        ),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: RichText(
-                          text: TextSpan(
-                            children: [
-                              const TextSpan(
-                                text: 'Welcome, ',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              TextSpan(
-                                text: userName,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const TextSpan(
-                                text: '!',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Refresh button
-                      IconButton(
-                        onPressed: _isRefreshing ? null : _refreshUserData,
-                        icon: _isRefreshing
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.refresh, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // White Content Card with Curve
-                Expanded(
+          backgroundColor: const Color(0xFFF5F7FA),
+          body: RefreshIndicator(
+            onRefresh: _refreshUserData,
+            color: AppColors.primary,
+            child: CustomScrollView(
+              slivers: [
+                // Custom App Bar with Profile Header
+                SliverToBoxAdapter(
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.primary,
+                          AppColors.primary.withOpacity(0.8),
+                          const Color(0xFF1A237E),
+                        ],
+                      ),
                       borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30),
-                        topRight: Radius.circular(30),
+                        bottomLeft: Radius.circular(sw * 0.08),
+                        bottomRight: Radius.circular(sw * 0.08),
                       ),
                     ),
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Account section
-                          _sectionTitle("Account"),
-                          const SizedBox(height: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppColors.lightGrey.withOpacity(0.5),
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(sw * 0.05, sh * 0.02, sw * 0.05, sh * 0.04),
+                        child: Column(
+                          children: [
+                            // Top Row with Title and Refresh
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                profileItem(
-                                  icon: Icons.person_outline,
-                                  title: "Personal Information",
-                                  subtitle:
-                                      "See your account information and login details",
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.editProfile,
-                                    );
-                                  },
+                                const Text(
+                                  'My Profile',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                profileItem(
-                                  icon: Icons.credit_card_outlined,
-                                  title: "Bank Card/Account",
-                                  subtitle:
-                                      "₦${walletNaira.toStringAsFixed(2)} / \$${walletDollar.toStringAsFixed(2)} Linked",
-                                  onTap: () {},
-                                ),
-                                profileItem(
-                                  icon: Icons.leaderboard_outlined,
-                                  title: "Leaderboard",
-                                  subtitle:
-                                      "See your ranking on the Eziplug leaderboard",
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.leaderboard,
-                                    );
-                                  },
-                                  showDivider: false,
+                                IconButton(
+                                  onPressed: _isRefreshing ? null : _refreshUserData,
+                                  icon: _isRefreshing
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.refresh_rounded, color: Colors.white),
                                 ),
                               ],
                             ),
-                          ),
-
-                          // Security section
-                          _sectionTitle("Security"),
-                          const SizedBox(height: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppColors.lightGrey.withOpacity(0.5),
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
+                            const SizedBox(height: 20),
+                            // Profile Avatar and Info
+                            Row(
                               children: [
-                                profileItem(
-                                  icon: Icons.lock_outline,
-                                  title: "Change Password",
-                                  subtitle:
-                                      "Make changes to your account password",
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.changePassword,
-                                    );
-                                  },
-                                ),
-                                profileItem(
-                                  icon: Icons.verified_user_outlined,
-                                  title: "KYC",
-                                  subtitle:
-                                      "Please verify your identity to have access to more features",
-                                  onTap: () {
-                                    Navigator.pushNamed(context, AppRoutes.kyc);
-                                  },
-                                ),
-                                profileItem(
-                                  icon: Icons.pin_outlined,
-                                  title: "PIN Management",
-                                  subtitle:
-                                      "Make changes to your transaction PIN",
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.changePinOtp,
-                                    );
-                                  },
-                                  showDivider: false,
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Services section
-                          _sectionTitle("Services"),
-                          const SizedBox(height: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppColors.lightGrey.withOpacity(0.5),
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                profileItem(
-                                  icon: Icons.info_outline,
-                                  title: "About Us",
-                                  subtitle: "Learn more about Cashpoint",
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.about,
-                                    );
-                                  },
-                                ),
-                                profileItem(
-                                  icon: Icons.support_agent_outlined,
-                                  title: "Help and Support",
-                                  subtitle:
-                                      "Contact our support, we are available 24/7",
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.support,
-                                    );
-                                  },
-                                ),
-                                profileItem(
-                                  icon: Icons.description_outlined,
-                                  title: "Terms and Conditions",
-                                  subtitle:
-                                      "See our terms of use and conditions",
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.termOfUse,
-                                    );
-                                  },
-                                ),
-                                profileItem(
-                                  icon: Icons.shield_outlined,
-                                  title: "Privacy Policy",
-                                  subtitle: "See our privacy policy",
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.privacyPolicy,
-                                    );
-                                  },
-                                  showDivider: false,
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Logout
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.red.withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: profileItem(
-                              icon: Icons.logout_outlined,
-                              title: "Logout",
-                              subtitle: "Sign out of your account",
-                              onTap: () async {
-                                // Show confirmation dialog
-                                final shouldLogout = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Logout'),
-                                    content: const Text(
-                                      'Are you sure you want to logout?',
+                                // Avatar with border
+                                Container(
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 35,
+                                    backgroundColor: Colors.white,
+                                    child: ClipOval(
+                                      child: userProfilePicture.isNotEmpty
+                                          ? Image.network(
+                                              userProfilePicture,
+                                              fit: BoxFit.cover,
+                                              width: 70,
+                                              height: 70,
+                                              errorBuilder: (context, error, stackTrace) {
+                                                return Icon(
+                                                  Icons.person,
+                                                  color: AppColors.primary,
+                                                  size: 35,
+                                                );
+                                              },
+                                            )
+                                          : Icon(
+                                              Icons.person,
+                                              color: AppColors.primary,
+                                              size: 35,
+                                            ),
                                     ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: Colors.red,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                // Name and Email
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        userFullName.isNotEmpty ? userFullName : 'User',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                        child: const Text('Logout'),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        userEmail,
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontSize: 14,
+                                        ),
                                       ),
                                     ],
                                   ),
-                                );
+                                ),
+                                // Edit Profile Button
+                                GestureDetector(
+                                  onTap: () => Navigator.pushNamed(context, AppRoutes.editProfile),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.edit_outlined,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
 
-                                if (shouldLogout == true) {
-                                  await authService.logout();
-                                  if (mounted) {
-                                    Navigator.pushReplacementNamed(
-                                      context,
-                                      AppRoutes.login,
-                                    );
-                                  }
-                                }
-                              },
-                              showDivider: false,
+                // Content
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(sw * 0.05),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        
+                        // Account Section
+                        _buildSectionTitle('Account'),
+                        const SizedBox(height: 12),
+                        _buildMenuCard([
+                          _buildMenuItem(
+                            icon: Icons.person_outline_rounded,
+                            iconColor: AppColors.primary,
+                            title: 'Personal Information',
+                            subtitle: 'Manage your account details',
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.editProfile),
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.account_balance_outlined,
+                            iconColor: const Color(0xFF00BFA5),
+                            title: 'Payout Accounts',
+                            subtitle: 'Manage your withdrawal accounts',
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.payoutAccounts),
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.leaderboard_rounded,
+                            iconColor: const Color(0xFFFF9800),
+                            title: 'Leaderboard',
+                            subtitle: 'See your ranking',
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.leaderboard),
+                            showDivider: false,
+                          ),
+                        ]),
+
+                        const SizedBox(height: 24),
+
+                        // Security Section
+                        _buildSectionTitle('Security'),
+                        const SizedBox(height: 12),
+                        _buildMenuCard([
+                          _buildMenuItem(
+                            icon: Icons.lock_outline_rounded,
+                            iconColor: const Color(0xFF7C4DFF),
+                            title: 'Change Password',
+                            subtitle: 'Update your account password',
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.changePassword),
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.verified_user_outlined,
+                            iconColor: const Color(0xFF00C853),
+                            title: 'KYC Verification',
+                            subtitle: 'Verify your identity',
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.kyc),
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.pin_outlined,
+                            iconColor: const Color(0xFFE91E63),
+                            title: 'PIN Management',
+                            subtitle: 'Manage your transaction PIN',
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.changePinOtp),
+                            showDivider: false,
+                          ),
+                        ]),
+
+                        const SizedBox(height: 24),
+
+                        // Support Section
+                        _buildSectionTitle('Support'),
+                        const SizedBox(height: 12),
+                        _buildMenuCard([
+                          _buildMenuItem(
+                            icon: Icons.help_outline_rounded,
+                            iconColor: const Color(0xFF2196F3),
+                            title: 'Help & Support',
+                            subtitle: 'Get help from our team',
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.support),
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.info_outline_rounded,
+                            iconColor: const Color(0xFF607D8B),
+                            title: 'About Us',
+                            subtitle: 'Learn more about Eziplug',
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.about),
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.description_outlined,
+                            iconColor: const Color(0xFF795548),
+                            title: 'Terms & Conditions',
+                            subtitle: 'Read our terms of service',
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.termOfUse),
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.shield_outlined,
+                            iconColor: const Color(0xFF009688),
+                            title: 'Privacy Policy',
+                            subtitle: 'How we protect your data',
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.privacyPolicy),
+                            showDivider: false,
+                          ),
+                        ]),
+
+                        const SizedBox(height: 24),
+
+                        // Logout Button
+                        _buildLogoutButton(authService),
+
+                        const SizedBox(height: 30),
+
+                        // App Version
+                        Center(
+                          child: Text(
+                            'Version 1.0.0',
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 12,
                             ),
                           ),
-
-                          const SizedBox(height: 20),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                     ),
                   ),
                 ),
@@ -450,6 +314,202 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: Colors.black87,
+        letterSpacing: 0.3,
+      ),
+    );
+  }
+
+  Widget _buildMenuCard(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool showDivider = true,
+  }) {
+    return Column(
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: showDivider ? null : BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  // Icon Container
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: iconColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: iconColor, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  // Title and Subtitle
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Arrow
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: Colors.grey.shade400,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (showDivider)
+          Divider(
+            color: Colors.grey.shade200,
+            height: 1,
+            indent: 74,
+            endIndent: 16,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildLogoutButton(AuthService authService) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          final shouldLogout = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.logout_rounded, color: Colors.red.shade400, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text('Logout'),
+                ],
+              ),
+              content: const Text('Are you sure you want to sign out of your account?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Logout'),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldLogout == true) {
+            await authService.logout();
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, AppRoutes.login);
+            }
+          }
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.red.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.logout_rounded, color: Colors.red.shade400, size: 22),
+              const SizedBox(width: 10),
+              Text(
+                'Sign Out',
+                style: TextStyle(
+                  color: Colors.red.shade400,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

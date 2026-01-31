@@ -721,9 +721,18 @@ class AuthService extends ChangeNotifier {
         },
       );
 
+      print('🔄 refreshUserData response: ${response.statusCode}');
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _user = data;
+        final responseData = jsonDecode(response.body);
+        
+        // Extract user data from response structure
+        // API returns: { "success": true, "message": "...", "data": { user fields } }
+        final userData = responseData['data'] ?? responseData;
+        
+        print('📦 User data refreshed: wallet_naira=${userData['wallet_naira']}');
+        
+        _user = userData;
 
         // Update stored data using FlutterSecureStorage
         await _storage.write(key: 'userData', value: jsonEncode(_user));
