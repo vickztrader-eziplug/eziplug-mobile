@@ -282,59 +282,76 @@ class _VerificationScreenState extends State<VerificationScreen>
 
                     const SizedBox(height: 32),
 
-                    // OTP Input Boxes
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(
-                        6,
-                        (index) => SizedBox(
-                          height: 55,
-                          width: 45,
-                          child: TextField(
-                            controller: _otpControllers[index],
-                            focusNode: _focusNodes[index],
-                            textAlign: TextAlign.center,
-                            keyboardType: TextInputType.number,
-                            maxLength: 1,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                    // OTP Input Boxes - Responsive layout to prevent overflow
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Calculate box width based on available space
+                        // 6 boxes with 5 gaps of 8px each = 40px for gaps
+                        final boxWidth = (constraints.maxWidth - 40) / 6;
+                        final clampedWidth = boxWidth.clamp(40.0, 55.0);
+                        
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: List.generate(
+                            6,
+                            (index) => SizedBox(
+                              height: 55,
+                              width: clampedWidth,
+                              child: TextField(
+                                controller: _otpControllers[index],
+                                focusNode: _focusNodes[index],
+                                textAlign: TextAlign.center,
+                                keyboardType: TextInputType.number,
+                                maxLength: 1,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                decoration: InputDecoration(
+                                  counterText: '',
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 0,
+                                    vertical: 14,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                      color: _otpControllers[index].text.isNotEmpty
+                                          ? AppColors.primary
+                                          : Colors.grey.shade400,
+                                      width: _otpControllers[index].text.isNotEmpty ? 1.5 : 1,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.primary,
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                onChanged: (value) {
+                                  setState(() {}); // Rebuild to update border colors
+                                  if (value.isNotEmpty && index < 5) {
+                                    _focusNodes[index + 1].requestFocus();
+                                  } else if (value.isEmpty && index > 0) {
+                                    _focusNodes[index - 1].requestFocus();
+                                  }
+                                },
+                              ),
                             ),
-                            decoration: InputDecoration(
-                              counterText: '',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  color: AppColors.primary,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            onChanged: (value) {
-                              if (value.isNotEmpty && index < 5) {
-                                _focusNodes[index + 1].requestFocus();
-                              } else if (value.isEmpty && index > 0) {
-                                _focusNodes[index - 1].requestFocus();
-                              }
-                            },
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 24),
