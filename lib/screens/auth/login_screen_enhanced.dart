@@ -605,7 +605,7 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
                                   ),
                                   GestureDetector(
                                     onTap: () {
-                                      Navigator.pushReplacementNamed(context, AppRoutes.register);
+                                      Navigator.pushNamed(context, AppRoutes.register);
                                     },
                                     child: Text(
                                       'Register',

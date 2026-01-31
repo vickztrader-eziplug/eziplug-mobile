@@ -693,15 +693,33 @@ class AuthService extends ChangeNotifier {
 
           // Handle different response structures
           Map<String, dynamic>? user;
-          if (result.containsKey('user') && result['user'] is Map) {
+          
+          // Check for standardized API response: { success: true, data: { ...user } }
+          if (result.containsKey('success') && result['success'] == true && result.containsKey('data')) {
+            final data = result['data'];
+            if (data is Map) {
+              // Data could be the user object directly or contain a 'user' key
+              if (data.containsKey('user') && data['user'] is Map) {
+                user = Map<String, dynamic>.from(data['user']);
+              } else if (data.containsKey('id')) {
+                // Data is the user object itself
+                user = Map<String, dynamic>.from(data);
+              }
+            }
+          }
+          // Fallback: Check for { user: { ... } } format
+          else if (result.containsKey('user') && result['user'] is Map) {
             user = Map<String, dynamic>.from(result['user']);
-          } else if (result.containsKey('result') && result['result'] is Map) {
+          } 
+          // Fallback: Check for { result: { user: { ... } } } format
+          else if (result.containsKey('result') && result['result'] is Map) {
             final res = result['result'] as Map;
             if (res.containsKey('user') && res['user'] is Map) {
               user = Map<String, dynamic>.from(res['user']);
             }
-          } else if (result is Map && result.containsKey('id')) {
-            // If response is the user object itself
+          } 
+          // Fallback: If response is the user object itself
+          else if (result is Map && result.containsKey('id')) {
             user = Map<String, dynamic>.from(result);
           }
 
@@ -710,6 +728,7 @@ class AuthService extends ChangeNotifier {
             _isAuthenticated = true;
             notifyListeners();
           } else {
+            debugPrint('checkAuth: Could not parse user from response: $result');
             await _clearAuth();
           }
         } else {
