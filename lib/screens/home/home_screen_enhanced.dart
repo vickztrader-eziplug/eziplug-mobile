@@ -102,10 +102,6 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       
-      // Debug: print what AuthService has
-      print('AuthService user: ${authService.user}');
-      print('AuthService userName: ${authService.userFullName}');
-      
       // Use data from AuthService which was set during login
       if (mounted) {
         setState(() {
@@ -119,12 +115,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
       
       // Also try to refresh from API
       final token = await authService.getToken();
-      if (token == null || token.isEmpty) {
-        debugPrint('Home: No token found');
-        return;
-      }
-
-      debugPrint('Home: Fetching user from ${Constants.user}');
+      if (token == null || token.isEmpty) return;
 
       final response = await http.get(
         Uri.parse(Constants.user),
@@ -133,9 +124,6 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
           'Accept': 'application/json',
         },
       );
-
-      debugPrint('Home: Response status ${response.statusCode}');
-      debugPrint('Home: Response body ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -151,8 +139,6 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
           userData = responseData;
         }
         
-        debugPrint('Home: wallet_naira from API = ${userData['wallet_naira']}');
-        
         if (mounted) {
           setState(() {
             final firstName = userData['first_name'] ?? userData['firstName'] ?? '';
@@ -162,11 +148,9 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
             _walletNaira = double.tryParse(userData['wallet_naira']?.toString() ?? '') ?? _walletNaira;
             _walletDollar = double.tryParse(userData['wallet_usd']?.toString() ?? '') ?? _walletDollar;
           });
-          debugPrint('Home: Wallet set to $_walletNaira');
         }
       }
     } catch (e) {
-      print('Error fetching user data: $e');
       if (mounted) setState(() => _isLoadingUserData = false);
     }
   }

@@ -60,48 +60,33 @@ class _RequestWithdrawalScreenState extends State<RequestWithdrawalScreen> {
       final authService = Provider.of<AuthService>(context, listen: false);
       final token = await authService.getToken();
 
-      debugPrint('Fetching wallet balance...');
-      debugPrint('Token: ${token?.substring(0, 20)}...');
-
       if (token == null || token.isEmpty) {
-        debugPrint('No token found');
         setState(() => _isLoadingWallet = false);
         return;
       }
 
-      final url = '${Constants.baseUrl}/user';
-      debugPrint('URL: $url');
-
       final response = await http.get(
-        Uri.parse(url),
+        Uri.parse('${Constants.baseUrl}/user'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
       );
 
-      debugPrint('Response status: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         final userData = responseData['data'] ?? responseData;
-
-        debugPrint('wallet_naira from API: ${userData['wallet_naira']}');
 
         if (mounted) {
           setState(() {
             _walletNaira = double.tryParse(userData['wallet_naira']?.toString() ?? '0') ?? 0.0;
             _isLoadingWallet = false;
           });
-          debugPrint('Wallet balance set to: $_walletNaira');
         }
       } else {
-        debugPrint('Failed to fetch wallet: ${response.statusCode}');
         if (mounted) setState(() => _isLoadingWallet = false);
       }
     } catch (e) {
-      debugPrint('Error fetching wallet: $e');
       if (mounted) {
         setState(() => _isLoadingWallet = false);
       }
