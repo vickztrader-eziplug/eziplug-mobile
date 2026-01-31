@@ -32,9 +32,10 @@ android {
 
     buildTypes {
         release {
-            // Enable R8 code shrinking with proper ProGuard rules
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // TEMPORARILY DISABLED - R8 is stripping HTTP classes
+            // Re-enable after identifying which classes need to be kept
+            isMinifyEnabled = false
+            isShrinkResources = false
             
             // ProGuard rules to keep necessary classes
             proguardFiles(
