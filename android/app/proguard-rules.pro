@@ -206,3 +206,25 @@
 -dontwarn com.google.android.material.**
 -dontnote android.net.http.**
 -dontnote org.apache.http.**
+
+# ============================================
+# APACHE TIKA / XML (used by file_picker, printing)
+# ============================================
+-dontwarn javax.xml.stream.**
+-dontwarn org.apache.tika.**
+-dontwarn org.apache.poi.**
+-dontwarn org.apache.xmlbeans.**
+-dontwarn org.openxmlformats.**
+-dontwarn schemaorg_apache_xmlbeans.**
+
+# Ignore missing javax.xml classes (not available on Android)
+-dontwarn javax.xml.**
+-dontwarn org.w3c.dom.**
+-dontwarn org.xml.sax.**
+
+# ============================================
+# R8 COMPATIBILITY - Treat missing classes as warnings, not errors
+# ============================================
+# This prevents R8 from failing on references to classes that exist
+# in the library but are not available on Android (e.g., javax.xml.stream)
+-ignorewarnings
