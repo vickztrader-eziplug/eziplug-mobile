@@ -234,8 +234,14 @@ class _VerificationScreenState extends State<VerificationScreen>
                     // Back Button
                     IconButton(
                       icon: const Icon(Icons.arrow_back),
-                      onPressed: () =>
-                          Navigator.pushReplacementNamed(context, '/register'),
+                      onPressed: () {
+                        // Check if we can pop, otherwise go to register
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        } else {
+                          Navigator.pushReplacementNamed(context, '/register');
+                        }
+                      },
                       padding: EdgeInsets.zero,
                       alignment: Alignment.centerLeft,
                     ),

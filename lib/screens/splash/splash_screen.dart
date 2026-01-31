@@ -63,8 +63,20 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (authService.isAuthenticated && authService.token != null) {
-      // Already logged in → Home
-      Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      // Check if email is verified
+      if (!authService.isEmailVerified) {
+        // Email not verified → Go to verification screen
+        Navigator.of(context).pushReplacementNamed(
+          AppRoutes.emailVerify,
+          arguments: {
+            'email': authService.userEmail,
+            'token': authService.token,
+          },
+        );
+      } else {
+        // Email verified → Home
+        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      }
     } else if (authService.hasCompletedOnboarding) {
       // Returning user → Login with saved email
       Navigator.of(context).pushReplacementNamed(

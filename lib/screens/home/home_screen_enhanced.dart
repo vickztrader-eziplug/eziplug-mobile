@@ -82,7 +82,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
   void initState() {
     super.initState();
     _advertPageController = PageController(viewportFraction: 0.88);
-    _walletPageController = PageController(viewportFraction: 0.92);
+    _walletPageController = PageController(viewportFraction: 1.0);
     
     _shimmerController = AnimationController(
       vsync: this,
@@ -499,8 +499,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
   }
 
   Widget _buildWalletSection(double sw, double sh) {
-    // Use a minimum height but allow it to expand
-    final cardHeight = sh * 0.20 < 150 ? 150.0 : sh * 0.20;
+    final cardHeight = sh * 0.24; // Increased height for enhanced card design
     
     return Column(
       children: [
@@ -510,40 +509,38 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
             controller: _walletPageController,
             onPageChanged: (index) => setState(() => _currentWalletPage = index),
             children: [
-              _buildEnhancedWalletCard(
-                sw, sh,
+              _buildBalanceCard(
                 currency: '₦',
-                currencyName: 'Nigerian Naira',
+                currencyLabel: 'Naira',
                 balance: _walletNaira,
-                gradientColors: [AppColors.primary, AppColors.primaryLight],
-                icon: Icons.account_balance_wallet_rounded,
+                cardColor: AppColors.primary,
+                cardHeight: cardHeight,
               ),
-              _buildEnhancedWalletCard(
-                sw, sh,
+              _buildBalanceCard(
                 currency: '\$',
-                currencyName: 'US Dollar',
+                currencyLabel: 'Dollar',
                 balance: _walletDollar,
-                gradientColors: [AppColors.accentTeal, Color(0xFF00E5D0)],
-                icon: Icons.attach_money_rounded,
+                cardColor: AppColors.accentTeal,
+                cardHeight: cardHeight,
               ),
             ],
           ),
         ),
-        SizedBox(height: sh * 0.015),
-        // Wallet Indicators
+        const SizedBox(height: 10),
+        // Page Indicators
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(2, (index) {
             return AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              margin: EdgeInsets.symmetric(horizontal: sw * 0.01),
-              width: _currentWalletPage == index ? sw * 0.06 : sw * 0.02,
-              height: sw * 0.02,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: _currentWalletPage == index ? 20 : 6,
+              height: 6,
               decoration: BoxDecoration(
                 color: _currentWalletPage == index
                     ? AppColors.primary
-                    : AppColors.primary.withOpacity(0.25),
-                borderRadius: BorderRadius.circular(sw * 0.01),
+                    : AppColors.primary.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(3),
               ),
             );
           }),
@@ -552,19 +549,22 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     );
   }
 
-  Widget _buildEnhancedWalletCard(
-    double sw,
-    double sh, {
+  Widget _buildBalanceCard({
     required String currency,
-    required String currencyName,
+    required String currencyLabel,
     required double balance,
-    required List<Color> gradientColors,
-    required IconData icon,
+    required Color cardColor,
+    required double cardHeight,
   }) {
+    // Define gradient colors based on card type
+    final gradientColors = currency == '₦'
+        ? [cardColor, cardColor.withOpacity(0.7), const Color(0xFF1A237E)]
+        : [cardColor, cardColor.withOpacity(0.8), const Color(0xFF004D40)];
+
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: sw * 0.01),
+      height: cardHeight,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(sw * 0.06),
+        borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -572,21 +572,22 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
         ),
         boxShadow: [
           BoxShadow(
-            color: gradientColors[0].withOpacity(0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: cardColor.withOpacity(0.4),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+            spreadRadius: 0,
           ),
         ],
       ),
       child: Stack(
         children: [
-          // Background Pattern
+          // Decorative circles pattern
           Positioned(
-            right: -sw * 0.1,
-            top: -sw * 0.1,
+            top: -30,
+            right: -30,
             child: Container(
-              width: sw * 0.5,
-              height: sw * 0.5,
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white.withOpacity(0.08),
@@ -594,168 +595,152 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
             ),
           ),
           Positioned(
-            left: -sw * 0.15,
-            bottom: -sw * 0.15,
+            bottom: -40,
+            left: -20,
             child: Container(
-              width: sw * 0.4,
-              height: sw * 0.4,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white.withOpacity(0.05),
               ),
             ),
           ),
-          
-          // Content
+          // Card content
           Padding(
-            padding: EdgeInsets.all(sw * 0.035),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Header row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Flexible(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(sw * 0.01),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(sw * 0.01),
-                            ),
-                            child: Icon(icon, color: Colors.white, size: sw * 0.03),
-                          ),
-                          SizedBox(width: sw * 0.008),
-                          Flexible(
-                            child: Text(
-                              currencyName,
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: sw * 0.022,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_isRefreshing)
-                      SizedBox(
-                        width: sw * 0.025,
-                        height: sw * 0.025,
-                        child: const CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      ),
-                  ],
-                ),
-                
-                // Balance section
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Available Balance',
-                            style: TextStyle(
-                              color: Colors.white60,
-                              fontSize: sw * 0.022,
-                            ),
-                          ),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              _isBalanceVisible
-                                  ? '$currency ${_formatBalance(balance)}'
-                                  : '$currency ••••••',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: sw * 0.055,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: sw * 0.01),
                     Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        GestureDetector(
-                          onTap: () => setState(() => _isBalanceVisible = !_isBalanceVisible),
-                          child: Container(
-                            padding: EdgeInsets.all(sw * 0.015),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(sw * 0.012),
-                            ),
-                            child: Icon(
-                              _isBalanceVisible
-                                  ? Icons.visibility_rounded
-                                  : Icons.visibility_off_rounded,
-                              color: Colors.white,
-                              size: sw * 0.03,
-                            ),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            currency == '₦' ? Icons.account_balance_wallet : Icons.currency_exchange,
+                            color: Colors.white,
+                            size: 16,
                           ),
                         ),
-                        SizedBox(width: 4),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const FundScreen()),
-                            );
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(sw * 0.015),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(sw * 0.012),
-                            ),
-                            child: Icon(
-                              Icons.add_rounded,
-                              color: gradientColors[0],
-                              size: sw * 0.03,
-                            ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$currencyLabel Balance',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
+                    GestureDetector(
+                      onTap: () => setState(() => _isBalanceVisible = !_isBalanceVisible),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          _isBalanceVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-                
-                // Action Buttons - at bottom
+                const SizedBox(height: 12),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _isBalanceVisible
+                        ? '$currency ${_formatBalance(balance)}'
+                        : '$currency ••••••',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+                const Spacer(),
                 Row(
                   children: [
-                    _buildWalletActionButton(
-                      sw,
-                      'Bonus',
-                      Icons.stars_rounded,
-                      () {},
+                    _buildCardButton(
+                      label: 'Bonus',
+                      icon: Icons.star_rounded,
+                      bgColor: Colors.white.withOpacity(0.2),
+                      onTap: () {},
                     ),
-                    SizedBox(width: sw * 0.01),
-                    _buildWalletActionButton(
-                      sw,
-                      'Save & Earn',
-                      Icons.savings_rounded,
-                      () => Navigator.pushNamed(context, AppRoutes.saveAndEarn),
+                    const SizedBox(width: 8),
+                    _buildCardButton(
+                      label: 'Save & Earn',
+                      icon: Icons.savings_rounded,
+                      bgColor: Colors.white.withOpacity(0.2),
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.saveAndEarn),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const FundScreen()),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.add_rounded,
+                              color: cardColor,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Fund',
+                              style: TextStyle(
+                                color: cardColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ],
+            ),
+          ),
+          // Card branding
+          Positioned(
+            bottom: 14,
+            right: 18,
+            child: Text(
+              'EZIPLUG',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.15),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
             ),
           ),
         ],
@@ -763,34 +748,31 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     );
   }
 
-  Widget _buildWalletActionButton(
-    double sw,
-    String label,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
+  Widget _buildCardButton({
+    required String label,
+    required IconData icon,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: sw * 0.02, vertical: sw * 0.015),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(sw * 0.015),
+          color: bgColor,
+          borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: sw * 0.03),
-            SizedBox(width: sw * 0.01),
-            Flexible(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: sw * 0.024,
-                  fontWeight: FontWeight.w600,
-                ),
-                overflow: TextOverflow.ellipsis,
+            Icon(icon, color: Colors.white, size: 12),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -803,47 +785,55 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     final actions = [
       {
         'icon': Icons.card_giftcard_rounded,
-        'label': 'Gift Cards',
+        'label': 'Trade Giftcard',
+        'subtitle': 'Enjoy sweet rates with swift payment',
         'color': AppColors.giftcardColor,
         'bgColor': AppColors.giftcardColor.withOpacity(0.12),
         'destination': const SellGiftCardScreen(),
       },
       {
         'icon': Icons.currency_bitcoin_rounded,
-        'label': 'Crypto',
+        'label': 'Trade Crypto',
+        'subtitle': 'Trade BTC, ETH, BNB & More for instant cash',
         'color': AppColors.cryptoColor,
         'bgColor': AppColors.cryptoColor.withOpacity(0.12),
         'destination': const TradeCryptoScreen(),
       },
       {
         'icon': Icons.calculate_rounded,
-        'label': 'Calculator',
+        'label': 'Rate Calculator',
+        'subtitle': 'Use rate calculator to preview currency rate',
         'color': AppColors.calculatorColor,
         'bgColor': AppColors.calculatorColor.withOpacity(0.12),
         'destination': const RateCalculatorScreen(),
       },
       {
         'icon': Icons.grid_view_rounded,
-        'label': 'More',
+        'label': 'More Services',
+        'subtitle': 'Buy data, purchase airtime and utilities',
         'color': AppColors.moreServicesColor,
         'bgColor': AppColors.moreServicesColor.withOpacity(0.12),
         'destination': const MoreServicesScreen(),
       },
     ];
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return GridView.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      childAspectRatio: 1.4,
       children: actions.map((action) {
-        return Flexible(
-          child: _buildQuickActionItem(
-            sw,
-            sh,
-            icon: action['icon'] as IconData,
-            label: action['label'] as String,
-            color: action['color'] as Color,
-            bgColor: action['bgColor'] as Color,
-            destination: action['destination'] as Widget,
-          ),
+        return _buildQuickActionItem(
+          sw,
+          sh,
+          icon: action['icon'] as IconData,
+          label: action['label'] as String,
+          subtitle: action['subtitle'] as String,
+          color: action['color'] as Color,
+          bgColor: action['bgColor'] as Color,
+          destination: action['destination'] as Widget,
         );
       }).toList(),
     );
@@ -854,31 +844,28 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     double sh, {
     required IconData icon,
     required String label,
+    required String subtitle,
     required Color color,
     required Color bgColor,
     required Widget destination,
   }) {
-    // Adaptive width with max constraint
-    final itemWidth = sw * 0.18;
-    
     return GestureDetector(
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
       },
       child: Container(
-        width: itemWidth,
-        constraints: BoxConstraints(minWidth: 60, maxWidth: 80),
-        padding: EdgeInsets.symmetric(vertical: sh * 0.015, horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(sw * 0.035),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withOpacity(0.2), width: 1),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.all(sw * 0.025),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: color,
                 shape: BoxShape.circle,
@@ -890,18 +877,28 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                   ),
                 ],
               ),
-              child: Icon(icon, color: Colors.white, size: sw * 0.045),
+              child: Icon(icon, color: Colors.white, size: 20),
             ),
-            SizedBox(height: 6),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: sw * 0.026,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textColor,
-                ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11,
+                color: Colors.black54,
+                height: 1.2,
               ),
             ),
           ],

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 // ignore: depend_on_referenced_packages
@@ -13,8 +12,12 @@ import 'screens/splash/splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Test network connectivity immediately on startup
-  await _testNetworkConnectivity();
+  // Test network connectivity immediately on startup (skip on web for now)
+  if (!kIsWeb) {
+    await _testNetworkConnectivity();
+  } else {
+    await debugLogger.log('STARTUP', 'App starting on WEB platform');
+  }
   
   final authService = AuthService();
   
@@ -41,18 +44,13 @@ void main() async {
 }
 
 /// Test network connectivity at startup to help debug release build issues
+/// Only runs on mobile/desktop platforms (not web)
 Future<void> _testNetworkConnectivity() async {
   final isRelease = kReleaseMode;
   await debugLogger.log('STARTUP', 'App starting in ${isRelease ? "RELEASE" : "DEBUG"} mode');
   
   try {
-    // Test 1: DNS resolution
-    await debugLogger.log('NET_TEST', 'Testing DNS resolution...');
-    final addresses = await InternetAddress.lookup('app.eziplug.app')
-        .timeout(const Duration(seconds: 10));
-    await debugLogger.log('NET_TEST', 'DNS resolved: ${addresses.first.address}');
-    
-    // Test 2: HTTP request using the robust API client
+    // Test HTTP request using the API client
     await debugLogger.log('NET_TEST', 'Testing HTTPS connection...');
     final response = await apiClient.get(
       Uri.parse('https://app.eziplug.app/api'),
@@ -60,10 +58,6 @@ Future<void> _testNetworkConnectivity() async {
       timeout: const Duration(seconds: 15),
     );
     await debugLogger.log('NET_TEST', 'HTTPS status: ${response.statusCode}');
-  } on SocketException catch (e) {
-    await debugLogger.log('NET_ERROR', 'Socket error: $e');
-  } on HandshakeException catch (e) {
-    await debugLogger.log('NET_ERROR', 'SSL Handshake error: $e');
   } catch (e) {
     await debugLogger.log('NET_ERROR', 'Network test failed: ${e.runtimeType}: $e');
   }

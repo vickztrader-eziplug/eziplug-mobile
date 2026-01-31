@@ -132,68 +132,67 @@ class _PayoutScreenState extends State<PayoutScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
+      backgroundColor: AppColors.primary,
+      body: SafeArea(
+        child: Column(
           children: [
-            // Header Section
+            // Enhanced Header Section
             Container(
-              width: double.infinity,
-              height: 260,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 24),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const Expanded(
-                            child: Text(
-                              'Payout to Bank',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
+                          child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                        ),
+                        onPressed: () => Navigator.pop(context),
                       ),
+                      const Spacer(),
+                      const Text(
+                        'Payout to Bank',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const Spacer(),
+                      const SizedBox(width: 48),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+                    child: const Icon(
+                      Icons.send_rounded,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
+            // Content Section
+            Expanded(
               child: Container(
                 decoration: const BoxDecoration(
-                  color: AppColors.background,
+                  color: Color(0xFFF8F9FA),
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+                    topLeft: Radius.circular(32),
+                    topRight: Radius.circular(32),
                   ),
                 ),
                 child: _isLoading
@@ -218,32 +217,58 @@ class _PayoutScreenState extends State<PayoutScreen> {
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          const SizedBox(height: 40),
+          // Drag handle
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 20),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
             child: Column(
               children: [
-                Icon(
-                  Icons.account_balance_wallet_outlined,
-                  size: 80,
-                  color: AppColors.primary.withOpacity(0.3),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFFFF5722).withOpacity(0.1),
+                        const Color(0xFFFF5722).withOpacity(0.05),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    size: 60,
+                    color: Color(0xFFFF5722),
+                  ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
                 const Text(
                   'No Payout Accounts',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -255,13 +280,14 @@ class _PayoutScreenState extends State<PayoutScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
+                    height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 36),
                 SizedBox(
                   width: double.infinity,
                   height: 56,
-                  child: ElevatedButton.icon(
+                  child: ElevatedButton(
                     onPressed: () async {
                       final result = await Navigator.push(
                         context,
@@ -273,14 +299,27 @@ class _PayoutScreenState extends State<PayoutScreen> {
                         _loadPayoutAccounts();
                       }
                     },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Bank Account'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_circle_outline_rounded, size: 22),
+                        SizedBox(width: 10),
+                        Text(
+                          'Add Bank Account',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -298,44 +337,116 @@ class _PayoutScreenState extends State<PayoutScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Drag handle
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
           // Add Account Button
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: OutlinedButton.icon(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const CreatePayoutAccountScreen(),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const CreatePayoutAccountScreen(),
+                    ),
+                  );
+                  if (result == true) {
+                    _loadPayoutAccounts();
+                  }
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.add_rounded,
+                          color: AppColors.primary,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      const Text(
+                        'Add New Bank Account',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: AppColors.primary.withOpacity(0.5),
+                      ),
+                    ],
                   ),
-                );
-                if (result == true) {
-                  _loadPayoutAccounts();
-                }
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Add New Bank Account'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
           // Accounts List
-          const Text(
-            'Your Bank Accounts',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
+          Row(
+            children: [
+              const Text(
+                'Your Bank Accounts',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_payoutAccounts.length}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -345,7 +456,7 @@ class _PayoutScreenState extends State<PayoutScreen> {
             itemCount: _payoutAccounts.length,
             itemBuilder: (context, index) {
               final account = _payoutAccounts[index];
-              return _buildAccountCard(account);
+              return _buildAccountCard(account, index);
             },
           ),
 
@@ -368,18 +479,26 @@ class _PayoutScreenState extends State<PayoutScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.textColor,
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: const Text(
-                  'Request Withdrawal',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.send_rounded, size: 20),
+                    SizedBox(width: 10),
+                    Text(
+                      'Request Withdrawal',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -388,64 +507,107 @@ class _PayoutScreenState extends State<PayoutScreen> {
     );
   }
 
-  Widget _buildAccountCard(Map<String, dynamic> account) {
+  Widget _buildAccountCard(Map<String, dynamic> account, int index) {
+    final colors = [
+      const Color(0xFF2196F3),
+      const Color(0xFF9C27B0),
+      const Color(0xFF4CAF50),
+      const Color(0xFFFF5722),
+      const Color(0xFF00BCD4),
+    ];
+    final cardColor = colors[index % colors.length];
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.lightGrey),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.account_balance,
-            color: AppColors.primary,
-            size: 24,
-          ),
-        ),
-        title: Text(
-          account['bank_name'] ?? 'Unknown Bank',
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
           children: [
-            const SizedBox(height: 4),
-            Text(
-              account['account_name'] ?? '',
-              style: const TextStyle(fontSize: 13),
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [cardColor, cardColor.withOpacity(0.7)],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: cardColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.account_balance_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              account['account_number'] ?? '',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    account['bank_name'] ?? 'Unknown Bank',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    account['account_name'] ?? '',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    account['account_number'] ?? '',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () => _deleteAccount(account['id']),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Colors.red,
+                  size: 20,
+                ),
               ),
             ),
           ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline, color: Colors.red),
-          onPressed: () => _deleteAccount(account['id']),
         ),
       ),
     );

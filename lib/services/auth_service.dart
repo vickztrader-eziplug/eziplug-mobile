@@ -1,7 +1,6 @@
 // lib/services/auth_service.dart
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:cashpoint/core/utils/constants.dart';
 import 'package:cashpoint/core/utils/api_response.dart';
 import 'package:cashpoint/services/debug_logger.dart';
@@ -47,6 +46,9 @@ class AuthService extends ChangeNotifier {
       double.tryParse(_userData?['wallet_naira']?.toString() ?? '0') ?? 0.0;
   double get walletDollar =>
       double.tryParse(_userData?['wallet_usd']?.toString() ?? '0') ?? 0.0;
+  
+  /// Check if user's email is verified
+  bool get isEmailVerified => _userData?['email_verified_at'] != null;
 
   Future<void> initAuth() async {
     try {
@@ -320,19 +322,13 @@ class AuthService extends ChangeNotifier {
           'message': 'Unexpected response ($statusCode): $body',
         };
       }
-    } on SocketException catch (e) {
-      await debugLogger.log('ERROR', 'Login socket error: $e');
-      return {'success': false, 'message': 'No internet connection: $e'};
-    } on HandshakeException catch (e) {
-      await debugLogger.log('ERROR', 'Login SSL error: $e');
-      return {'success': false, 'message': 'SSL/TLS error: $e'};
     } on TimeoutException catch (e) {
       await debugLogger.log('ERROR', 'Login timeout: $e');
       return {'success': false, 'message': 'Request timed out. Please try again.'};
     } catch (e, stackTrace) {
       await debugLogger.log('ERROR', 'Login exception: ${e.runtimeType}: $e');
       debugPrint('Stack trace: $stackTrace');
-      return {'success': false, 'message': 'Network error (${e.runtimeType}): $e'};
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 

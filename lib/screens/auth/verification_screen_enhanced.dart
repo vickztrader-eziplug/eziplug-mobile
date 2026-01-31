@@ -308,7 +308,20 @@ class _VerificationScreenEnhancedState extends State<VerificationScreenEnhanced>
                           ),
                           child: IconButton(
                             icon: const Icon(Icons.arrow_back, color: Colors.white),
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () {
+                              // Check if we can pop, otherwise go to appropriate screen
+                              if (Navigator.canPop(context)) {
+                                Navigator.pop(context);
+                              } else {
+                                // If email verification (from login), go to login
+                                // If OTP verification (from register), go to register
+                                if (widget.isEmailVerification) {
+                                  Navigator.pushReplacementNamed(context, AppRoutes.login);
+                                } else {
+                                  Navigator.pushReplacementNamed(context, AppRoutes.register);
+                                }
+                              }
+                            },
                           ),
                         ),
                       ],

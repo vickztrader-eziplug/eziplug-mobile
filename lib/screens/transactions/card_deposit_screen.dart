@@ -118,10 +118,22 @@ class _CardDepositScreenState extends State<CardDepositScreen> {
           ),
         );
 
-        if (paymentResult == true) {
-          // Payment successful, verify on backend
+        // Handle result based on platform
+        // Web returns Map with {success: bool, data: ...}
+        // Mobile returns bool (true = completed, need to verify)
+        if (paymentResult is Map && paymentResult['success'] == true) {
+          // Web platform - already verified during polling
+          final authService = Provider.of<AuthService>(context, listen: false);
+          await authService.refreshUserData();
+          final responseData = getResponseData(paymentResult['data']);
+          _showSuccessDialog(responseData);
+        } else if (paymentResult == true) {
+          // Mobile platform - need to verify on backend
           await _verifyPayment(reference);
+        } else if (paymentResult is Map && paymentResult['success'] == false) {
+          _showSnackBar(paymentResult['message'] ?? 'Payment failed', Colors.red);
         }
+        // else: payment was cancelled, do nothing
       } else {
         final result = jsonDecode(response.body);
         _showSnackBar(
@@ -328,224 +340,395 @@ class _CardDepositScreenState extends State<CardDepositScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
+      backgroundColor: AppColors.primary,
+      body: SafeArea(
+        child: Column(
           children: [
-            if (_isLoading)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
-                  ),
-                ),
-              ),
-
-            // Header Section
+            // Enhanced Header Section
             Container(
-              width: double.infinity,
-              height: 260,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 24),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const Expanded(
-                            child: Text(
-                              'Card Deposit',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
+                          child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                        ),
+                        onPressed: () => Navigator.pop(context),
                       ),
+                      const Spacer(),
+                      const Text(
+                        'Card Deposit',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const Spacer(),
+                      const SizedBox(width: 48),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+                    child: const Icon(
+                      Icons.credit_card_rounded,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
+            // Content Section
+            Expanded(
               child: Container(
                 decoration: const BoxDecoration(
-                  color: AppColors.background,
+                  color: Color(0xFFF8F9FA),
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+                    topLeft: Radius.circular(32),
+                    topRight: Radius.circular(32),
                   ),
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Amount Input
-                      const Text(
-                        'Enter Amount',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _amountController,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        decoration: InputDecoration(
-                          prefixText: '₦',
-                          prefixStyle: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          hintText: '0',
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.lightGrey),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.lightGrey),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.primary,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() => _selectedAmount = null);
-                        },
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      // Quick Amount Selection
-                      const Text(
-                        'Quick Select',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _amounts.map((amount) {
-                            final isSelected = _selectedAmount == amount;
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedAmount = amount;
-                                  _amountController.clear();
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? AppColors.primary
-                                        : AppColors.light,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  '₦${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : AppColors.textColor,
-                                  ),
-                                ),
+                child: Stack(
+                  children: [
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Drag handle
+                          Center(
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 20),
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(2),
                               ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      // Proceed Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _initiatePayment,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.textColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
                             ),
-                            elevation: 0,
-                            disabledBackgroundColor: AppColors.lightGrey,
                           ),
-                          child: const Text(
-                            'Proceed to Payment',
-                            style: TextStyle(
+
+                          // Amount Input Card
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
                               color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF9C27B0).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(
+                                        Icons.payments_outlined,
+                                        color: Color(0xFF9C27B0),
+                                        size: 22,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Text(
+                                      'Enter Amount',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                TextField(
+                                  controller: _amountController,
+                                  keyboardType: TextInputType.number,
+                                  style: const TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  decoration: InputDecoration(
+                                    prefixText: '₦ ',
+                                    prefixStyle: TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[400],
+                                    ),
+                                    hintText: '0.00',
+                                    hintStyle: TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[300],
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.grey[50],
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: const BorderSide(
+                                        color: AppColors.primary,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 20,
+                                    ),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() => _selectedAmount = null);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Quick Amount Selection
+                          const Text(
+                            'Quick Select',
+                            style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: _amounts.map((amount) {
+                              final isSelected = _selectedAmount == amount;
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedAmount = amount;
+                                    _amountController.clear();
+                                  });
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: isSelected
+                                        ? LinearGradient(
+                                            colors: [
+                                              AppColors.primary,
+                                              AppColors.primary.withOpacity(0.8),
+                                            ],
+                                          )
+                                        : null,
+                                    color: isSelected ? null : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: isSelected
+                                            ? AppColors.primary.withOpacity(0.3)
+                                            : Colors.black.withOpacity(0.04),
+                                        blurRadius: isSelected ? 12 : 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    '₦${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: isSelected ? Colors.white : Colors.grey[800],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+
+                          const SizedBox(height: 32),
+
+                          // Info Card
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  const Color(0xFFFF9800).withOpacity(0.1),
+                                  const Color(0xFFFF9800).withOpacity(0.05),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFFF9800).withOpacity(0.2),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF9800).withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.info_outline_rounded,
+                                    color: Color(0xFFE65100),
+                                    size: 22,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Card Payment Fee',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                          color: Color(0xFFE65100),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'A small processing fee applies to card payments',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 32),
+
+                          // Proceed Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _initiatePayment,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 0,
+                                disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.lock_outline_rounded, size: 20),
+                                  const SizedBox(width: 10),
+                                  const Text(
+                                    'Proceed to Payment',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Security Badge
+                          Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.shield_outlined, size: 16, color: Colors.grey[500]),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Secured by Paystack',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Loading Overlay
+                    if (_isLoading)
+                      Container(
+                        color: Colors.black54,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(32),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const CircularProgressIndicator(
+                                  color: AppColors.primary,
+                                  strokeWidth: 3,
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'Processing...',
+                                  style: TextStyle(
+                                    color: Colors.grey[800],
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ),

@@ -1,42 +1,24 @@
 // lib/services/api_client.dart
+// Cross-platform HTTP client that works on mobile, desktop, and web
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart';
 import 'debug_logger.dart';
 
-/// A robust HTTP client that works in both debug and release modes.
-/// Handles SSL certificates and provides detailed error logging.
+/// A simple HTTP client wrapper that works across all platforms.
+/// Uses the standard http package which is cross-platform compatible.
 class ApiClient {
   static ApiClient? _instance;
   late final http.Client _client;
   
   ApiClient._() {
-    _client = _createClient();
+    // Standard http.Client works on all platforms including web
+    _client = http.Client();
   }
   
   static ApiClient get instance {
     _instance ??= ApiClient._();
     return _instance!;
-  }
-  
-  http.Client _createClient() {
-    // Create an HttpClient that accepts all certificates in case of issues
-    final httpClient = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 30)
-      ..idleTimeout = const Duration(seconds: 30);
-    
-    // For release builds, we can be more lenient with certificate validation
-    // This helps debug SSL issues - remove in production if needed
-    httpClient.badCertificateCallback = (X509Certificate cert, String host, int port) {
-      debugLogger.log('SSL', 'Certificate check for $host:$port', showToast: false);
-      // Return true to accept the certificate (for debugging)
-      // In production, you should validate properly
-      return true;
-    };
-    
-    return IOClient(httpClient);
   }
   
   /// Make a GET request
@@ -50,12 +32,6 @@ class ApiClient {
       final response = await _client.get(url, headers: headers).timeout(timeout);
       await debugLogger.log('HTTP', 'GET ${url.path}: ${response.statusCode}', showToast: false);
       return response;
-    } on SocketException catch (e) {
-      await debugLogger.log('HTTP_ERROR', 'Socket error on GET: $e');
-      rethrow;
-    } on HandshakeException catch (e) {
-      await debugLogger.log('HTTP_ERROR', 'SSL error on GET: $e');
-      rethrow;
     } on TimeoutException catch (e) {
       await debugLogger.log('HTTP_ERROR', 'Timeout on GET: $e');
       rethrow;
@@ -81,12 +57,6 @@ class ApiClient {
       ).timeout(timeout);
       await debugLogger.log('HTTP', 'POST ${url.path}: ${response.statusCode}', showToast: false);
       return response;
-    } on SocketException catch (e) {
-      await debugLogger.log('HTTP_ERROR', 'Socket error on POST: $e');
-      rethrow;
-    } on HandshakeException catch (e) {
-      await debugLogger.log('HTTP_ERROR', 'SSL error on POST: $e');
-      rethrow;
     } on TimeoutException catch (e) {
       await debugLogger.log('HTTP_ERROR', 'Timeout on POST: $e');
       rethrow;
@@ -118,12 +88,6 @@ class ApiClient {
       ).timeout(timeout);
       await debugLogger.log('HTTP', 'POST JSON ${url.path}: ${response.statusCode}', showToast: false);
       return response;
-    } on SocketException catch (e) {
-      await debugLogger.log('HTTP_ERROR', 'Socket error on POST JSON: $e');
-      rethrow;
-    } on HandshakeException catch (e) {
-      await debugLogger.log('HTTP_ERROR', 'SSL error on POST JSON: $e');
-      rethrow;
     } on TimeoutException catch (e) {
       await debugLogger.log('HTTP_ERROR', 'Timeout on POST JSON: $e');
       rethrow;

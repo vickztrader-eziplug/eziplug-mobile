@@ -1,6 +1,6 @@
 {
-    "name": "cashpoint",
-    "short_name": "cashpoint",
+    "name": "Eziplug",
+    "short_name": "Eziplug",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -314,34 +314,34 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       )
                     : SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.22,
+                        height: MediaQuery.of(context).size.height * 0.2,
                         child: ListView(
                           scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                           children: [
                             _balanceCard(
                               context,
                               currency: '₦',
-                              currencyLabel: 'Naira Balance',
+                              currencyLabel: 'Available Balance',
                               balance: _formatBalance(_walletNaira),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 15),
                             _balanceCard(
                               context,
                               currency: '\$',
-                              currencyLabel: 'Dollar Balance',
+                              currencyLabel: 'Available Balance',
                               balance: _formatBalance(_walletDollar),
                             ),
                           ],
                         ),
                       ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: const Text(
-                    'Quick Actions',
+                    'Quick Links',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -352,49 +352,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 12),
 
-                // Quick Actions Grid - 2 per row, larger cards
+                // Quick Links Grid - 2 per row like old design
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
                     crossAxisCount: 2,
-                    crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 1.3,
+                    crossAxisSpacing: 12,
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    childAspectRatio: 1.4,
                     children: [
-                    _quickActionCard(
-                      context,
-                      icon: Icons.card_giftcard_rounded,
-                      title: 'Trade Giftcard',
-                      subtitle: 'Best rates, instant pay',
-                      color: const Color(0xFF6C5CE7),
-                      destination: const SellGiftCardScreen(),
-                    ),
-                    _quickActionCard(
-                      context,
-                      icon: Icons.currency_bitcoin_rounded,
-                      title: 'Trade Crypto',
-                      subtitle: 'BTC, ETH & more',
-                      color: const Color(0xFFF39C12),
-                      destination: const TradeCryptoScreen(),
-                    ),
-                    _quickActionCard(
-                      context,
-                      icon: Icons.calculate_rounded,
-                      title: 'Rate Calculator',
-                      subtitle: 'Check live rates',
-                      color: const Color(0xFF00B894),
-                      destination: const RateCalculatorScreen(),
-                    ),
-                    _quickActionCard(
-                      context,
-                      icon: Icons.grid_view_rounded,
-                      title: 'More Services',
-                      subtitle: 'Bills, airtime & data',
-                      color: const Color(0xFFE84393),
-                      destination: const MoreServicesScreen(),
-                    ),
+                      _quickActionCard(
+                        context,
+                        icon: Icons.card_giftcard,
+                        title: 'Trade Giftcard',
+                        subtitle: 'Enjoy sweet rates with swift payment',
+                        color: AppColors.primary,
+                        destination: const SellGiftCardScreen(),
+                      ),
+                      _quickActionCard(
+                        context,
+                        icon: Icons.currency_bitcoin,
+                        title: 'Trade Crypto',
+                        subtitle: 'Trade BTC, ETH, BNB & More for instant cash',
+                        color: AppColors.primary,
+                        destination: const TradeCryptoScreen(),
+                      ),
+                      _quickActionCard(
+                        context,
+                        icon: Icons.calculate_outlined,
+                        title: 'Rate Calculator',
+                        subtitle: 'Use rate calculate to preview currency rate',
+                        color: AppColors.primary,
+                        destination: const RateCalculatorScreen(),
+                      ),
+                      _quickActionCard(
+                        context,
+                        icon: Icons.apps_rounded,
+                        title: 'More Service',
+                        subtitle: 'Buy data, purchase airtime and utilities',
+                        color: AppColors.primary,
+                        destination: const MoreServicesScreen(),
+                      ),
                     ],
                   ),
                 ),
@@ -465,7 +465,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
   }
 
-  /// Quick Action Card - Old layout style with modern colors
+  /// Quick Action Card - Old design style with consistent look
   Widget _quickActionCard(
     BuildContext context, {
     required IconData icon,
@@ -482,46 +482,44 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(14),
+          color: const Color(0xFFF8F8FF),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Circular Icon Background
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color,
+                color: AppColors.primary,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 24,
-              ),
+              child: Icon(icon, color: Colors.white, size: 20),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Text(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
-                color: Colors.black87,
+                color: Colors.black,
               ),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             Text(
               subtitle,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 11,
-                color: Colors.grey.shade600,
+                color: Colors.black54,
                 height: 1.2,
               ),
             ),
@@ -602,38 +600,33 @@ class _HomeScreenState extends State<HomeScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     
     return Container(
-      width: screenWidth * 0.85,
-      padding: const EdgeInsets.all(20),
+      width: screenWidth * 0.75,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: currency == '₦' 
-              ? [AppColors.primary, AppColors.primary.withOpacity(0.8)]
-              : [const Color(0xFF2D3436), const Color(0xFF636E72)],
-        ),
+        color: currency == '₦' ? AppColors.primary : const Color(0xFF2D3436),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: (currency == '₦' ? AppColors.primary : Colors.grey).withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Text(
+            currencyLabel,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                currencyLabel,
+                _isBalanceVisible ? '$currency$balance' : '$currency••••••',
                 style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               Row(
@@ -648,8 +641,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       _isBalanceVisible
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      color: Colors.white70,
-                      size: 20,
+                      color: Colors.white,
+                      size: 26,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -665,7 +658,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white24,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -679,59 +672,47 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            _isBalanceVisible ? '$currency$balance' : '$currency••••••',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
           const Spacer(),
           Row(
             children: [
-              _balanceActionButton(
-                label: 'View Bonus',
-                onTap: () {},
-                filled: true,
+              TextButton(
+                onPressed: () {},
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.white24,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'View Bonus',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
               ),
               const SizedBox(width: 10),
-              _balanceActionButton(
-                label: 'Save & Earn',
-                onTap: () => Navigator.pushNamed(context, AppRoutes.saveAndEarn),
-                filled: false,
+              OutlinedButton(
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.saveAndEarn),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.white, width: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Save and Earn',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _balanceActionButton({
-    required String label,
-    required VoidCallback onTap,
-    required bool filled,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: filled ? Colors.white24 : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: filled ? null : Border.all(color: Colors.white54, width: 1),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
       ),
     );
   }

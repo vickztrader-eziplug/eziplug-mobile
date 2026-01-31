@@ -1,15 +1,13 @@
 // lib/services/debug_logger.dart
-import 'dart:io';
+// Cross-platform debug logger that works on mobile, desktop, and web
 import 'package:flutter/foundation.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
-// path_provider can fail in release mode, so file logging is optional
-import 'package:path_provider/path_provider.dart';
 
 /// A simple debug logger that:
 /// 1. Shows toast messages on screen (only in debug mode or for errors)
-/// 2. Writes logs to a file on the device
-/// 3. Keeps logs in memory for viewing in a debug screen
+/// 2. Keeps logs in memory for viewing in a debug screen
+/// Note: File logging disabled for web compatibility
 class DebugLogger {
   static final DebugLogger _instance = DebugLogger._internal();
   factory DebugLogger() => _instance;
@@ -37,8 +35,8 @@ class DebugLogger {
     // Print to console
     debugPrint(logEntry);
 
-    // Show toast if enabled
-    if (showToasts && showToast) {
+    // Show toast if enabled (not supported on web in the same way)
+    if (showToasts && showToast && !kIsWeb) {
       Fluttertoast.showToast(
         msg: '[$tag] ${message.length > 100 ? '${message.substring(0, 100)}...' : message}',
         toastLength: Toast.LENGTH_LONG,
@@ -48,9 +46,6 @@ class DebugLogger {
         fontSize: 12.0,
       );
     }
-
-    // Write to file
-    await _writeToFile(logEntry);
   }
 
   Color _getColorForTag(String tag) {
@@ -68,56 +63,19 @@ class DebugLogger {
     }
   }
 
-  Future<void> _writeToFile(String logEntry) async {
-    // File logging is optional - path_provider may not work in release mode
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/eziplug_debug.log');
-      await file.writeAsString('$logEntry\n', mode: FileMode.append);
-    } catch (e) {
-      // Silently ignore file write errors - in-memory logs and toasts still work
-    }
-  }
-
-  /// Get the log file path
+  /// Get the log file path (returns empty on web)
   Future<String> getLogFilePath() async {
-    final directory = await getApplicationDocumentsDirectory();
-    return '${directory.path}/eziplug_debug.log';
+    return 'In-memory logs only (web compatible)';
   }
 
-  /// Read all logs - from memory (file logging may not work in release)
+  /// Read all logs from memory
   Future<String> readLogsFromFile() async {
-    // In release mode, path_provider may fail, so return in-memory logs
-    if (_logs.isNotEmpty) {
-      return _logs.join('\n');
-    }
-    
-    // Try file as fallback
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/eziplug_debug.log');
-      if (await file.exists()) {
-        return await file.readAsString();
-      }
-      return 'No logs found';
-    } catch (e) {
-      // Return in-memory logs if file access fails
-      return _logs.isEmpty ? 'No logs available (file access failed)' : _logs.join('\n');
-    }
+    return _logs.isEmpty ? 'No logs available' : _logs.join('\n');
   }
 
   /// Clear all logs
   Future<void> clearLogs() async {
     _logs.clear();
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/eziplug_debug.log');
-      if (await file.exists()) {
-        await file.delete();
-      }
-    } catch (e) {
-      debugPrint('Failed to clear log file: $e');
-    }
   }
 }
 

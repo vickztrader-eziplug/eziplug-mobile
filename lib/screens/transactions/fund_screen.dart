@@ -12,75 +12,153 @@ class FundScreen extends StatefulWidget {
   State<FundScreen> createState() => _FundScreenState();
 }
 
-class _FundScreenState extends State<FundScreen> {
+class _FundScreenState extends State<FundScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, top: 16, bottom: 8),
+      padding: const EdgeInsets.only(left: 4, top: 20, bottom: 12),
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
           color: Colors.black87,
+          letterSpacing: 0.5,
         ),
       ),
     );
   }
 
-  Widget profileItem({
+  Widget _buildFundingOption({
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
-    bool showDivider = true,
+    required Color iconBgColor,
+    required int index,
   }) {
-    return Column(
-      children: [
-        ListTile(
-          onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 4,
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 100)),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: child,
           ),
-          leading: Container(
-            width: 45,
-            height: 45,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 22),
-          ),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 14,
-              color: Colors.black87,
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          iconBgColor,
+                          iconBgColor.withOpacity(0.7),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: iconBgColor.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.black.withOpacity(0.5),
-            ),
-          ),
-          trailing: const Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: Colors.black38,
           ),
         ),
-        if (showDivider)
-          Divider(
-            color: AppColors.lightGrey.withOpacity(0.3),
-            height: 0,
-            thickness: 1,
-            indent: 76,
-            endIndent: 16,
-          ),
-      ],
+      ),
     );
   }
 
@@ -91,145 +169,227 @@ class _FundScreenState extends State<FundScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header Section
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
+            // Header Section with gradient
+            Container(
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withOpacity(0.9),
+                  ],
+                ),
+              ),
+              child: Column(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Spacer(),
+                      const Text(
+                        'Wallet',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const Spacer(),
+                      const SizedBox(width: 48),
+                    ],
                   ),
-                  const Spacer(),
-                  const Text(
-                    'Wallet',
-                    style: TextStyle(
+                  const SizedBox(height: 16),
+                  // Wallet illustration
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_rounded,
                       color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      size: 40,
                     ),
                   ),
-                  const Spacer(),
-                  const SizedBox(width: 48),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
-
             // White Content Card with Curve
             Expanded(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(32),
+                      topRight: Radius.circular(32),
+                    ),
                   ),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Funding Wallet Methods Section
-                      _sectionTitle("Funding"),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.lightGrey.withOpacity(0.5),
-                            width: 1,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Drag handle
+                        Center(
+                          child: Container(
+                            margin: const EdgeInsets.only(top: 12, bottom: 8),
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(2),
+                            ),
                           ),
                         ),
-                        child: Column(
-                          children: [
-                            profileItem(
-                              icon: Icons.account_balance_outlined,
-                              title: "Bank Transfer",
-                              subtitle:
-                                  "Fund your naira wallet via bank transfer",
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const BankTransferScreen(),
-                                  ),
-                                );
-                              },
+
+                        // Funding Section
+                        _sectionTitle("Fund Your Wallet"),
+                        _buildFundingOption(
+                          icon: Icons.account_balance_rounded,
+                          title: "Bank Transfer",
+                          subtitle: "Fund via bank transfer to virtual account",
+                          iconBgColor: const Color(0xFF2196F3),
+                          index: 0,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const BankTransferScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildFundingOption(
+                          icon: Icons.credit_card_rounded,
+                          title: "Card Deposit",
+                          subtitle: "Instant funding with debit/credit card",
+                          iconBgColor: const Color(0xFF9C27B0),
+                          index: 1,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CardDepositScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildFundingOption(
+                          icon: Icons.attach_money_rounded,
+                          title: "USD Wallet",
+                          subtitle: "Fund your dollar wallet (Coming Soon)",
+                          iconBgColor: const Color(0xFF4CAF50),
+                          index: 2,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ComingSoonScreen(
+                                  title: 'USD Wallet',
+                                  message: 'USD wallet funding will be available soon',
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+
+                        // Withdrawal Section
+                        _sectionTitle("Withdraw Funds"),
+                        _buildFundingOption(
+                          icon: Icons.send_rounded,
+                          title: "Payout to Bank",
+                          subtitle: "Withdraw to your local bank account",
+                          iconBgColor: const Color(0xFFFF5722),
+                          index: 3,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PayoutScreen(),
+                              ),
+                            );
+                          },
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Info Card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppColors.primary.withOpacity(0.1),
+                                AppColors.primary.withOpacity(0.05),
+                              ],
                             ),
-                            profileItem(
-                              icon: Icons.credit_card_outlined,
-                              title: "Card Deposit",
-                              subtitle:
-                                  "Fund your naira wallet using your card",
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const CardDepositScreen(),
-                                  ),
-                                );
-                              },
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.2),
                             ),
-                            profileItem(
-                              icon: Icons.monetization_on_outlined,
-                              title: "USD (Optional)",
-                              subtitle:
-                                  "Fund your USD wallet using your card or USD account",
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const ComingSoonScreen(
-                                      title: 'USD Wallet',
-                                      message:
-                                          'USD wallet funding will be available soon',
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.info_outline_rounded,
+                                  color: AppColors.primary,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Quick Tip',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: AppColors.primary,
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                              showDivider: false,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Withdrawal Methods Section
-                      _sectionTitle("Withdrawal"),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.lightGrey.withOpacity(0.5),
-                            width: 1,
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Bank transfers are free, while card deposits attract a small fee.',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Column(
-                          children: [
-                            profileItem(
-                              icon: Icons.account_balance_outlined,
-                              title: "Payout to bank",
-                              subtitle: "Withdrawal to your bank account",
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const PayoutScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
