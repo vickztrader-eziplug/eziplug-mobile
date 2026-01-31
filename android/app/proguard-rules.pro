@@ -10,6 +10,29 @@
 -keep class io.flutter.embedding.** { *; }
 
 # ============================================
+# FLUTTER PIGEON (CRITICAL - used by modern Flutter plugins)
+# ============================================
+# Keep ALL Pigeon-generated code
+-keep class dev.flutter.pigeon.** { *; }
+-keep interface dev.flutter.pigeon.** { *; }
+-keepclassmembers class dev.flutter.pigeon.** { *; }
+
+# Keep all classes that implement Pigeon APIs
+-keep class * implements dev.flutter.pigeon.** { *; }
+-keep class **.*Api { *; }
+-keep class **.*Api$* { *; }
+
+# Prevent obfuscation of method names used in method channels
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Keep all native methods
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# ============================================
 # GOOGLE PLAY CORE (Required for Flutter)
 # ============================================
 -dontwarn com.google.android.play.core.**
@@ -74,20 +97,36 @@
 -keep class androidx.security.crypto.** { *; }
 
 # ============================================
-# SHARED PREFERENCES
+# SHARED PREFERENCES (critical for auth)
 # ============================================
 -keep class io.flutter.plugins.sharedpreferences.** { *; }
+-keep class io.flutter.plugins.shared_preferences.** { *; }
+-keep class io.flutter.plugins.shared_preferences_android.** { *; }
+-keep class dev.flutter.pigeon.shared_preferences_android.** { *; }
+
+# ============================================
+# FLUTTER PIGEON (used by many plugins)
+# ============================================
+-keep class dev.flutter.pigeon.** { *; }
+-keep interface dev.flutter.pigeon.** { *; }
+-keepclassmembers class dev.flutter.pigeon.** { *; }
 
 # ============================================
 # PATH PROVIDER
 # ============================================
 -keep class io.flutter.plugins.pathprovider.** { *; }
+-keep class io.flutter.plugins.path_provider.** { *; }
+-keep class io.flutter.plugins.path_provider_android.** { *; }
+-keep class dev.flutter.pigeon.path_provider_android.** { *; }
 
 # ============================================
 # FLUTTERTOAST
 # ============================================
 -keep class io.github.nicosalvato.fluttertoast.** { *; }
+-keep class io.github.nicosalvato.** { *; }
 -keep class com.shashank.sony.fancytoastlib.** { *; }
+-keep class io.flutter.plugins.fluttertoast.** { *; }
+-keep class dev.flutter.pigeon.fluttertoast.** { *; }
 
 # ============================================
 # KOTLIN

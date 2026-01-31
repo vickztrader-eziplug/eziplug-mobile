@@ -32,10 +32,9 @@ android {
 
     buildTypes {
         release {
-            // TEMPORARILY DISABLED - R8 is stripping HTTP classes
-            // Re-enable after identifying which classes need to be kept
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // Re-enabled with comprehensive ProGuard rules
+            isMinifyEnabled = true
+            isShrinkResources = true
             
             // ProGuard rules to keep necessary classes
             proguardFiles(

@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/toast_helper.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
+import '../../services/debug_logger.dart';
 import '../../routes.dart';
 
 class LoginScreenEnhanced extends StatefulWidget {
@@ -182,21 +183,33 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
         // Check if email is verified
         final isEmailVerified = result['isEmailVerified'] as bool? ?? true;
         
+        await debugLogger.log('LOGIN', 'Success! isEmailVerified: $isEmailVerified');
+        
         if (!isEmailVerified) {
           // Email not verified - redirect to verification screen
+          await debugLogger.log('NAV', 'Navigating to email verify screen');
           ToastHelper.showInfo(result['message'] ?? "Please verify your email to continue");
-          Navigator.pushReplacementNamed(
-            context,
-            AppRoutes.emailVerify,
-            arguments: {
-              'email': _emailController.text.trim(),
-              'token': result['token'] ?? '',
-            },
-          );
+          if (mounted) {
+            Navigator.pushReplacementNamed(
+              context,
+              AppRoutes.emailVerify,
+              arguments: {
+                'email': _emailController.text.trim(),
+                'token': result['token'] ?? '',
+              },
+            );
+          }
         } else {
           // Email verified - proceed to main screen
+          await debugLogger.log('NAV', 'Navigating to main screen...');
           ToastHelper.showSuccess(result['message'] ?? "Login successful");
-          Navigator.pushReplacementNamed(context, AppRoutes.main);
+          if (mounted) {
+            await debugLogger.log('NAV', 'Calling pushReplacementNamed to: ${AppRoutes.main}');
+            Navigator.pushReplacementNamed(context, AppRoutes.main);
+            await debugLogger.log('NAV', 'Navigation called successfully');
+          } else {
+            await debugLogger.log('NAV', 'Widget not mounted, skipping navigation');
+          }
         }
       } else {
         final statusCode = result['statusCode'] as int?;
@@ -214,8 +227,9 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
           ToastHelper.showError(result['message'] ?? "Invalid credentials");
         }
       }
-    } catch (e) {
-      ToastHelper.showError("Error processing response: $e");
+    } catch (e, stackTrace) {
+      await debugLogger.log('ERROR', 'Post-login processing error: $e');
+      ToastHelper.showError("Error: $e");
     }
   }
 

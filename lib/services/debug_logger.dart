@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
+// path_provider can fail in release mode, so file logging is optional
 import 'package:path_provider/path_provider.dart';
 
 /// A simple debug logger that:
@@ -67,12 +68,13 @@ class DebugLogger {
   }
 
   Future<void> _writeToFile(String logEntry) async {
+    // File logging is optional - path_provider may not work in release mode
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/eziplug_debug.log');
       await file.writeAsString('$logEntry\n', mode: FileMode.append);
     } catch (e) {
-      debugPrint('Failed to write log to file: $e');
+      // Silently ignore file write errors - in-memory logs and toasts still work
     }
   }
 
@@ -82,8 +84,14 @@ class DebugLogger {
     return '${directory.path}/eziplug_debug.log';
   }
 
-  /// Read all logs from file
+  /// Read all logs - from memory (file logging may not work in release)
   Future<String> readLogsFromFile() async {
+    // In release mode, path_provider may fail, so return in-memory logs
+    if (_logs.isNotEmpty) {
+      return _logs.join('\n');
+    }
+    
+    // Try file as fallback
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/eziplug_debug.log');
@@ -92,7 +100,8 @@ class DebugLogger {
       }
       return 'No logs found';
     } catch (e) {
-      return 'Error reading logs: $e';
+      // Return in-memory logs if file access fails
+      return _logs.isEmpty ? 'No logs available (file access failed)' : _logs.join('\n');
     }
   }
 
