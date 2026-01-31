@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+// Removed SharedPreferences - using FlutterSecureStorage only for release compatibility
 
 class AuthService extends ChangeNotifier {
   static const String baseUrl = Constants.baseUrl;
@@ -50,12 +50,13 @@ class AuthService extends ChangeNotifier {
 
   Future<void> initAuth() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      _token = prefs.getString('token');
-      final userDataString = prefs.getString('userData');
+      // Using FlutterSecureStorage instead of SharedPreferences for release compatibility
+      _token = await _storage.read(key: 'token');
+      final userDataString = await _storage.read(key: 'userData');
 
-      // ✅ ADD ONLY THIS LINE - load onboarding status
-      _hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
+      // Load onboarding status
+      final onboardingStatus = await _storage.read(key: 'hasCompletedOnboarding');
+      _hasCompletedOnboarding = onboardingStatus == 'true';
 
       if (userDataString != null) {
         _user = jsonDecode(userDataString);
@@ -69,7 +70,7 @@ class AuthService extends ChangeNotifier {
       // If anything fails during init, continue anyway
       debugPrint('Error during initAuth: $e');
     } finally {
-      // ✅ Always mark as initialized, even if there were errors
+      // Always mark as initialized, even if there were errors
       _isInitialized = true;
       notifyListeners();
     }
@@ -649,7 +650,7 @@ class AuthService extends ChangeNotifier {
   //   notifyListeners();
   // }
   Future<void> _saveAuth(Map<String, dynamic> payload) async {
-    final prefs = await SharedPreferences.getInstance();
+    // Using FlutterSecureStorage only for release compatibility
     final apiResponse = ApiResponse.fromJson(payload);
     
     // Get token from new format (data.token) or old format (results.token)
@@ -660,18 +661,16 @@ class AuthService extends ChangeNotifier {
     if (token != null) {
       _token = token;
       await _storage.write(key: 'token', value: token);
-      await prefs.setString('token', _token!);
     }
 
     if (user != null) {
       _user = user;
-      await _storage.write(key: 'user', value: jsonEncode(user));
-      await prefs.setString('userData', jsonEncode(user));
+      await _storage.write(key: 'userData', value: jsonEncode(user));
 
-      // ✅ ADD ONLY THESE LINES - mark onboarding as completed on first login
+      // Mark onboarding as completed on first login
       if (!_hasCompletedOnboarding) {
         _hasCompletedOnboarding = true;
-        await prefs.setBool('hasCompletedOnboarding', true);
+        await _storage.write(key: 'hasCompletedOnboarding', value: 'true');
       }
     }
 
@@ -681,8 +680,7 @@ class AuthService extends ChangeNotifier {
 
   /// Mark onboarding as completed (call this from your onboarding screen)
   Future<void> completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('hasCompletedOnboarding', true);
+    await _storage.write(key: 'hasCompletedOnboarding', value: 'true');
     _hasCompletedOnboarding = true;
     notifyListeners();
   }
@@ -697,10 +695,10 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<String?> getToken2() async {
+    // Using FlutterSecureStorage instead of SharedPreferences
     if (_token != null) return _token;
 
-    final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('token');
+    _token = await _storage.read(key: 'token');
     return _token;
   }
 
@@ -731,9 +729,8 @@ class AuthService extends ChangeNotifier {
         final data = jsonDecode(response.body);
         _user = data;
 
-        // Update stored data
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('userData', jsonEncode(_user));
+        // Update stored data using FlutterSecureStorage
+        await _storage.write(key: 'userData', value: jsonEncode(_user));
 
         notifyListeners();
         return true;
@@ -820,14 +817,12 @@ class AuthService extends ChangeNotifier {
 
   /// Clear authentication
   Future<void> _clearAuth() async {
+    // Using FlutterSecureStorage only
     await _storage.delete(key: 'token');
     await _storage.delete(key: 'user');
+    await _storage.delete(key: 'userData');
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('userData');
-
-    // ✅ IMPORTANT: Keep onboarding status so user doesn't see it again
+    // IMPORTANT: Keep onboarding status so user doesn't see it again
     // Only remove token and user data, NOT hasCompletedOnboarding
 
     _token = null;

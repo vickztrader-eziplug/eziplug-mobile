@@ -1,7 +1,7 @@
 import 'package:cashpoint/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 
 class LeaderboardScreen extends StatefulWidget {
@@ -77,8 +77,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   Future<String> _getToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('token') ?? '';
+      const storage = FlutterSecureStorage();
+      return await storage.read(key: 'token') ?? '';
     } catch (e) {
       return '';
     }
