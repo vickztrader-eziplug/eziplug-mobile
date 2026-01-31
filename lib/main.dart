@@ -9,7 +9,20 @@ import 'screens/splash/splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final authService = AuthService();
-  await authService.initAuth();
+  
+  // Initialize auth with a timeout to prevent blocking the app
+  try {
+    await authService.initAuth().timeout(
+      const Duration(seconds: 15),
+      onTimeout: () {
+        // If initialization takes too long, continue anyway
+        // The splash screen will handle re-checking
+        debugPrint('Auth initialization timed out, continuing...');
+      },
+    );
+  } catch (e) {
+    debugPrint('Auth initialization error: $e');
+  }
 
   runApp(
     ChangeNotifierProvider<AuthService>.value(

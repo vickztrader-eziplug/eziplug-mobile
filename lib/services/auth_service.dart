@@ -1,4 +1,5 @@
 // lib/services/auth_service.dart
+import 'dart:async';
 import 'dart:convert';
 import 'package:cashpoint/core/utils/constants.dart';
 import 'package:cashpoint/core/utils/api_response.dart';
@@ -45,25 +46,30 @@ class AuthService extends ChangeNotifier {
       double.tryParse(_userData?['wallet_usd']?.toString() ?? '0') ?? 0.0;
 
   Future<void> initAuth() async {
-    final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('token');
-    final userDataString = prefs.getString('userData');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _token = prefs.getString('token');
+      final userDataString = prefs.getString('userData');
 
-    // ✅ ADD ONLY THIS LINE - load onboarding status
-    _hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
+      // ✅ ADD ONLY THIS LINE - load onboarding status
+      _hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
 
-    if (userDataString != null) {
-      _user = jsonDecode(userDataString);
+      if (userDataString != null) {
+        _user = jsonDecode(userDataString);
+      }
+
+      // Check if token is valid (you may already have this)
+      if (_token != null && _token!.isNotEmpty) {
+        await checkAuth();
+      }
+    } catch (e) {
+      // If anything fails during init, continue anyway
+      debugPrint('Error during initAuth: $e');
+    } finally {
+      // ✅ Always mark as initialized, even if there were errors
+      _isInitialized = true;
+      notifyListeners();
     }
-
-    // Check if token is valid (you may already have this)
-    if (_token != null && _token!.isNotEmpty) {
-      await checkAuth();
-    }
-
-    // ✅ ADD ONLY THIS LINE - mark as initialized
-    _isInitialized = true;
-    notifyListeners();
   }
   // Future<void> initAuth() async {
   //   final prefs = await SharedPreferences.getInstance();
@@ -680,7 +686,7 @@ class AuthService extends ChangeNotifier {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
           },
-        );
+        ).timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 200) {
           final result = jsonDecode(response.body);
@@ -710,7 +716,12 @@ class AuthService extends ChangeNotifier {
           await _clearAuth();
         }
       } catch (e) {
-        await _clearAuth();
+        debugPrint('checkAuth error: $e');
+        // Don't clear auth on timeout - user might just have poor connection
+        // Only clear if it's an auth error
+        if (e is! TimeoutException) {
+          await _clearAuth();
+        }
       }
     }
   }
