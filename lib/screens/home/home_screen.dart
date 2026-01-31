@@ -197,113 +197,113 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: Colors.white,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.only(top: 12, bottom: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 22,
-                            backgroundColor: AppColors.primary.withOpacity(0.2),
-                            backgroundImage: _userProfilePicture.isNotEmpty
-                                ? NetworkImage(_userProfilePicture)
-                                : null,
-                            child: _userProfilePicture.isEmpty
-                                ? Text(
-                                    _userName.isNotEmpty
-                                        ? _userName[0].toUpperCase()
-                                        : 'U',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primary,
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          const SizedBox(width: 10),
-                          Flexible(
-                            child: RichText(
-                              overflow: TextOverflow.ellipsis,
-                              text: TextSpan(
-                                text: 'Welcome, ',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 15,
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text: '${_userName.split(' ').first}!',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                    ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: AppColors.primary.withOpacity(0.2),
+                              backgroundImage: _userProfilePicture.isNotEmpty
+                                  ? NetworkImage(_userProfilePicture)
+                                  : null,
+                              child: _userProfilePicture.isEmpty
+                                  ? Text(
+                                      _userName.isNotEmpty
+                                          ? _userName[0].toUpperCase()
+                                          : 'U',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primary,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 10),
+                            Flexible(
+                              child: RichText(
+                                overflow: TextOverflow.ellipsis,
+                                text: TextSpan(
+                                  text: 'Welcome, ',
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 15,
                                   ),
-                                ],
+                                  children: [
+                                    TextSpan(
+                                      text: '${_userName.split(' ').first}!',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Notification Button
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.notification,
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.notifications_none_rounded,
+                              size: 26,
+                            ),
+                          ),
+                          Positioned(
+                            right: 6,
+                            top: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  '3',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    // Notification Button
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            Navigator.pushNamed(
-                              context,
-                              AppRoutes.notification,
-                            );
-                          },
-                          icon: const Icon(
-                            Icons.notifications_none_rounded,
-                            size: 26,
-                          ),
-                        ),
-                        Positioned(
-                          right: 6,
-                          top: 8,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
-                            child: const Center(
-                              child: Text(
-                                '3',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 20),
 
-                // Balance Cards - Full Width, Swipeable
+                // Balance Cards - Horizontal Scroll (Old Design Style)
                 _isLoadingUserData
                     ? const Center(
                         child: Padding(
@@ -313,77 +313,56 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       )
-                    : Column(
-                        children: [
-                          SizedBox(
-                            height: 160,
-                            child: PageView(
-                              controller: _walletPageController,
-                              onPageChanged: (index) {
-                                setState(() {
-                                  _currentWalletPage = index;
-                                });
-                              },
-                              children: [
-                                _balanceCard(
-                                  context,
-                                  currency: '₦',
-                                  currencyLabel: 'Naira Balance',
-                                  balance: _formatBalance(_walletNaira),
-                                ),
-                                _balanceCard(
-                                  context,
-                                  currency: '\$',
-                                  currencyLabel: 'Dollar Balance',
-                                  balance: _formatBalance(_walletDollar),
-                                ),
-                              ],
+                    : SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.22,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          children: [
+                            _balanceCard(
+                              context,
+                              currency: '₦',
+                              currencyLabel: 'Naira Balance',
+                              balance: _formatBalance(_walletNaira),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          // Wallet Indicator Dots
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                              2,
-                              (index) => Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                width: _currentWalletPage == index ? 24 : 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: _currentWalletPage == index
-                                      ? AppColors.primary
-                                      : AppColors.primary.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
+                            const SizedBox(width: 12),
+                            _balanceCard(
+                              context,
+                              currency: '\$',
+                              currencyLabel: 'Dollar Balance',
+                              balance: _formatBalance(_walletDollar),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
 
                 const SizedBox(height: 24),
 
-                const Text(
-                  'Quick Actions',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: const Text(
+                    'Quick Actions',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
                   ),
                 ),
 
                 const SizedBox(height: 12),
 
                 // Quick Actions Grid - 2 per row, larger cards
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.1,
-                  children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.3,
+                    children: [
                     _quickActionCard(
                       context,
                       icon: Icons.card_giftcard_rounded,
@@ -416,7 +395,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: const Color(0xFFE84393),
                       destination: const MoreServicesScreen(),
                     ),
-                  ],
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 20),
@@ -485,7 +465,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
   }
 
-  /// New Quick Action Card - larger, more appealing
+  /// Quick Action Card - Old layout style with modern colors
   Widget _quickActionCard(
     BuildContext context, {
     required IconData icon,
@@ -502,47 +482,47 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withOpacity(0.2),
-            width: 1,
-          ),
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: color,
-                borderRadius: BorderRadius.circular(12),
+                shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
                 color: Colors.white,
-                size: 28,
+                size: 24,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
                 color: Colors.black87,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               subtitle,
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 11,
                 color: Colors.grey.shade600,
+                height: 1.2,
               ),
             ),
           ],
@@ -619,9 +599,10 @@ class _HomeScreenState extends State<HomeScreen> {
     required String currencyLabel,
     required String balance,
   }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
     return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      width: screenWidth * 0.85,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(

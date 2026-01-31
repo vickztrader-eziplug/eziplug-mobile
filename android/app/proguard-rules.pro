@@ -91,10 +91,23 @@
 -keep class * implements com.google.gson.JsonDeserializer
 
 # ============================================
-# FLUTTER SECURE STORAGE
+# FLUTTER SECURE STORAGE (CRITICAL)
 # ============================================
 -keep class com.it_nomads.fluttersecurestorage.** { *; }
+-keep class com.it_nomads.** { *; }
+-keepclassmembers class com.it_nomads.fluttersecurestorage.** { *; }
 -keep class androidx.security.crypto.** { *; }
+-keep class androidx.security.** { *; }
+
+# Keep the plugin method channels
+-keep class io.flutter.plugin.common.** { *; }
+-keep class io.flutter.plugin.common.MethodChannel { *; }
+-keep class io.flutter.plugin.common.MethodChannel$* { *; }
+-keep class io.flutter.plugin.common.MethodCall { *; }
+
+# Keep all plugin registrants
+-keep class io.flutter.plugins.GeneratedPluginRegistrant { *; }
+-keepclassmembers class io.flutter.plugins.GeneratedPluginRegistrant { *; }
 
 # ============================================
 # SHARED PREFERENCES (critical for auth)

@@ -27,7 +27,7 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
       
-      # Build Release APK - now using FlutterSecureStorage instead of SharedPreferences
+      # Build Release APK (dependencies fixed in pubspec.yaml)
       - name: Build Release APK
         run: flutter build apk --release
       
