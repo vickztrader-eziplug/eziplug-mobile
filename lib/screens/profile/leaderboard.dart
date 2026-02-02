@@ -1,8 +1,10 @@
-import 'package:cashpoint/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
+
+import '../../core/theme/app_colors.dart';
+import '../../core/utils/constants.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -11,14 +13,56 @@ class LeaderboardScreen extends StatefulWidget {
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
 }
 
-class _LeaderboardScreenState extends State<LeaderboardScreen> {
+class _LeaderboardScreenState extends State<LeaderboardScreen>
+    with SingleTickerProviderStateMixin {
   List<LeaderboardUser> _leaderboardData = [];
   bool _isLoading = true;
   String? _error;
+  String _selectedPeriod = 'month';
+  String _selectedType = 'all';
+  
+  // Rewards info
+  Map<String, dynamic> _rewards = {};
+  Map<String, dynamic> _periodInfo = {};
+  Map<String, dynamic>? _currentUser;
+  Map<String, dynamic> _stats = {};
+
+  late TabController _tabController;
+
+  final List<Map<String, String>> _periodOptions = [
+    {'value': 'week', 'label': 'This Week'},
+    {'value': 'month', 'label': 'This Month'},
+    {'value': 'year', 'label': 'This Year'},
+    {'value': 'all', 'label': 'All Time'},
+  ];
+
+  final List<Map<String, dynamic>> _typeOptions = [
+    {'value': 'all', 'label': 'All Trades', 'icon': Icons.swap_horiz},
+    {'value': 'crypto', 'label': 'Crypto', 'icon': Icons.currency_bitcoin},
+    {'value': 'giftcard', 'label': 'Gift Cards', 'icon': Icons.card_giftcard},
+  ];
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    _fetchLeaderboard();
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    final types = ['all', 'crypto', 'giftcard'];
+    setState(() {
+      _selectedType = types[_tabController.index];
+    });
     _fetchLeaderboard();
   }
 
@@ -31,7 +75,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     try {
       final token = await _getToken();
       final response = await http.get(
-        Uri.parse('https://cashpoint.deovaze.com/api/leaderboard'),
+        Uri.parse(
+            '${Constants.baseUrl}/leaderboard?period=$_selectedPeriod&type=$_selectedType'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -40,19 +85,28 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        
+
         if (data['success'] == true) {
-          final List<dynamic> leaderboardList = data['result']['leaderboard'];
-          
+          final result = data['result'] ?? data['data'] ?? {};
+          final List<dynamic> leaderboardList = result['leaderboard'] ?? [];
+
           setState(() {
             _leaderboardData = leaderboardList.map((item) {
               return LeaderboardUser(
-                rank: item['rank'],
-                name: item['user']['name'],
-                avatar: item['user']['avatar'],
-                totalVolume: item['total_volume'],
+                rank: item['rank'] ?? 0,
+                name: item['user']?['name'] ?? 'Unknown',
+                avatar: item['user']?['avatar'],
+                totalVolume: double.tryParse(item['total_volume']?.toString() ?? '0') ?? 0,
+                isCurrentUser: item['user']?['is_current_user'] ?? false,
               );
             }).toList();
+            
+            _rewards = Map<String, dynamic>.from(result['rewards'] ?? {});
+            _periodInfo = Map<String, dynamic>.from(result['period'] ?? {});
+            _currentUser = result['current_user'] != null 
+                ? Map<String, dynamic>.from(result['current_user']) 
+                : null;
+            _stats = Map<String, dynamic>.from(result['stats'] ?? {});
             _isLoading = false;
           });
         } else {
@@ -84,147 +138,440 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     }
   }
 
-  String _formatVolume(String volume) {
-    try {
-      final double amount = double.parse(volume);
-      if (amount >= 1000000) {
-        return '₦${(amount / 1000000).toStringAsFixed(1)}M';
-      } else if (amount >= 1000) {
-        return '₦${(amount / 1000).toStringAsFixed(1)}K';
-      }
-      return '₦${amount.toStringAsFixed(0)}';
-    } catch (e) {
-      return '₦0';
+  String _formatVolume(double volume) {
+    if (volume >= 1000000) {
+      return '₦${(volume / 1000000).toStringAsFixed(1)}M';
+    } else if (volume >= 1000) {
+      return '₦${(volume / 1000).toStringAsFixed(1)}K';
     }
+    return '₦${volume.toStringAsFixed(0)}';
+  }
+
+  String _formatReward(dynamic amount) {
+    if (amount == null) return '₦0';
+    final value = double.tryParse(amount.toString()) ?? 0;
+    if (value >= 1000) {
+      return '₦${(value / 1000).toStringAsFixed(0)}K';
+    }
+    return '₦${value.toStringAsFixed(0)}';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          // Gradient Header
+          _buildHeader(),
+          
+          // Tab Bar for trade types
+          _buildTabBar(),
+          
+          // Content
+          Expanded(
+            child: _isLoading
+                ? _buildLoadingState()
+                : _error != null
+                    ? _buildErrorState()
+                    : RefreshIndicator(
+                        onRefresh: _fetchLeaderboard,
+                        color: AppColors.primary,
+                        child: _buildContent(),
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary,
+            AppColors.primary.withOpacity(0.85),
+            AppColors.primaryLight,
+          ],
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
           children: [
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 220,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            // App Bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'Leaderboard',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+            ),
+            
+            // Period Selector
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: _buildPeriodSelector(),
+            ),
+
+            // Rewards Banner
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+              child: _buildRewardsBanner(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPeriodSelector() {
+    return Container(
+      height: 36,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: _periodOptions.map((option) {
+          final isSelected = _selectedPeriod == option['value'];
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _selectedPeriod = option['value']!);
+                _fetchLeaderboard();
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Text(
+                    option['label']!,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected ? AppColors.primary : Colors.white.withOpacity(0.9),
+                    ),
+                  ),
                 ),
               ),
-              child: SafeArea(
-                child: Column(
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildRewardsBanner() {
+    final first = _formatReward(_rewards['first_place']);
+    final second = _formatReward(_rewards['second_place']);
+    final third = _formatReward(_rewards['third_place']);
+    final daysRemaining = _periodInfo['days_remaining'];
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.2),
+            Colors.white.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.emoji_events, color: Color(0xFFFFD700), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Monthly Rewards',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withOpacity(0.95),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildRewardItem('🥈', '2nd', second),
+              _buildRewardItem('🥇', '1st', first, isFirst: true),
+              _buildRewardItem('🥉', '3rd', third),
+            ],
+          ),
+          if (daysRemaining != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${daysRemaining is num ? daysRemaining.abs().toInt() : daysRemaining} days remaining',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withOpacity(0.9),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRewardItem(String emoji, String place, String amount, {bool isFirst = false}) {
+    return Column(
+      children: [
+        Text(
+          emoji,
+          style: TextStyle(fontSize: isFirst ? 32 : 24),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          place,
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.white.withOpacity(0.8),
+          ),
+        ),
+        Text(
+          amount,
+          style: TextStyle(
+            fontSize: isFirst ? 16 : 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      color: Colors.white,
+      child: TabBar(
+        controller: _tabController,
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.textSecondary,
+        indicatorColor: AppColors.primary,
+        indicatorWeight: 3,
+        labelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        tabs: _typeOptions.map((option) {
+          return Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(option['icon'] as IconData, size: 16),
+                const SizedBox(width: 6),
+                Text(option['label'] as String),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Column(
+        children: [
+          // Current User Rank Card (if not in top 3)
+          if (_currentUser != null && (_currentUser!['rank'] ?? 0) > 3)
+            _buildCurrentUserCard(),
+          
+          // Top 3 Podium
+          if (_leaderboardData.length >= 3)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              child: _buildPodium(),
+            ),
+          
+          // Stats Summary
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+            child: _buildStatsSummary(),
+          ),
+          
+          // Full Leaderboard
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    const SizedBox(height: 30),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          const Expanded(
-                            child: Text(
-                              'Leaderboard',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.format_list_numbered,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Full Rankings',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textColor,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${_leaderboardData.length} traders',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 16),
+                if (_leaderboardData.isNotEmpty)
+                  ..._leaderboardData.map((user) => _buildLeaderboardItem(user))
+                else
+                  _buildEmptyState(),
+              ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                        ),
-                      )
-                    : _error != null
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.error_outline,
-                                  size: 60,
-                                  color: Colors.red.withOpacity(0.5),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _error!,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(color: Colors.red),
-                                ),
-                                const SizedBox(height: 16),
-                                ElevatedButton(
-                                  onPressed: _fetchLeaderboard,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text('Retry'),
-                                ),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _fetchLeaderboard,
-                            color: AppColors.primary,
-                            child: SingleChildScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
-                              child: Column(
-                                children: [
-                                  // Top 3 Podium
-                                  if (_leaderboardData.length >= 3)
-                                    _buildPodium(),
-                                  const SizedBox(height: 30),
-                                  // Full Leaderboard List
-                                  if (_leaderboardData.isNotEmpty)
-                                    _buildLeaderboardList(),
-                                  if (_leaderboardData.isEmpty)
-                                    _buildEmptyState(),
-                                ],
-                              ),
-                            ),
-                          ),
-              ),
-            ),
+  Widget _buildCurrentUserCard() {
+    final rank = _currentUser!['rank'] ?? 0;
+    final volume = double.tryParse(_currentUser!['total_volume']?.toString() ?? '0') ?? 0;
+    
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withOpacity(0.1),
+            AppColors.primaryLight.withOpacity(0.05),
           ],
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '#$rank',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your Current Rank',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  _formatVolume(volume),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              'Keep Trading!',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -235,156 +582,158 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     final second = top3.length > 1 ? top3[1] : null;
     final third = top3.length > 2 ? top3[2] : null;
 
-    return SizedBox(
-      height: 220,
-      child: Stack(
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
         children: [
-          // Second Place (Left)
-          if (second != null)
-            Positioned(
-              left: 0,
-              bottom: 30,
-              child: _buildPodiumProfile(
-                name: second.name,
-                imageUrl: second.avatar,
-                position: 2,
-                volume: second.totalVolume,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFDD835).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.emoji_events,
+                  color: Color(0xFFFDD835),
+                  size: 16,
+                ),
               ),
-            ),
-          // First Place (Center)
-          if (first != null)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 60,
-              child: _buildPodiumProfile(
-                name: first.name,
-                imageUrl: first.avatar,
-                position: 1,
-                volume: first.totalVolume,
-                isWinner: true,
+              const SizedBox(width: 8),
+              const Text(
+                'Top Traders',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor,
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 180,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Second Place (Left)
+                if (second != null)
+                  Expanded(
+                    child: _buildPodiumItem(
+                      user: second,
+                      height: 100,
+                      medalColor: const Color(0xFFB0BEC5),
+                      medalEmoji: '🥈',
+                    ),
+                  ),
+                // First Place (Center)
+                if (first != null)
+                  Expanded(
+                    child: _buildPodiumItem(
+                      user: first,
+                      height: 130,
+                      medalColor: const Color(0xFFFDD835),
+                      medalEmoji: '🥇',
+                      isFirst: true,
+                    ),
+                  ),
+                // Third Place (Right)
+                if (third != null)
+                  Expanded(
+                    child: _buildPodiumItem(
+                      user: third,
+                      height: 80,
+                      medalColor: const Color(0xFFFFAB91),
+                      medalEmoji: '🥉',
+                    ),
+                  ),
+              ],
             ),
-          // Third Place (Right)
-          if (third != null)
-            Positioned(
-              right: 0,
-              bottom: 10,
-              child: _buildPodiumProfile(
-                name: third.name,
-                imageUrl: third.avatar,
-                position: 3,
-                volume: third.totalVolume,
-              ),
-            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPodiumProfile({
-    required String name,
-    String? imageUrl,
-    required int position,
-    required String volume,
-    bool isWinner = false,
+  Widget _buildPodiumItem({
+    required LeaderboardUser user,
+    required double height,
+    required Color medalColor,
+    required String medalEmoji,
+    bool isFirst = false,
   }) {
-    Color borderColor;
-    Color badgeColor;
-
-    switch (position) {
-      case 1:
-        borderColor = const Color(0xFFFDD835);
-        badgeColor = const Color(0xFFFDD835);
-        break;
-      case 2:
-        borderColor = const Color(0xFFB0BEC5);
-        badgeColor = const Color(0xFFB0BEC5);
-        break;
-      case 3:
-        borderColor = const Color(0xFFFFAB91);
-        badgeColor = const Color(0xFFFFAB91);
-        break;
-      default:
-        borderColor = Colors.grey;
-        badgeColor = Colors.grey;
-    }
-
-    final String imageUrl_ = imageUrl != null && imageUrl.isNotEmpty
-        ? 'https://cashpoint.deovaze.com/storage/$imageUrl'
+    final String imageUrl = user.avatar != null && user.avatar!.isNotEmpty
+        ? '${Constants.baseUrl.replaceAll('/api', '')}/storage/${user.avatar}'
         : '';
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
+        // User Avatar with Medal
         Stack(
           clipBehavior: Clip.none,
           children: [
             Container(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: borderColor, width: 3),
+                border: Border.all(color: medalColor, width: 3),
+                boxShadow: isFirst
+                    ? [
+                        BoxShadow(
+                          color: medalColor.withOpacity(0.4),
+                          blurRadius: 12,
+                          spreadRadius: 2,
+                        ),
+                      ]
+                    : null,
               ),
               child: CircleAvatar(
-                radius: isWinner ? 40 : 32,
+                radius: isFirst ? 32 : 26,
                 backgroundImage:
-                    imageUrl_.isNotEmpty ? NetworkImage(imageUrl_) : null,
+                    imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
                 backgroundColor: AppColors.lightGrey.withOpacity(0.3),
-                child: imageUrl_.isEmpty
+                child: imageUrl.isEmpty
                     ? Icon(
                         Icons.person,
-                        size: isWinner ? 35 : 28,
+                        size: isFirst ? 28 : 22,
                         color: Colors.grey,
                       )
                     : null,
               ),
             ),
-            if (isWinner)
-              Positioned(
-                top: -5,
-                right: -5,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: badgeColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.emoji_events,
-                    color: Colors.white,
-                    size: 16,
-                  ),
+            Positioned(
+              bottom: -8,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Text(
+                  medalEmoji,
+                  style: TextStyle(fontSize: isFirst ? 24 : 18),
                 ),
               ),
-            if (!isWinner)
-              Positioned(
-                bottom: -5,
-                right: -5,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: badgeColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: Text(
-                    '$position',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
+            ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
+        // User Name
         Text(
-          name,
+          user.name,
           style: TextStyle(
-            fontSize: isWinner ? 14 : 12,
+            fontSize: isFirst ? 13 : 11,
             fontWeight: FontWeight.w600,
             color: AppColors.textColor,
           ),
@@ -392,29 +741,169 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+        const SizedBox(height: 2),
+        // Volume
+        Text(
+          _formatVolume(user.totalVolume),
+          style: TextStyle(
+            fontSize: isFirst ? 12 : 10,
+            fontWeight: FontWeight.w500,
+            color: AppColors.primary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Podium Base
+        Container(
+          width: double.infinity,
+          height: height,
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                medalColor.withOpacity(0.3),
+                medalColor.withOpacity(0.5),
+              ],
+            ),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              '#${user.rank}',
+              style: TextStyle(
+                fontSize: isFirst ? 20 : 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildLeaderboardList() {
+  Widget _buildStatsSummary() {
+    final totalParticipants = _stats['total_participants'] ?? 0;
+    final totalVolume = double.tryParse(_stats['total_volume']?.toString() ?? '0') ?? 0;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildStatItem(
+              icon: Icons.people_outline,
+              label: 'Traders',
+              value: totalParticipants.toString(),
+              color: AppColors.info,
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 40,
+            color: AppColors.lightGrey.withOpacity(0.3),
+          ),
+          Expanded(
+            child: _buildStatItem(
+              icon: Icons.trending_up,
+              label: 'Total Volume',
+              value: _formatVolume(totalVolume),
+              color: AppColors.success,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
     return Column(
-      children: _leaderboardData.map((user) {
-        return _buildLeaderboardItem(user);
-      }).toList(),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textColor,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildLeaderboardItem(LeaderboardUser user) {
     final String imageUrl = user.avatar != null && user.avatar!.isNotEmpty
-        ? 'https://cashpoint.deovaze.com/storage/${user.avatar}'
+        ? '${Constants.baseUrl.replaceAll('/api', '')}/storage/${user.avatar}'
         : '';
 
+    Color rankColor;
+    IconData? rankIcon;
+    
+    switch (user.rank) {
+      case 1:
+        rankColor = const Color(0xFFFDD835);
+        rankIcon = Icons.emoji_events;
+        break;
+      case 2:
+        rankColor = const Color(0xFFB0BEC5);
+        rankIcon = Icons.emoji_events;
+        break;
+      case 3:
+        rankColor = const Color(0xFFFFAB91);
+        rankIcon = Icons.emoji_events;
+        break;
+      default:
+        rankColor = AppColors.lightGrey;
+        rankIcon = null;
+    }
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: user.isCurrentUser 
+            ? AppColors.primary.withOpacity(0.08)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: user.isCurrentUser 
+            ? Border.all(color: AppColors.primary.withOpacity(0.3))
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -427,97 +916,200 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         children: [
           // Rank Badge
           Container(
-            width: 32,
-            height: 32,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               color: user.rank <= 3
-                  ? AppColors.primary.withOpacity(0.1)
-                  : AppColors.lightGrey.withOpacity(0.3),
+                  ? rankColor.withOpacity(0.2)
+                  : AppColors.lightGrey.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: Text(
-                '#${user.rank}',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: user.rank <= 3 ? AppColors.primary : AppColors.textColor,
-                ),
-              ),
+              child: rankIcon != null
+                  ? Icon(rankIcon, color: rankColor, size: 18)
+                  : Text(
+                      '#${user.rank}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textColor,
+                      ),
+                    ),
             ),
           ),
           const SizedBox(width: 12),
           // Avatar
-          CircleAvatar(
-            radius: 22,
-            backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-            backgroundColor: AppColors.lightGrey.withOpacity(0.3),
-            child: imageUrl.isEmpty
-                ? const Icon(Icons.person, size: 22, color: Colors.grey)
-                : null,
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: user.rank <= 3 ? rankColor : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            child: CircleAvatar(
+              radius: 20,
+              backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+              backgroundColor: AppColors.lightGrey.withOpacity(0.3),
+              child: imageUrl.isEmpty
+                  ? const Icon(Icons.person, size: 20, color: Colors.grey)
+                  : null,
+            ),
           ),
           const SizedBox(width: 12),
           // Name
           Expanded(
-            child: Text(
-              user.name,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textColor,
-              ),
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.name,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: user.isCurrentUser ? AppColors.primary : AppColors.textColor,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (user.isCurrentUser)
+                  const Text(
+                    'You',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(width: 8),
           // Volume
-          Text(
-            _formatVolume(user.totalVolume),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textColor,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ),
-          const SizedBox(width: 4),
-          const Icon(
-            Icons.star,
-            color: Color(0xFFFDD835),
-            size: 18,
+            child: Text(
+              _formatVolume(user.totalVolume),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildLoadingState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.leaderboard_outlined,
-            size: 80,
-            color: AppColors.textColor.withOpacity(0.3),
-          ),
+          const CircularProgressIndicator(color: AppColors.primary),
           const SizedBox(height: 16),
           Text(
-            'No Leaderboard Data',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textColor.withOpacity(0.6),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Check back later for rankings',
+            'Loading leaderboard...',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textColor.withOpacity(0.5),
+              color: AppColors.textSecondary,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.red.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _error ?? 'Something went wrong',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _fetchLeaderboard,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Try Again'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.leaderboard_outlined,
+                size: 48,
+                color: AppColors.primary.withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No Rankings Yet',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Start trading to appear on the leaderboard!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -528,12 +1120,14 @@ class LeaderboardUser {
   final int rank;
   final String name;
   final String? avatar;
-  final String totalVolume;
+  final double totalVolume;
+  final bool isCurrentUser;
 
   LeaderboardUser({
     required this.rank,
     required this.name,
     this.avatar,
     required this.totalVolume,
+    this.isCurrentUser = false,
   });
 }

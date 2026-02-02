@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class Constants {
   static const String baseUrl =
-      // "http://127.0.0.1:8000/api"; // For local testing
-      "https://app.eziplug.app/api"; // Production URL
+      "http://127.0.0.1:8000/api"; // For local testing
+      // "https://app.eziplug.app/api"; // Production URL
 
   // App Info
   static const String appName = 'Eziplug';
@@ -63,6 +63,17 @@ class Constants {
   static const giftCardHistory = '$baseUrl/giftcard/history';
   static const cryotoHistory = '$baseUrl/crypto/history';
   
+  // Leaderboard Endpoints
+  static const leaderboard = '$baseUrl/leaderboard';
+  static const leaderboardCrypto = '$baseUrl/leaderboard/crypto';
+  static const leaderboardGiftcard = '$baseUrl/leaderboard/giftcard';
+
+  // KYC Endpoints
+  static const kycStatus = '$baseUrl/kyc/status';
+  static const kycTier2 = '$baseUrl/kyc/tier2';
+  static const kycTier3 = '$baseUrl/kyc/tier3';
+  static const kycHistory = '$baseUrl/kyc/history';
+
   // Unified Transactions Endpoint (replaces individual history endpoints)
   static const transactions = '$baseUrl/transactions';
   static const transactionDetails = '$baseUrl/transactions'; // Append /{reference}

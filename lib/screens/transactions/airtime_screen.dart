@@ -8,8 +8,8 @@ import '../../core/utils/constants.dart';
 import '../../core/utils/api_response.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
+import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/pin_entry_screen.dart';
 import '../reusable/receipt_screen.dart';
 
 class AirtimeScreen extends StatefulWidget {
@@ -263,23 +263,24 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
       return;
     }
 
-    // Navigate to PIN screen
+    // Show PIN verification modal
     if (!mounted) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PinEntryScreen(
-          title: 'Confirm Purchase',
-          subtitle: 'Enter your 4 digit PIN to buy ₦$amount airtime',
-          onPinComplete: (pin) => _purchaseAirtime(pin),
-          onForgotPin: () {
-            Navigator.pop(context);
-            _showSnackBar('Contact support to reset PIN', Colors.orange);
-          },
-        ),
-      ),
+    final pin = await PinVerificationModal.show(
+      context: context,
+      title: 'Confirm Purchase',
+      subtitle: 'Enter your 4-digit PIN to confirm this transaction',
+      transactionType: 'Airtime Purchase',
+      recipient: _phoneController.text,
+      amount: '₦${_formatBalance(amount.toDouble())}',
+      onForgotPin: () {
+        _showSnackBar('Go to Profile > PIN Management to reset your PIN', Colors.orange);
+      },
     );
+
+    if (pin != null && pin.length == 4) {
+      _purchaseAirtime(pin);
+    }
   }
 
   Future<void> _purchaseAirtime(String pin) async {
@@ -297,7 +298,6 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
       // Check balance before proceeding
       if (_walletNaira < amount) {
         if (!mounted) return;
-        Navigator.pop(context); // Close PIN screen
         _showSnackBar(
           'Insufficient balance. Please fund your wallet',
           Colors.red,
@@ -343,8 +343,6 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
           });
         }
 
-        Navigator.pop(context); // Close PIN screen
-
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -378,8 +376,6 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
           ),
         );
       } else if (response.statusCode == 400) {
-        Navigator.pop(context); // Close PIN screen
-
         // Check for specific error messages
         if (responseData['message']?.toLowerCase().contains('insufficient') ==
             true) {
@@ -392,8 +388,6 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
         } else if (responseData['message']?.toLowerCase().contains('pin') ==
             true) {
           _showSnackBar(responseData['message'] ?? 'Invalid PIN', Colors.red);
-          // Don't close PIN screen for invalid PIN - let user retry
-          return;
         } else {
           _showSnackBar(
             responseData['message'] ?? 'Transaction failed',
@@ -401,12 +395,10 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
           );
         }
       } else if (response.statusCode == 401) {
-        Navigator.pop(context); // Close PIN screen
         _showSnackBar('Session expired. Please login again', Colors.red);
         await authService.logout();
         Navigator.pushReplacementNamed(context, '/login');
       } else {
-        Navigator.pop(context);
         _showSnackBar(
           responseData['message'] ?? 'Failed to purchase airtime',
           Colors.red,
@@ -414,7 +406,6 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      Navigator.pop(context); // Close PIN screen
       _showSnackBar(e.toString().replaceAll('Exception: ', ''), Colors.red);
     } finally {
       if (mounted) setState(() => _isLoading = false);

@@ -49,6 +49,9 @@ class AuthService extends ChangeNotifier {
   
   /// Check if user's email is verified
   bool get isEmailVerified => _userData?['email_verified_at'] != null;
+  
+  /// Check if user has set up their PIN
+  bool get isPinSet => _userData?['has_pin'] == true;
 
   Future<void> initAuth() async {
     try {

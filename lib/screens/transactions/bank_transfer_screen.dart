@@ -54,34 +54,37 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
         return;
       }
 
+      // Fetch virtual account from the dedicated endpoint
       final response = await http.get(
-        Uri.parse('${Constants.baseUrl}/user'),
+        Uri.parse('${Constants.baseUrl}/accounts/get-account'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
       );
 
-      print('📡 User Data Status: ${response.statusCode}');
-      print('📦 User Data Body: ${response.body}');
+      print('📡 Virtual Account Status: ${response.statusCode}');
+      print('📦 Virtual Account Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
+        final result = jsonDecode(response.body);
+        final data = result['data'] ?? result;
+        
         if (mounted) {
           setState(() {
-            // Check if virtual_accounts exists and is not empty
-            if (data['virtual_accounts'] != null &&
-                data['virtual_accounts'].toString().isNotEmpty &&
-                data['virtual_accounts'] != '{}' &&
-                data['virtual_accounts'] != '[]') {
-              _virtualAccount = data['virtual_accounts'] is String
-                  ? jsonDecode(data['virtual_accounts'])
-                  : data['virtual_accounts'];
+            // Get virtual_account from response
+            if (data['virtual_account'] != null) {
+              _virtualAccount = data['virtual_account'];
             }
             _isLoading = false;
           });
         }
+      } else if (response.statusCode == 404) {
+        // No virtual account found - this is OK, user needs to create one
+        setState(() {
+          _virtualAccount = null;
+          _isLoading = false;
+        });
       } else {
         setState(() {
           _isLoading = false;
@@ -89,7 +92,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      print('Error loading virtual account: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -99,7 +102,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
     }
   }
 
-  Future<void> _createVirtualAccount() async {
+  Future<void> _createVirtualAccount({int retryCount = 0}) async {
     setState(() => _isCreatingAccount = true);
 
     try {
@@ -120,8 +123,43 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
 
       if (createResponse.statusCode == 200 ||
           createResponse.statusCode == 201) {
-        // Get the created account
-        await _getVirtualAccount();
+        final result = jsonDecode(createResponse.body);
+        final data = result['data'] ?? result;
+        
+        // Check if status is pending (async account creation)
+        if (data['status'] == 'pending') {
+          // Auto-retry up to 3 times with delay
+          if (retryCount < 3) {
+            _showSnackBar(
+              'Creating account... please wait',
+              Colors.orange,
+            );
+            await Future.delayed(const Duration(seconds: 2));
+            if (mounted) {
+              await _createVirtualAccount(retryCount: retryCount + 1);
+            }
+            return;
+          }
+          
+          _showSnackBar(
+            result['message'] ?? 'Account creation in progress. Please try again in a few moments.',
+            Colors.orange,
+          );
+          setState(() => _isCreatingAccount = false);
+          return;
+        }
+        
+        if (data['virtual_account'] != null) {
+          // Account returned directly in create response
+          setState(() {
+            _virtualAccount = data['virtual_account'];
+            _isCreatingAccount = false;
+          });
+          _showSnackBar('Virtual account created successfully!', Colors.green);
+        } else {
+          // Fallback: fetch account separately
+          await _getVirtualAccount();
+        }
       } else {
         final result = jsonDecode(createResponse.body);
         _showSnackBar(
@@ -155,11 +193,11 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        final accountData = getResponseData(result);
+        final data = result['data'] ?? result;
 
         if (mounted) {
           setState(() {
-            _virtualAccount = accountData is Map ? accountData : (result['account'] ?? accountData);
+            _virtualAccount = data['virtual_account'];
             _isCreatingAccount = false;
           });
 
@@ -685,7 +723,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      _virtualAccount!['bank'] ?? 'N/A',
+                      _virtualAccount!['bank_name'] ?? _virtualAccount!['bank'] ?? 'N/A',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -771,7 +809,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
                 child: _buildQuickCopyButton(
                   'Copy Bank Name',
                   Icons.account_balance_rounded,
-                  _virtualAccount!['bank'] ?? '',
+                  _virtualAccount!['bank_name'] ?? _virtualAccount!['bank'] ?? '',
                 ),
               ),
             ],

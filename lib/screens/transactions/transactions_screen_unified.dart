@@ -35,6 +35,7 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
     'Crypto': 'crypto',
     'Data': 'data',
     'Giftcard': 'giftcard',
+    'Payout': 'payout',
     'User Gift': 'wallet_transfer',
     'Payment': 'wallet_funding',
     'Betting': 'betting',
@@ -274,7 +275,8 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
                           IconButton(
                             icon: const Icon(Icons.arrow_back, color: Colors.white),
                             onPressed: () {
-                              Navigator.of(context).pop();
+                              // Navigate to main screen with bottom nav - this screen is part of MainScreen tabs
+                              Navigator.of(context).pushReplacementNamed('/main');
                             },
                           ),
                           const Expanded(

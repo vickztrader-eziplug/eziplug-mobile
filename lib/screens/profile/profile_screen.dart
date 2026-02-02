@@ -233,19 +233,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             subtitle: 'Update your account password',
                             onTap: () => Navigator.pushNamed(context, AppRoutes.changePassword),
                           ),
-                          _buildMenuItem(
-                            icon: Icons.verified_user_outlined,
-                            iconColor: const Color(0xFF00C853),
-                            title: 'KYC Verification',
-                            subtitle: 'Verify your identity',
-                            onTap: () => Navigator.pushNamed(context, AppRoutes.kyc),
-                          ),
+                          _buildKycMenuItem(authService),
                           _buildMenuItem(
                             icon: Icons.pin_outlined,
                             iconColor: const Color(0xFFE91E63),
                             title: 'PIN Management',
                             subtitle: 'Manage your transaction PIN',
-                            onTap: () => Navigator.pushNamed(context, AppRoutes.changePinOtp),
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.changePin),
                             showDivider: false,
                           ),
                         ]),
@@ -418,6 +412,153 @@ class _ProfileScreenState extends State<ProfileScreen> {
             indent: 74,
             endIndent: 16,
           ),
+      ],
+    );
+  }
+
+  Widget _buildKycMenuItem(AuthService authService) {
+    // Get KYC tier from user data (default to 1)
+    final kycTier = authService.user?['current_kyc_tier'] ?? 1;
+    final hasPending = authService.user?['has_pending_kyc'] ?? false;
+    
+    // Determine badge color and text based on tier
+    Color tierColor;
+    String tierText;
+    IconData tierIcon;
+    
+    if (hasPending) {
+      tierColor = Colors.orange;
+      tierText = 'Pending';
+      tierIcon = Icons.hourglass_empty_rounded;
+    } else {
+      switch (kycTier) {
+        case 1:
+          tierColor = Colors.grey;
+          tierText = 'Tier 1';
+          tierIcon = Icons.verified_user_outlined;
+          break;
+        case 2:
+          tierColor = const Color(0xFF2196F3);
+          tierText = 'Tier 2';
+          tierIcon = Icons.verified_user_rounded;
+          break;
+        case 3:
+          tierColor = const Color(0xFF00C853);
+          tierText = 'Tier 3';
+          tierIcon = Icons.verified_rounded;
+          break;
+        default:
+          tierColor = Colors.grey;
+          tierText = 'Tier 1';
+          tierIcon = Icons.verified_user_outlined;
+      }
+    }
+
+    return Column(
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => Navigator.pushNamed(context, AppRoutes.kyc),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  // Icon Container
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: tierColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(tierIcon, color: tierColor, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  // Title and Subtitle
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'KYC Verification',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          hasPending 
+                              ? 'Verification in progress'
+                              : kycTier >= 3 
+                                  ? 'Fully verified' 
+                                  : 'Upgrade to unlock more features',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Tier Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: tierColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: tierColor.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (hasPending)
+                          SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(tierColor),
+                            ),
+                          )
+                        else
+                          Icon(
+                            kycTier >= 3 ? Icons.check_circle : Icons.arrow_upward_rounded,
+                            size: 14,
+                            color: tierColor,
+                          ),
+                        const SizedBox(width: 4),
+                        Text(
+                          tierText,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: tierColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Arrow
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: Colors.grey.shade400,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Divider(
+          color: Colors.grey.shade200,
+          height: 1,
+          indent: 74,
+          endIndent: 16,
+        ),
       ],
     );
   }

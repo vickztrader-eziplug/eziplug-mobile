@@ -1,6 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -17,34 +19,70 @@ class EditProfileScreen extends StatefulWidget {
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends State<EditProfileScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _middleNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
+  final FocusNode _firstNameFocus = FocusNode();
+  final FocusNode _middleNameFocus = FocusNode();
+  final FocusNode _lastNameFocus = FocusNode();
+  final FocusNode _usernameFocus = FocusNode();
+  final FocusNode _phoneFocus = FocusNode();
+
   bool _isLoading = false;
   bool _isLoadingProfile = true;
+  Map<String, String> _fieldErrors = {};
 
   // Passport (using the circular uploader)
-  File? _selectedPassport;
+  XFile? _selectedPassport;
+  Uint8List? _selectedPassportBytes;
   String? _currentPassport;
 
   final ImagePicker _picker = ImagePicker();
 
+  AnimationController? _animationController;
+  Animation<double>? _fadeAnimation;
+  Animation<Offset>? _slideAnimation;
+
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController!, curve: Curves.easeOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _animationController!, curve: Curves.easeOut),
+    );
     _loadUserProfile();
   }
 
   @override
   void dispose() {
-    _fullNameController.dispose();
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _lastNameController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _firstNameFocus.dispose();
+    _middleNameFocus.dispose();
+    _lastNameFocus.dispose();
+    _usernameFocus.dispose();
+    _phoneFocus.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 
@@ -64,448 +102,899 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
+        
+        // Extract user data - data is directly in 'data' key
+        final data = responseData['data'] ?? responseData;
 
         if (mounted) {
           setState(() {
-            _fullNameController.text =
-                data['first_name'] ?? data['firstName'] ?? data['name'] ?? '';
-            _usernameController.text =
-                data['username'] ?? data['userName'] ?? '';
-            _emailController.text = data['email'] ?? '';
-            _phoneController.text = data['phone'] ?? '';
-            _currentPassport = data['passport'] ?? data['photo'] ?? '';
+            _firstNameController.text = data['first_name']?.toString() ?? '';
+            _middleNameController.text = data['middle_name']?.toString() ?? '';
+            _lastNameController.text = data['last_name']?.toString() ?? '';
+            _usernameController.text = data['username']?.toString() ?? '';
+            _emailController.text = data['email']?.toString() ?? '';
+            _phoneController.text = data['phone']?.toString() ?? '';
+            _currentPassport = data['passport']?.toString() ?? data['photo']?.toString() ?? '';
             _isLoadingProfile = false;
           });
+          if (_animationController?.status == AnimationStatus.dismissed) {
+            _animationController?.forward();
+          }
+        }
+      } else {
+        if (mounted) {
+          setState(() => _isLoadingProfile = false);
+          if (_animationController?.status == AnimationStatus.dismissed) {
+            _animationController?.forward();
+          }
         }
       }
     } catch (e) {
       print('Error loading profile: $e');
       if (mounted) {
         setState(() => _isLoadingProfile = false);
-        _showSnackBar('Error loading profile', Colors.red);
+        if (_animationController?.status == AnimationStatus.dismissed) {
+          _animationController?.forward();
+        }
+        ToastHelper.showError('Error loading profile');
       }
     }
   }
 
   Future<void> _pickPassport() async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
+      // Show bottom sheet with options
+      await showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (context) => _buildImagePickerSheet(),
       );
-
-      if (pickedFile != null) {
-        setState(() {
-          _selectedPassport = File(pickedFile.path);
-        });
-      }
     } catch (e) {
       print('Error picking passport: $e');
-      _showSnackBar('Error selecting passport', Colors.red);
+      ToastHelper.showError('Error selecting photo');
     }
+  }
+
+  Widget _buildImagePickerSheet() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Change Profile Photo',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textColor,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildPickerOption(
+                icon: Icons.camera_alt_rounded,
+                label: 'Camera',
+                color: Colors.blue,
+                onTap: () async {
+                  Navigator.pop(context);
+                  final XFile? pickedFile = await _picker.pickImage(
+                    source: ImageSource.camera,
+                    maxWidth: 1024,
+                    maxHeight: 1024,
+                    imageQuality: 85,
+                  );
+                  if (pickedFile != null) {
+                    await _uploadPassport(pickedFile);
+                  }
+                },
+              ),
+              _buildPickerOption(
+                icon: Icons.photo_library_rounded,
+                label: 'Gallery',
+                color: Colors.purple,
+                onTap: () async {
+                  Navigator.pop(context);
+                  final XFile? pickedFile = await _picker.pickImage(
+                    source: ImageSource.gallery,
+                    maxWidth: 1024,
+                    maxHeight: 1024,
+                    imageQuality: 85,
+                  );
+                  if (pickedFile != null) {
+                    await _uploadPassport(pickedFile);
+                  }
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPickerOption({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(icon, color: color, size: 32),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _updateProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _fieldErrors = {};
+    });
+    HapticFeedback.mediumImpact();
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       final token = await authService.getToken();
 
-      bool profileUpdated = false;
-      bool passportUpdated = false;
+      // Update user profile info
+      final response = await http.post(
+        Uri.parse('${Constants.baseUrl}/user/update'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'first_name': _firstNameController.text.trim(),
+          'middle_name': _middleNameController.text.trim(),
+          'last_name': _lastNameController.text.trim(),
+          'username': _usernameController.text.trim(),
+          'phone': _phoneController.text.trim(),
+        }),
+      );
 
-      // 1. Update user info (email, phone) if changed
-      if (_emailController.text.isNotEmpty ||
-          _phoneController.text.isNotEmpty) {
-        var profileRequest = http.MultipartRequest(
-          'POST',
-          Uri.parse('${Constants.baseUrl}/user/update'),
-        );
+      final result = jsonDecode(response.body);
 
-        profileRequest.headers['Authorization'] = 'Bearer $token';
-        profileRequest.headers['Accept'] = 'application/json';
-        profileRequest.fields['email'] = _emailController.text.trim();
-        profileRequest.fields['phone'] = _phoneController.text.trim();
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Refresh user data
+        await authService.refreshUserData();
 
-        print('📤 Updating profile info...');
-        final profileStreamedResponse = await profileRequest.send();
-        final profileResponse = await http.Response.fromStream(
-          profileStreamedResponse,
-        );
-        final profileData = jsonDecode(profileResponse.body);
+        if (!mounted) return;
 
-        print('📡 Profile Response Status: ${profileResponse.statusCode}');
-        print('📦 Profile Response Data: $profileData');
+        ToastHelper.showSuccess('Profile updated successfully!');
 
-        if (profileResponse.statusCode == 200 ||
-            profileResponse.statusCode == 201) {
-          profileUpdated = true;
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) Navigator.pop(context, true);
+        });
+      } else if (response.statusCode == 422) {
+        // Handle validation errors
+        final errors = result['errors'] as Map<String, dynamic>?;
+        if (errors != null) {
+          setState(() {
+            _fieldErrors = errors.map((key, value) => 
+              MapEntry(key, (value as List).first.toString()));
+          });
+        } else {
+          ToastHelper.showError(result['message'] ?? 'Validation failed');
         }
-      }
-
-      // 2. Upload passport if selected
-      if (_selectedPassport != null) {
-        var passportRequest = http.MultipartRequest(
-          'POST',
-          Uri.parse('${Constants.baseUrl}/passport'),
-        );
-
-        passportRequest.headers['Authorization'] = 'Bearer $token';
-        passportRequest.headers['Accept'] = 'application/json';
-        passportRequest.files.add(
-          await http.MultipartFile.fromPath('photo', _selectedPassport!.path),
-        );
-
-        print('📤 Uploading passport...');
-        final passportStreamedResponse = await passportRequest.send();
-        final passportResponse = await http.Response.fromStream(
-          passportStreamedResponse,
-        );
-        final passportData = jsonDecode(passportResponse.body);
-
-        print('📡 Passport Response Status: ${passportResponse.statusCode}');
-        print('📦 Passport Response Data: $passportData');
-
-        if (passportResponse.statusCode == 200 ||
-            passportResponse.statusCode == 201) {
-          final responseData = getResponseData(passportData);
-          final updatedUser = responseData['user'] ?? passportData['user'];
-          if (updatedUser != null) {
-            setState(() {
-              _currentPassport = updatedUser['passport'];
-              _selectedPassport = null;
-            });
-          }
-          passportUpdated = true;
-        }
-      }
-
-      // Refresh user data
-      await authService.refreshUserData();
-
-      if (!mounted) return;
-
-      // Show success message
-      if (passportUpdated && profileUpdated) {
-        _showSnackBar(
-          'Profile and passport updated successfully',
-          Colors.green,
-        );
-      } else if (passportUpdated) {
-        _showSnackBar('Passport updated successfully', Colors.green);
-      } else if (profileUpdated) {
-        _showSnackBar('Profile updated successfully', Colors.green);
       } else {
-        _showSnackBar('No changes to update', Colors.orange);
+        ToastHelper.showError(result['message'] ?? 'Failed to update profile');
       }
-
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) Navigator.pop(context, true);
-      });
     } catch (e) {
       print('Error updating profile: $e');
-      _showSnackBar('Error: $e', Colors.red);
+      ToastHelper.showError('Error updating profile');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _showSnackBar(String message, Color color) {
-    if (!mounted) return;
-    // Use ToastHelper for consistent top-positioned toasts
-    ToastHelper.showSnackBar(context, message, color);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            if (_isLoading)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
-                  ),
-                ),
-              ),
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                // Custom App Bar
+                _buildAppBar(),
 
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 260,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          const Expanded(
-                            child: Text(
-                              'Edit Profile',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                // Content
+                Expanded(
+                  child: _isLoadingProfile
+                      ? _buildLoadingState()
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: FadeTransition(
+                            opacity: _fadeAnimation ?? const AlwaysStoppedAnimation(1.0),
+                            child: SlideTransition(
+                              position: _slideAnimation ?? const AlwaysStoppedAnimation(Offset.zero),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  children: [
+                                    // Profile Photo Section
+                                    _buildProfilePhotoSection(),
+
+                                    const SizedBox(height: 32),
+
+                                    // Personal Info Card
+                                    _buildPersonalInfoCard(),
+
+                                    const SizedBox(height: 20),
+
+                                    // Contact Info Card
+                                    _buildContactInfoCard(),
+
+                                    const SizedBox(height: 32),
+
+                                    // Update Button
+                                    _buildUpdateButton(),
+
+                                    const SizedBox(height: 20),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                        ),
+                ),
+              ],
+            ),
+          ),
+
+          // Loading Overlay
+          if (_isLoading) _buildLoadingOverlay(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_back,
+                color: AppColors.primary,
+                size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'Edit Profile',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const CircularProgressIndicator(
+              color: AppColors.primary,
+              strokeWidth: 3,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Loading profile...',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingOverlay() {
+    return Container(
+      color: Colors.black.withOpacity(0.5),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(30),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 3,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Updating profile...',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfilePhotoSection() {
+    return Column(
+      children: [
+        // Photo Container
+        Stack(
+          children: [
+            // Main Photo Circle
+            Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary.withOpacity(0.2),
+                    AppColors.primary.withOpacity(0.1),
                   ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                  ),
+                  child: ClipOval(
+                    child: Container(
+                      width: 116,
+                      height: 116,
+                      color: Colors.grey.shade200,
+                      child: _buildProfileImage(),
+                    ),
+                  ),
                 ),
               ),
             ),
 
-            // Content Section with curved top
+            // Camera Button
             Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+              bottom: 5,
+              right: 5,
+              child: GestureDetector(
+                onTap: _pickPassport,
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.primary, AppColors.primary],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: Colors.white,
+                    size: 20,
                   ),
                 ),
-                child: _isLoadingProfile
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                        ),
-                      )
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.all(24),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // Passport Picture (Circular)
-                              Stack(
-                                children: [
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: AppColors.primary,
-                                        width: 3,
-                                      ),
-                                    ),
-                                    child: CircleAvatar(
-                                      radius: 60,
-                                      backgroundColor: AppColors.lightGrey,
-                                      backgroundImage: _getPassportImage(),
-                                      child: _getPassportChild(),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: GestureDetector(
-                                      onTap: _pickPassport,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.white,
-                                            width: 3,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.2,
-                                              ),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: const Icon(
-                                          Icons.camera_alt,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  // Show a badge when passport is selected but not uploaded
-                                  if (_selectedPassport != null)
-                                    Positioned(
-                                      top: 0,
-                                      right: 0,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.orange,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.white,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.edit,
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
+              ),
+            ),
 
-                              const SizedBox(height: 8),
-
-                              // Label
-                              Text(
-                                'Passport / ID Photo',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textColor.withOpacity(0.7),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-
-                              const SizedBox(height: 4),
-
-                              // Hint text when passport is selected
-                              if (_selectedPassport != null)
-                                Text(
-                                  'Tap "Update Profile" to save',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.orange[700],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-
-                              const SizedBox(height: 30),
-
-                              // Full Name (Read-only)
-                              _buildLabel('Full Name'),
-                              const SizedBox(height: 8),
-                              _buildTextField(
-                                controller: _fullNameController,
-                                hintText: 'Full Name',
-                                enabled: false,
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              // Username (Read-only)
-                              _buildLabel('Username'),
-                              const SizedBox(height: 8),
-                              _buildTextField(
-                                controller: _usernameController,
-                                hintText: 'Username',
-                                enabled: false,
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              // Email (Editable)
-                              _buildLabel('Email Address'),
-                              const SizedBox(height: 8),
-                              _buildTextField(
-                                controller: _emailController,
-                                hintText: 'Email Address',
-                                keyboardType: TextInputType.emailAddress,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Email is required';
-                                  }
-                                  if (!value.contains('@')) {
-                                    return 'Enter a valid email';
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              // Phone (Editable)
-                              _buildLabel('Phone Number'),
-                              const SizedBox(height: 8),
-                              _buildTextField(
-                                controller: _phoneController,
-                                hintText: 'Phone Number',
-                                keyboardType: TextInputType.phone,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Phone number is required';
-                                  }
-                                  if (value.length < 10) {
-                                    return 'Enter a valid phone number';
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 40),
-
-                              // Update Button
-                              SizedBox(
-                                width: double.infinity,
-                                height: 56,
-                                child: ElevatedButton(
-                                  onPressed: _isLoading ? null : _updateProfile,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.textColor,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 0,
-                                    disabledBackgroundColor:
-                                        AppColors.lightGrey,
-                                  ),
-                                  child: const Text(
-                                    'Update Profile',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+            // Uploading Indicator
+            if (_selectedPassport != null && _isLoading)
+              Positioned(
+                top: 5,
+                right: 5,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.3),
+                        blurRadius: 6,
                       ),
+                    ],
+                  ),
+                  child: const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // Photo Label
+        Text(
+          'Profile Photo',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
+        ),
+
+        // Uploading Hint
+        if (_selectedPassport != null && _isLoading) ...[
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Uploading photo...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPersonalInfoCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.person_outline_rounded,
+                  color: Colors.blue.shade600,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Text(
+                'Personal Information',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // First Name Field
+          _buildInputField(
+            label: 'First Name',
+            controller: _firstNameController,
+            focusNode: _firstNameFocus,
+            icon: Icons.person_outline_rounded,
+            errorText: _fieldErrors['first_name'],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'First name is required';
+              }
+              return null;
+            },
+          ),
+
+          const SizedBox(height: 20),
+
+          // Middle Name Field (Optional)
+          _buildInputField(
+            label: 'Middle Name (Optional)',
+            controller: _middleNameController,
+            focusNode: _middleNameFocus,
+            icon: Icons.person_outline_rounded,
+            errorText: _fieldErrors['middle_name'],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Last Name Field
+          _buildInputField(
+            label: 'Last Name',
+            controller: _lastNameController,
+            focusNode: _lastNameFocus,
+            icon: Icons.person_outline_rounded,
+            errorText: _fieldErrors['last_name'],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Last name is required';
+              }
+              return null;
+            },
+          ),
+
+          const SizedBox(height: 20),
+
+          // Username Field
+          _buildInputField(
+            label: 'Username',
+            controller: _usernameController,
+            focusNode: _usernameFocus,
+            icon: Icons.alternate_email_rounded,
+            errorText: _fieldErrors['username'],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Username is required';
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactInfoCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.contact_mail_outlined,
+                  color: Colors.green.shade600,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Text(
+                'Contact Information',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Email Field (Read-only)
+          _buildInputField(
+            label: 'Email Address',
+            controller: _emailController,
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+            enabled: false, // Email is read-only
+          ),
+
+          const SizedBox(height: 20),
+
+          // Phone Field (Editable)
+          _buildInputField(
+            label: 'Phone Number',
+            controller: _phoneController,
+            icon: Icons.phone_outlined,
+            focusNode: _phoneFocus,
+            keyboardType: TextInputType.phone,
+            errorText: _fieldErrors['phone'],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Phone number is required';
+              }
+              if (value.length < 10) {
+                return 'Enter a valid phone number';
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    FocusNode? focusNode,
+    TextInputType keyboardType = TextInputType.text,
+    bool enabled = true,
+    String? errorText,
+    String? Function(String?)? validator,
+  }) {
+    final bool hasError = errorText != null && errorText.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: enabled ? Colors.white : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: hasError
+                  ? Colors.red.shade400
+                  : enabled
+                      ? (focusNode?.hasFocus ?? false
+                          ? AppColors.primary
+                          : Colors.grey.shade200)
+                      : Colors.grey.shade300,
+              width: hasError
+                  ? 1.5
+                  : (enabled && (focusNode?.hasFocus ?? false) ? 2 : 1),
+            ),
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: hasError
+                          ? Colors.red.withOpacity(0.08)
+                          : Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
+          ),
+          child: TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            keyboardType: keyboardType,
+            enabled: enabled,
+            style: TextStyle(
+              fontSize: 15,
+              color: enabled ? Colors.black87 : Colors.grey.shade600,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Enter $label',
+              hintStyle: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade400,
+              ),
+              prefixIcon: Container(
+                padding: const EdgeInsets.all(12),
+                child: Icon(
+                  icon,
+                  color: hasError
+                      ? Colors.red.shade400
+                      : enabled
+                          ? (focusNode?.hasFocus ?? false
+                              ? AppColors.primary
+                              : Colors.grey.shade400)
+                          : Colors.grey.shade400,
+                  size: 22,
+                ),
+              ),
+              suffixIcon: !enabled
+                  ? Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        Icons.lock_outline_rounded,
+                        color: Colors.grey.shade400,
+                        size: 20,
+                      ),
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+            validator: validator,
+          ),
+        ),
+        if (hasError) ...[
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 14,
+                color: Colors.red.shade600,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  errorText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.red.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildUpdateButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _updateProfile,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          shadowColor: AppColors.primary.withOpacity(0.3),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.check_circle_outline_rounded, size: 22),
+            const SizedBox(width: 10),
+            const Text(
+              'Update Profile',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -514,88 +1003,194 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  // Upload passport immediately when selected
+  Future<void> _uploadPassport(XFile imageFile) async {
+    // Read bytes first for preview
+    final bytes = await imageFile.readAsBytes();
+    
+    setState(() {
+      _selectedPassport = imageFile;
+      _selectedPassportBytes = bytes;
+      _isLoading = true;
+    });
+
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final token = await authService.getToken();
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${Constants.baseUrl}/passport'),
+      );
+
+      request.headers['Authorization'] = 'Bearer $token';
+      request.headers['Accept'] = 'application/json';
+      
+      // Use bytes for cross-platform compatibility
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'photo',
+          bytes,
+          filename: 'passport_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Extract passport URL from response
+        final responseData = data['data'] ?? data;
+        final user = responseData['user'] ?? responseData;
+        final passportUrl = user['passport'];
+        
+        setState(() {
+          _currentPassport = passportUrl;
+          _selectedPassport = null;
+          _selectedPassportBytes = null;
+        });
+        
+        // Refresh user data
+        await authService.refreshUserData();
+        
+        ToastHelper.showSuccess('Photo updated successfully!');
+      } else {
+        ToastHelper.showError(data['message'] ?? 'Failed to upload photo');
+        setState(() {
+          _selectedPassport = null;
+          _selectedPassportBytes = null;
+        });
+      }
+    } catch (e) {
+      print('Error uploading passport: $e');
+      ToastHelper.showError('Error uploading photo');
+      setState(() {
+        _selectedPassport = null;
+        _selectedPassportBytes = null;
+      });
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   // Helper method to get passport image
   ImageProvider? _getPassportImage() {
-    if (_selectedPassport != null) {
-      // Show selected passport (preview before upload)
-      return FileImage(_selectedPassport!);
-    } else if (_currentPassport != null && _currentPassport!.isNotEmpty) {
-      // Show uploaded passport from server
-      return NetworkImage(_currentPassport!);
+    print('_getPassportImage called');
+    print('_selectedPassportBytes: ${_selectedPassportBytes != null}');
+    print('_currentPassport: $_currentPassport');
+    
+    try {
+      if (_selectedPassportBytes != null) {
+        print('Returning MemoryImage');
+        return MemoryImage(_selectedPassportBytes!);
+      } else if (_currentPassport != null && _currentPassport!.isNotEmpty) {
+        String url = _currentPassport!;
+        
+        // If it's a relative path, prepend the base URL
+        if (url.startsWith('/storage') || url.startsWith('storage')) {
+          // Get base URL without /api suffix
+          String baseUrl = Constants.baseUrl;
+          if (baseUrl.endsWith('/api')) {
+            baseUrl = baseUrl.substring(0, baseUrl.length - 4);
+          }
+          url = '$baseUrl${url.startsWith('/') ? url : '/$url'}';
+        }
+        
+        print('Final image URL: $url');
+        
+        // Only return NetworkImage for valid URLs
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          print('Returning NetworkImage for: $url');
+          return NetworkImage(url);
+        } else {
+          print('URL does not start with http/https');
+        }
+      } else {
+        print('No passport to display');
+      }
+    } catch (e) {
+      print('Error loading passport image: $e');
     }
     return null;
+  }
+
+  // Build profile image with error handling
+  Widget _buildProfileImage() {
+    // Show selected image bytes
+    if (_selectedPassportBytes != null) {
+      return Image.memory(
+        _selectedPassportBytes!,
+        fit: BoxFit.cover,
+        width: 116,
+        height: 116,
+      );
+    }
+    
+    // Show network image if available
+    if (_currentPassport != null && _currentPassport!.isNotEmpty) {
+      String url = _currentPassport!;
+      
+      // If it's a relative path, prepend the base URL
+      if (url.startsWith('/storage') || url.startsWith('storage')) {
+        String baseUrl = Constants.baseUrl;
+        if (baseUrl.endsWith('/api')) {
+          baseUrl = baseUrl.substring(0, baseUrl.length - 4);
+        }
+        url = '$baseUrl${url.startsWith('/') ? url : '/$url'}';
+      }
+      
+      print('Loading image from: $url');
+      
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return Image.network(
+          url,
+          fit: BoxFit.cover,
+          width: 116,
+          height: 116,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+                strokeWidth: 2,
+                color: AppColors.primary,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            print('Image load error: $error');
+            return Icon(
+              Icons.error_outline,
+              size: 50,
+              color: Colors.red.shade400,
+            );
+          },
+        );
+      }
+    }
+    
+    // Show placeholder
+    return Icon(
+      Icons.person_rounded,
+      size: 50,
+      color: Colors.grey.shade400,
+    );
   }
 
   // Helper method to show placeholder when no passport
   Widget? _getPassportChild() {
     if (_selectedPassport == null &&
         (_currentPassport == null || _currentPassport!.isEmpty)) {
-      return const Icon(
-        Icons.badge_outlined,
-        size: 60,
-        color: AppColors.textColor,
+      return Icon(
+        Icons.person_rounded,
+        size: 50,
+        color: Colors.grey.shade400,
       );
     }
     return null;
-  }
-
-  Widget _buildLabel(String label) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: AppColors.textColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-    bool enabled = true,
-    String? Function(String?)? validator,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: enabled ? AppColors.cardBackground : Colors.grey[200],
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(
-          color: enabled ? AppColors.lightGrey : Colors.grey[300]!,
-          width: 1,
-        ),
-      ),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        enabled: enabled,
-        style: TextStyle(
-          fontSize: 14,
-          color: enabled
-              ? AppColors.textColor
-              : AppColors.textColor.withOpacity(0.5),
-        ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-          suffixIcon: !enabled
-              ? Icon(Icons.lock_outline, color: Colors.grey[400], size: 20)
-              : null,
-        ),
-        validator: validator,
-      ),
-    );
   }
 }

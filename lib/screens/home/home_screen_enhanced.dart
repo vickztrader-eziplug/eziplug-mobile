@@ -470,7 +470,9 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
   }
 
   Widget _buildWalletSection(double sw, double sh) {
-    final cardHeight = sh * 0.235; // Adjusted for perfect fit
+    // Use a fixed height that fits content well on all devices
+    // Minimum 150, maximum 180 to prevent it from being too tall on large screens
+    final cardHeight = (sh * 0.20).clamp(150.0, 180.0);
     
     return Column(
       children: [
@@ -571,10 +573,10 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
           ),
           // Card content
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min, // Don't expand to fill height
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distribute content evenly
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -604,40 +606,39 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                         ),
                       ],
                     ),
+                    // KYC Tier Badge
+                    _buildKycBadge(),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _isBalanceVisible
+                            ? '$currency ${_formatBalance(balance)}'
+                            : '$currency ••••••',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => setState(() => _isBalanceVisible = !_isBalanceVisible),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          _isBalanceVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                          color: Colors.white,
-                          size: 16,
-                        ),
+                      child: Icon(
+                        _isBalanceVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        color: Colors.white.withOpacity(0.7),
+                        size: 20,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    _isBalanceVisible
-                        ? '$currency ${_formatBalance(balance)}'
-                        : '$currency ••••••',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8), // Reduced gap before buttons
                 Row(
                   children: [
                     _buildCardButton(
@@ -708,6 +709,68 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Build KYC tier badge for balance card
+  Widget _buildKycBadge() {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final kycTier = authService.user?['current_kyc_tier'] ?? 1;
+    final hasPending = authService.user?['has_pending_kyc'] ?? false;
+    
+    // Define badge properties based on tier and pending status
+    IconData tierIcon;
+    String tierText;
+    Color bgColor;
+    
+    if (hasPending) {
+      tierIcon = Icons.hourglass_top_rounded;
+      tierText = 'Pending';
+      bgColor = Colors.orange;
+    } else {
+      switch (kycTier) {
+        case 3:
+          tierIcon = Icons.workspace_premium_rounded;
+          tierText = 'Tier 3';
+          bgColor = AppColors.cryptoColor;
+          break;
+        case 2:
+          tierIcon = Icons.verified_rounded;
+          tierText = 'Tier 2';
+          bgColor = AppColors.cryptoColor;
+          break;
+        default:
+          tierIcon = Icons.person_outline_rounded;
+          tierText = 'Tier 1';
+          bgColor = AppColors.cryptoColor;
+      }
+    }
+    
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.kyc),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(tierIcon, color: Colors.white, size: 14),
+            const SizedBox(width: 4),
+            Text(
+              tierText,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

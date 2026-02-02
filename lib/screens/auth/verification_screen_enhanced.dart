@@ -133,11 +133,20 @@ class _VerificationScreenEnhancedState extends State<VerificationScreenEnhanced>
         
         if (mounted) {
           if (widget.isEmailVerification) {
-            // If verifying email after login, go to main screen
-            Navigator.pushReplacementNamed(context, AppRoutes.main);
+            // If verifying email after login, check if PIN is set
+            final authService = Provider.of<AuthService>(context, listen: false);
+            await authService.refreshUserData();
+            
+            if (authService.isPinSet) {
+              // PIN already set, go to main screen
+              Navigator.pushReplacementNamed(context, AppRoutes.main);
+            } else {
+              // PIN not set, go to PIN setup
+              Navigator.pushReplacementNamed(context, AppRoutes.pinSetup);
+            }
           } else {
-            // If verifying after registration, go to login
-            Navigator.pushReplacementNamed(context, AppRoutes.login);
+            // If verifying after registration, go to PIN setup
+            Navigator.pushReplacementNamed(context, AppRoutes.pinSetup);
           }
         }
       } else {

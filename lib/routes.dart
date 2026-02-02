@@ -1,11 +1,12 @@
 import 'package:cashpoint/screens/auth/forgot_password_screen_enhanced.dart';
+import 'package:cashpoint/screens/auth/pin_setup_screen.dart';
 import 'package:cashpoint/screens/home/main_screen.dart';
 import 'package:cashpoint/screens/profile/about_screen.dart';
-import 'package:cashpoint/screens/profile/change_password.dart';
-import 'package:cashpoint/screens/profile/change_pin_screen.dart';
-import 'package:cashpoint/screens/profile/changepin_otp_screen.dart';
+import 'package:cashpoint/screens/profile/change_password_screen.dart';
+import 'package:cashpoint/screens/profile/change_pin_otp_screen.dart';
+import 'package:cashpoint/screens/profile/new_pin_screen.dart';
 import 'package:cashpoint/screens/profile/edit_profile_screen.dart';
-import 'package:cashpoint/screens/profile/kyc_tier1_screen.dart';
+import 'package:cashpoint/screens/profile/kyc_verification_screen.dart';
 import 'package:cashpoint/screens/profile/leaderboard.dart';
 import 'package:cashpoint/screens/profile/privacy_policy_screen.dart';
 import 'package:cashpoint/screens/profile/support_screen.dart';
@@ -45,6 +46,7 @@ class AppRoutes {
   static const register = '/register';
   static const verify = '/verify';
   static const emailVerify = '/email-verify';
+  static const pinSetup = '/pin-setup';
   static const login = '/login';
   static const forgotPassword = '/forgot-password';
   static const home = '/home';
@@ -111,6 +113,8 @@ class AppRoutes {
             isEmailVerification: true,
           ),
         );
+      case pinSetup:
+        return MaterialPageRoute(builder: (_) => const PinSetupScreen());
       case login:
         // ✅ FIXED: Pass savedEmail to LoginScreen
         final savedEmail = settings.arguments as String?;
@@ -126,9 +130,9 @@ class AppRoutes {
       case editProfile:
         return MaterialPageRoute(builder: (_) => const EditProfileScreen());
       case changePin:
-        return MaterialPageRoute(builder: (_) => const ChangePinScreen());
-      case changePinOtp:
         return MaterialPageRoute(builder: (_) => const ChangePinOtpScreen());
+      case changePinOtp:
+        return MaterialPageRoute(builder: (_) => const NewPinScreen());
       case changePassword:
         return MaterialPageRoute(builder: (_) => const ChangePasswordScreen());
       case about:
@@ -182,7 +186,7 @@ class AppRoutes {
       case notification:
         return MaterialPageRoute(builder: (_) => const NotificationScreen());
       case kyc:
-        return MaterialPageRoute(builder: (_) => const KYCTier1Screen());
+        return MaterialPageRoute(builder: (_) => const KycVerificationScreen());
       case payoutAccounts:
         return MaterialPageRoute(builder: (_) => const PayoutScreen());
 

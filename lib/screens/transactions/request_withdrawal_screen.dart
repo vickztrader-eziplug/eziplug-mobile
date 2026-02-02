@@ -6,8 +6,8 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../core/utils/api_response.dart';
+import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/pin_entry_screen.dart';
 import '../reusable/receipt_screen.dart';
 
 class RequestWithdrawalScreen extends StatefulWidget {
@@ -122,20 +122,21 @@ class _RequestWithdrawalScreenState extends State<RequestWithdrawalScreen> {
 
     if (!mounted) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PinEntryScreen(
-          title: 'Confirm Withdrawal',
-          subtitle: 'Enter your 4 digit PIN to request withdrawal',
-          onPinComplete: (pin) => _requestWithdrawal(pin),
-          onForgotPin: () {
-            Navigator.pop(context);
-            _showSnackBar('Contact support to reset PIN', Colors.orange);
-          },
-        ),
-      ),
+    final pin = await PinVerificationModal.show(
+      context: context,
+      title: 'Confirm Withdrawal',
+      subtitle: 'Enter your 4-digit PIN to confirm this withdrawal',
+      transactionType: 'Withdrawal',
+      recipient: _selectedAccount!['account_name'] ?? _selectedAccount!['bank_name'] ?? '',
+      amount: '${_formatAmount(amount)}',
+      onForgotPin: () {
+        _showSnackBar('Go to Profile > PIN Management to reset your PIN', Colors.orange);
+      },
     );
+
+    if (pin != null && pin.length == 4) {
+      _requestWithdrawal(pin);
+    }
   }
 
   Future<void> _requestWithdrawal(String pin) async {
@@ -166,8 +167,6 @@ class _RequestWithdrawalScreenState extends State<RequestWithdrawalScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        Navigator.pop(context);
-
         final responseData = getResponseData(responseJson);
 
         Navigator.pushReplacement(
@@ -210,13 +209,12 @@ class _RequestWithdrawalScreenState extends State<RequestWithdrawalScreen> {
           ),
         );
       } else if (response.statusCode == 401) {
-        Navigator.pop(context);
         _showSnackBar('Session expired. Please login again', Colors.red);
         await authService.logout();
-      } else if (response.statusCode == 400 && responseJson['message']?.toString().contains('PIN') == true) {
-        throw Exception(responseJson['message'] ?? 'Invalid PIN');
+        Navigator.pushReplacementNamed(context, '/login');
+      } else if (response.statusCode == 400 && responseJson['message']?.toString().toLowerCase().contains('pin') == true) {
+        _showSnackBar(responseJson['message'] ?? 'Invalid PIN', Colors.red);
       } else {
-        Navigator.pop(context);
         _showSnackBar(
           getResponseMessage(responseJson) ?? 'Failed to process withdrawal',
           Colors.red,
@@ -225,7 +223,6 @@ class _RequestWithdrawalScreenState extends State<RequestWithdrawalScreen> {
     } catch (e) {
       if (!mounted) return;
       _showSnackBar(e.toString().replaceAll('Exception: ', ''), Colors.red);
-      rethrow;
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -449,6 +446,7 @@ class _RequestWithdrawalScreenState extends State<RequestWithdrawalScreen> {
           ),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: widget.payoutAccounts.isEmpty
           ? Padding(
               padding: const EdgeInsets.all(20),

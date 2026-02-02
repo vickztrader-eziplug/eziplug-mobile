@@ -61,12 +61,12 @@ class _FundScreenState extends State<FundScreen> with SingleTickerProviderStateM
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 400 + (index * 100)),
-      curve: Curves.easeOutBack,
+      curve: Curves.easeOut,
       builder: (context, value, child) {
         return Transform.translate(
           offset: Offset(0, 20 * (1 - value)),
           child: Opacity(
-            opacity: value,
+            opacity: value.clamp(0.0, 1.0),
             child: child,
           ),
         );
