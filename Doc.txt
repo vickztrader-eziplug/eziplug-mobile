@@ -114,3 +114,5 @@ Set up push notifications (optional)
 Build admin panel for approvals
 Add transaction history screen
 Implement refund system if needed
+
+The status bar is not matching the screen's background color on [page name]

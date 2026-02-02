@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../routes.dart';
 
@@ -7,9 +8,15 @@ class OnboardingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.white,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
         child: SingleChildScrollView(
           // ✅ makes content scrollable
           padding: const EdgeInsets.symmetric(horizontal: 45.0, vertical: 30),
@@ -99,6 +106,7 @@ class OnboardingScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

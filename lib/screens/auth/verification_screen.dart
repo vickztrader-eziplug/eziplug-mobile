@@ -212,9 +212,15 @@ class _VerificationScreenState extends State<VerificationScreen>
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.white,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
         child: SingleChildScrollView(
           // Added SingleChildScrollView to fix overflow
           child: Padding(
@@ -463,6 +469,7 @@ class _VerificationScreenState extends State<VerificationScreen>
             ),
           ),
         ),
+      ),
       ),
     );
   }

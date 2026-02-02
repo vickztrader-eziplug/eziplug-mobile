@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'dart:convert';
@@ -197,9 +198,15 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     final sw = size.width;
     final sh = size.height;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: RefreshIndicator(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: AppColors.primary,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: RefreshIndicator(
         onRefresh: _refreshData,
         color: AppColors.primary,
         backgroundColor: Colors.white,
@@ -292,6 +299,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
             ),
           ],
         ),
+      ),
       ),
     );
   }
