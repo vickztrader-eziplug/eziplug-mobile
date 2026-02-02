@@ -37,7 +37,6 @@ import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/auth/register_screen_enhanced.dart';
 import 'screens/auth/verification_screen_enhanced.dart';
 import 'screens/auth/login_screen_enhanced.dart';
-import 'screens/home/home_screen.dart';
 import 'screens/profile/profile_screen.dart';
 
 class AppRoutes {
@@ -49,7 +48,6 @@ class AppRoutes {
   static const pinSetup = '/pin-setup';
   static const login = '/login';
   static const forgotPassword = '/forgot-password';
-  static const home = '/home';
   static const main = '/main';
   static const profile = '/profile';
   static const editProfile = '/editProfile';
@@ -123,8 +121,6 @@ class AppRoutes {
         );
       case main:
         return MaterialPageRoute(builder: (_) => MainScreen());
-      case home:
-        return MaterialPageRoute(builder: (_) => HomeScreen());
       case profile:
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
       case editProfile:
