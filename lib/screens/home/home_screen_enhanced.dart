@@ -300,15 +300,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.gradientStart,
-            AppColors.gradientMiddle,
-            AppColors.gradientEnd.withOpacity(0.9),
-          ],
-        ),
+        color: AppColors.primary,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(sw * 0.08),
           bottomRight: Radius.circular(sw * 0.08),
