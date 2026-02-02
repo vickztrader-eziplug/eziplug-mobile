@@ -232,7 +232,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                         ? _buildLoadingWallet(sw, sh)
                         : _buildWalletSection(sw, sh),
                     
-                    SizedBox(height: sh * 0.03),
+                    const SizedBox(height: 20),
                     
                     // Quick Actions Title
                     Row(
@@ -265,12 +265,12 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                       ],
                     ),
                     
-                    SizedBox(height: sh * 0.015),
+                    const SizedBox(height: 8),
                     
                     // Quick Actions Grid
                     _buildQuickActionsGrid(sw, sh),
                     
-                    SizedBox(height: sh * 0.03),
+                    const SizedBox(height: 20),
                     
                     // Promo Banner Section
                     Text(

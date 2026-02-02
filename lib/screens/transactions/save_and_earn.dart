@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'dart:convert';
@@ -530,9 +531,15 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: _primaryColor,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: Stack(
         children: [
           Column(
             children: [
@@ -789,6 +796,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
             ),
         ],
       ),
+    ),
     );
   }
 

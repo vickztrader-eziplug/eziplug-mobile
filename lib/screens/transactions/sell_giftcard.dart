@@ -267,9 +267,15 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: _themeColor,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: Column(
         children: [
           // Modern Gradient Header
           ModernFormWidgets.buildGradientHeader(
@@ -441,6 +447,7 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 
