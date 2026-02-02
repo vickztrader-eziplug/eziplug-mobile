@@ -848,6 +848,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
       crossAxisCount: 2,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
+      padding: EdgeInsets.zero, // Remove default padding that causes gap on mobile
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       childAspectRatio: 1.4,

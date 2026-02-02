@@ -285,9 +285,15 @@ class _VerificationScreenEnhancedState extends State<VerificationScreenEnhanced>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.grey.shade50,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -595,6 +601,7 @@ class _VerificationScreenEnhancedState extends State<VerificationScreenEnhanced>
           ),
         ),
       ),
+    ),
     );
   }
 }

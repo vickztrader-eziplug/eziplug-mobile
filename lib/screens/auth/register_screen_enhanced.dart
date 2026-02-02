@@ -371,9 +371,15 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
     final sw = MediaQuery.of(context).size.width;
     final sh = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: AppColors.primary,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -798,6 +804,7 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
           ),
         ),
       ),
+    ),
     );
   }
 }

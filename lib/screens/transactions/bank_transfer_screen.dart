@@ -73,8 +73,12 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
         if (mounted) {
           setState(() {
             // Get virtual_account from response
+            // Handle both wrapped (data.virtual_account) and unwrapped (data directly) formats
             if (data['virtual_account'] != null) {
               _virtualAccount = data['virtual_account'];
+            } else if (data['account_number'] != null) {
+              // Data is directly in 'data' without virtual_account wrapper
+              _virtualAccount = data;
             }
             _isLoading = false;
           });
@@ -150,9 +154,16 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
         }
         
         if (data['virtual_account'] != null) {
-          // Account returned directly in create response
+          // Account returned directly in create response (wrapped format)
           setState(() {
             _virtualAccount = data['virtual_account'];
+            _isCreatingAccount = false;
+          });
+          _showSnackBar('Virtual account created successfully!', Colors.green);
+        } else if (data['account_number'] != null) {
+          // Account returned directly in data (unwrapped format)
+          setState(() {
+            _virtualAccount = data;
             _isCreatingAccount = false;
           });
           _showSnackBar('Virtual account created successfully!', Colors.green);
@@ -197,7 +208,12 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
 
         if (mounted) {
           setState(() {
-            _virtualAccount = data['virtual_account'];
+            // Handle both wrapped and unwrapped formats
+            if (data['virtual_account'] != null) {
+              _virtualAccount = data['virtual_account'];
+            } else if (data['account_number'] != null) {
+              _virtualAccount = data;
+            }
             _isCreatingAccount = false;
           });
 

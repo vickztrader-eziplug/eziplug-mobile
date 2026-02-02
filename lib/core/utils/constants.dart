@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class Constants {
   static const String baseUrl =
-      // "http://127.0.0.1:8000/api"; // For local testing
-      "https://app.eziplug.app/api"; // Production URL
+      "http://127.0.0.1:8000/api"; // For local testing
+      // "https://app.eziplug.app/api"; // Production URL
 
   // App Info
   static const String appName = 'Eziplug';

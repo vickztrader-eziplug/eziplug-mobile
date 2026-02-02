@@ -266,21 +266,21 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
   }
 
   void _onMeterNumberChanged() {
-    // Clear verification when meter number changes
-    if (_customerName != null || _meterVerificationError != null) {
-      setState(() {
+    // Always trigger rebuild to update verify button state
+    // and clear verification when meter number changes
+    setState(() {
+      if (_customerName != null || _meterVerificationError != null) {
         _customerName = null;
         _meterVerificationError = null;
         _hasManuallyVerified = false;
-      });
-    }
+      }
+    });
   }
 
   bool _canVerifyMeter() {
     return _selectedProviderServiceId != null &&
         _selectedType != null &&
-        _meterController.text.length >= 10 &&
-        _meterController.text.length <= 13 &&
+        _meterController.text.length == 11 &&
         !_isVerifyingMeter;
   }
 
@@ -290,8 +290,8 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
         _showSnackBar('Please select a provider first', Colors.orange);
       } else if (_selectedType == null) {
         _showSnackBar('Please select meter type first', Colors.orange);
-      } else if (_meterController.text.length < 10) {
-        _showSnackBar('Meter number must be at least 10 digits', Colors.orange);
+      } else if (_meterController.text.length != 11) {
+        _showSnackBar('Meter number must be 11 digits', Colors.orange);
       }
       return;
     }
@@ -759,12 +759,12 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                 Expanded(
                                   child: ModernFormWidgets.buildTextField(
                                     controller: _meterController,
-                                    hintText: 'Enter meter number',
+                                    hintText: 'Enter 11-digit meter number',
                                     prefixIcon: Icons.electric_meter,
                                     keyboardType: TextInputType.number,
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
-                                      LengthLimitingTextInputFormatter(13),
+                                      LengthLimitingTextInputFormatter(11),
                                     ],
                                   ),
                                 ),

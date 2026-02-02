@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/toast_helper.dart';
@@ -434,9 +435,15 @@ class _ForgotPasswordScreenEnhancedState extends State<ForgotPasswordScreenEnhan
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.grey.shade50,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -709,6 +716,7 @@ class _ForgotPasswordScreenEnhancedState extends State<ForgotPasswordScreenEnhan
           ),
         ),
       ),
+    ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/toast_helper.dart';
 import 'package:provider/provider.dart';
@@ -356,9 +357,15 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
     final sw = MediaQuery.of(context).size.width;
     final sh = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: AppColors.primary,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -712,6 +719,7 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
           ),
         ),
       ),
+    ),
     );
   }
 }
