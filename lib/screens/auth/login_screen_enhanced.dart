@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/error_handler.dart';
 import '../../core/utils/toast_helper.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
@@ -141,6 +143,16 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
     }
   }
 
+  /// Check if device has internet connectivity
+  Future<bool> _hasInternetConnection() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    }
+  }
+
   void _login() async {
     _validateFields();
     
@@ -149,6 +161,17 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
     }
 
     setState(() => _loading = true);
+    
+    // Check internet connectivity first
+    final hasInternet = await _hasInternetConnection();
+    if (!hasInternet) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ToastHelper.showError("No internet connection");
+      }
+      return;
+    }
+    
     final auth = Provider.of<AuthService>(context, listen: false);
 
     final data = {
@@ -165,8 +188,8 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
       debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         setState(() => _loading = false);
-        // Show detailed error in release
-        ToastHelper.showError("Connection error: ${e.runtimeType}");
+        // Use sanitized error message for production
+        ToastHelper.showException(e, fallback: "Network error. Please try again.");
       }
       return;
     }
@@ -230,7 +253,8 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
       }
     } catch (e, stackTrace) {
       await debugLogger.log('ERROR', 'Post-login processing error: $e');
-      ToastHelper.showError("Error: $e");
+      // Use sanitized error message
+      ToastHelper.showException(e, fallback: "Something went wrong. Please try again.");
     }
   }
 

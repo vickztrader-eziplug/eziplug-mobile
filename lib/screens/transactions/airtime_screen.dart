@@ -6,6 +6,7 @@ import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../core/utils/api_response.dart';
+import '../../core/utils/error_handler.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
 import '../../core/widgets/pin_verification_modal.dart';
@@ -406,7 +407,8 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      _showSnackBar(e.toString().replaceAll('Exception: ', ''), Colors.red);
+      // Use sanitized error message for production
+      _showSnackBar(ErrorHandler.getUserFriendlyMessage(e), Colors.red);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

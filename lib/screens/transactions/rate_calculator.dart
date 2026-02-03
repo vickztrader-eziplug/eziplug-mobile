@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 // ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 // ignore: depend_on_referenced_packages
@@ -353,57 +354,64 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          // Modern Gradient Header
-          ModernFormWidgets.buildGradientHeader(
-            context: context,
-            title: 'Rate Calculator',
-            subtitle: 'Calculate giftcard & crypto rates',
-            primaryColor: _primaryColor,
-          ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: _primaryColor,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: Column(
+          children: [
+            // Modern Gradient Header
+            ModernFormWidgets.buildGradientHeader(
+              context: context,
+              title: 'Rate Calculator',
+              subtitle: 'Calculate giftcard & crypto rates',
+              primaryColor: _primaryColor,
+            ),
 
-          // Toggle Buttons
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: ModernFormWidgets.buildFormCard(
-              padding: const EdgeInsets.all(6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildToggleTab(
-                      'Giftcard Rate',
-                      Icons.card_giftcard,
-                      isGiftcardRate,
-                      () => setState(() => isGiftcardRate = true),
+            // Toggle Buttons
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ModernFormWidgets.buildFormCard(
+                padding: const EdgeInsets.all(6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildToggleTab(
+                        'Giftcard Rate',
+                        Icons.card_giftcard,
+                        isGiftcardRate,
+                        () => setState(() => isGiftcardRate = true),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _buildToggleTab(
-                      'Crypto Rate',
-                      Icons.currency_bitcoin,
-                      !isGiftcardRate,
-                      () => setState(() => isGiftcardRate = false),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildToggleTab(
+                        'Crypto Rate',
+                        Icons.currency_bitcoin,
+                        !isGiftcardRate,
+                        () => setState(() => isGiftcardRate = false),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // Content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              child: isGiftcardRate
-                  ? _buildGiftcardRateContent()
-                  : _buildCryptoRateContent(),
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                child: isGiftcardRate
+                    ? _buildGiftcardRateContent()
+                    : _buildCryptoRateContent(),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

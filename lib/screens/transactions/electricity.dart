@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/error_handler.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
@@ -523,7 +524,8 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      _showSnackBar(e.toString().replaceAll('Exception: ', ''), Colors.red);
+      // Use sanitized error message for production
+      _showSnackBar(ErrorHandler.getUserFriendlyMessage(e), Colors.red);
       rethrow;
     } finally {
       if (mounted) setState(() => _isLoading = false);

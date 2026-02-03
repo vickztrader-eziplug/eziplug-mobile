@@ -77,6 +77,7 @@ class AppRoutes {
   static const saveAndEarn = '/saveAndEarn';
   static const lockFund = '/lockFund';
   static const notification = '/notification';
+  static const notificationDetails = '/notification-details';
   static const kyc = '/kyc';
   static const payoutAccounts = '/payoutAccounts';
   static const debugLogs = '/debug-logs';

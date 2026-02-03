@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../services/auth_service.dart';
-import '../reusable/pin_entry_screen.dart';
+import '../../core/widgets/pin_verification_modal.dart';
 
 class GiftCardConfirmationScreen extends StatefulWidget {
   final String type; // 'buy' or 'sell'
@@ -19,7 +20,7 @@ class GiftCardConfirmationScreen extends StatefulWidget {
   final double rate;
   final int quantity;
   final List<String>? images; // For sell only - paths (deprecated)
-  final List<File>? imageFiles; // For sell only - actual files
+  final List<XFile>? imageFiles; // For sell only - XFile for cross-platform support
 
   const GiftCardConfirmationScreen({
     super.key,
@@ -346,7 +347,7 @@ class _GiftCardConfirmationScreenState
 class GiftCardTermsScreen extends StatefulWidget {
   final String type;
   final Map<String, dynamic> transactionData;
-  final List<File>? imageFiles; // File objects for sell
+  final List<XFile>? imageFiles; // XFile objects for sell (cross-platform)
   final String transactionRef;
   final double amountUsd;
   final double amountNgn;
@@ -375,26 +376,30 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
   bool _isAgreed = false;
   bool _isProcessing = false;
 
-  void _proceedToPin() {
+  Future<void> _proceedToPin() async {
     if (!_isAgreed) {
       _showSnackBar('Please agree to the terms and conditions', Colors.red);
       return;
     }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PinEntryScreen(
-          title: 'Confirm Transaction',
-          subtitle: 'Enter your 4 digit PIN to proceed',
-          onPinComplete: (pin) => _processTransaction(pin),
-          onForgotPin: () {
-            Navigator.pop(context);
-            _showSnackBar('Contact support to reset PIN', Colors.orange);
-          },
-        ),
-      ),
+    final isBuy = widget.type == 'buy';
+    final totalAmount = widget.amountNgn * (widget.transactionData['quantity'] as int? ?? 1);
+
+    final pin = await PinVerificationModal.show(
+      context: context,
+      title: 'Confirm Transaction',
+      subtitle: 'Enter your 4-digit PIN to confirm this transaction',
+      transactionType: isBuy ? 'Gift Card Purchase' : 'Gift Card Sale',
+      recipient: '${widget.giftCardName} (${widget.countryName})',
+      amount: '₦${totalAmount.toStringAsFixed(2)}',
+      onForgotPin: () {
+        _showSnackBar('Go to Profile > PIN Management to reset your PIN', Colors.orange);
+      },
     );
+
+    if (pin != null && pin.length == 4) {
+      _processTransaction(pin);
+    }
   }
 
   Future<void> _processTransaction(String pin) async {
@@ -438,16 +443,14 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
             .toString();
         request.fields['pin'] = pin;
 
-        // Add images
+        // Add images - use readAsBytes for cross-platform support (web + mobile)
         for (int i = 0; i < widget.imageFiles!.length; i++) {
-          var file = widget.imageFiles![i];
-          var stream = http.ByteStream(file.openRead());
-          var length = await file.length();
-          var multipartFile = http.MultipartFile(
+          var xFile = widget.imageFiles![i];
+          var bytes = await xFile.readAsBytes();
+          var multipartFile = http.MultipartFile.fromBytes(
             'images[$i]', // Laravel expects images[0], images[1], etc.
-            stream,
-            length,
-            filename: file.path.split('/').last,
+            bytes,
+            filename: xFile.name,
           );
           request.files.add(multipartFile);
         }
@@ -483,9 +486,6 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
       setState(() => _isProcessing = false);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Close PIN screen
-        Navigator.pop(context);
-
         // Show success dialog
         _showSuccessDialog(
           responseData['message'] ??
@@ -493,19 +493,16 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
         );
       } else if (response.statusCode == 400) {
         // Wrong PIN or validation error
-        Navigator.pop(context); // Close PIN screen
         _showSnackBar(
           responseData['message'] ?? 'Invalid PIN or transaction data',
           Colors.red,
         );
       } else {
-        Navigator.pop(context); // Close PIN screen
         throw Exception(responseData['message'] ?? 'Transaction failed');
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isProcessing = false);
-      Navigator.pop(context); // Close PIN screen
       _showSnackBar(e.toString().replaceAll('Exception: ', ''), Colors.red);
     }
   }

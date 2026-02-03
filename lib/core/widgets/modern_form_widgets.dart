@@ -19,15 +19,7 @@ class ModernFormWidgets {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            primaryColor,
-            primaryColor.withOpacity(0.8),
-            primaryColor.withOpacity(0.6),
-          ],
-        ),
+        color: primaryColor,
       ),
       child: SafeArea(
         bottom: false,

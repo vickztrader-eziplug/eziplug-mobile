@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'error_handler.dart';
 
 /// Centralized Toast Helper for consistent toast notifications
 /// 
@@ -55,6 +57,20 @@ class ToastHelper {
       backgroundColor: infoColor,
       icon: Icons.info_outline,
     );
+  }
+  
+  /// Show an exception error with sanitized message for production
+  /// In release mode: Shows generic "Network error" message
+  /// In debug mode: Shows full exception details for debugging
+  static void showException(dynamic exception, {String? fallback}) {
+    final message = ErrorHandler.getUserFriendlyMessage(exception, fallback: fallback);
+    showError(message);
+  }
+  
+  /// Show an exception error with SnackBar (context-based)
+  static void showExceptionSnackBar(BuildContext context, dynamic exception, {String? fallback}) {
+    final message = ErrorHandler.getUserFriendlyMessage(exception, fallback: fallback);
+    showErrorSnackBar(context, message);
   }
 
   /// Handle HTTP error responses appropriately

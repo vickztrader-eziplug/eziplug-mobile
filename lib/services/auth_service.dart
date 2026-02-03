@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:cashpoint/core/utils/constants.dart';
 import 'package:cashpoint/core/utils/api_response.dart';
+import 'package:cashpoint/core/utils/error_handler.dart';
 import 'package:cashpoint/services/debug_logger.dart';
 import 'package:cashpoint/services/api_client.dart';
 import 'package:flutter/material.dart';
@@ -158,8 +159,8 @@ class AuthService extends ChangeNotifier {
       }
     } catch (e, stackTrace) {
       await debugLogger.log('ERROR', 'Register exception: $e');
-      debugPrint('Stack trace: $stackTrace');
-      return {'success': false, 'message': 'Network error: $e'};
+      ErrorHandler.logError('Register', e, stackTrace);
+      return {'success': false, 'message': ErrorHandler.getUserFriendlyMessage(e)};
     }
   }
 
@@ -330,8 +331,8 @@ class AuthService extends ChangeNotifier {
       return {'success': false, 'message': 'Request timed out. Please try again.'};
     } catch (e, stackTrace) {
       await debugLogger.log('ERROR', 'Login exception: ${e.runtimeType}: $e');
-      debugPrint('Stack trace: $stackTrace');
-      return {'success': false, 'message': 'Network error: $e'};
+      ErrorHandler.logError('Login', e, stackTrace);
+      return {'success': false, 'message': ErrorHandler.getUserFriendlyMessage(e)};
     }
   }
 
@@ -446,8 +447,8 @@ class AuthService extends ChangeNotifier {
       }
     } catch (e) {
       print('Verify OTP Exception: $e');
-      print('Exception Stack Trace: ${StackTrace.current}');
-      return {'success': false, 'message': 'Server error: $e'};
+      ErrorHandler.logError('VerifyOTP', e);
+      return {'success': false, 'message': ErrorHandler.getUserFriendlyMessage(e)};
     }
   }
 
@@ -491,7 +492,7 @@ class AuthService extends ChangeNotifier {
         };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Server error: $e'};
+      return {'success': false, 'message': ErrorHandler.getUserFriendlyMessage(e)};
     }
   }
 
@@ -549,7 +550,7 @@ class AuthService extends ChangeNotifier {
         };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Server error: $e'};
+      return {'success': false, 'message': ErrorHandler.getUserFriendlyMessage(e)};
     }
   }
 
@@ -622,7 +623,7 @@ class AuthService extends ChangeNotifier {
       }
     } catch (e) {
       await debugLogger.log('ERROR', 'Resend OTP exception: $e');
-      return {'success': false, 'message': 'Server error: $e'};
+      return {'success': false, 'message': ErrorHandler.getUserFriendlyMessage(e)};
     }
   }
 

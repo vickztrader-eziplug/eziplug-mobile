@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -39,7 +41,8 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
   double _amountNgn = 0.0;
   double _rate = 0.0;
 
-  List<File> _selectedImages = [];
+  List<XFile> _selectedImages = [];
+  Map<String, Uint8List> _imageBytes = {}; // Cache for web image display
   final ImagePicker _imagePicker = ImagePicker();
 
   @override
@@ -162,11 +165,17 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
       final List<XFile> pickedFiles = await _imagePicker.pickMultiImage();
 
       if (pickedFiles.isNotEmpty) {
+        final newImages = pickedFiles.take(5 - _selectedImages.length).toList();
+        
+        // Cache bytes for web display
+        if (kIsWeb) {
+          for (final xFile in newImages) {
+            _imageBytes[xFile.path] = await xFile.readAsBytes();
+          }
+        }
+        
         setState(() {
-          _selectedImages = pickedFiles
-              .take(5) // Maximum 5 images
-              .map((xFile) => File(xFile.path))
-              .toList();
+          _selectedImages.addAll(newImages);
         });
       }
     } catch (e) {
@@ -182,8 +191,13 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
       );
 
       if (photo != null && _selectedImages.length < 5) {
+        // Cache bytes for web display
+        if (kIsWeb) {
+          _imageBytes[photo.path] = await photo.readAsBytes();
+        }
+        
         setState(() {
-          _selectedImages.add(File(photo.path));
+          _selectedImages.add(photo);
         });
       }
     } catch (e) {
@@ -193,7 +207,8 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
 
   void _removeImage(int index) {
     setState(() {
-      _selectedImages.removeAt(index);
+      final removed = _selectedImages.removeAt(index);
+      _imageBytes.remove(removed.path); // Clean up cached bytes
     });
   }
 
@@ -250,7 +265,7 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
           amountNgn: _amountNgn,
           rate: _rate,
           quantity: int.parse(_quantityController.text),
-          imageFiles: _selectedImages, // Pass actual File objects
+          imageFiles: _selectedImages, // Pass XFile objects for cross-platform support
         ),
       ),
     );
@@ -634,12 +649,19 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      _selectedImages[index],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                    ),
+                    child: kIsWeb
+                        ? Image.memory(
+                            _imageBytes[_selectedImages[index].path]!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          )
+                        : Image.file(
+                            File(_selectedImages[index].path),
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
                   ),
                   Positioned(
                     top: 4,

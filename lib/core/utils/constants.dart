@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class Constants {
   static const String baseUrl =
-      // "http://127.0.0.1:8000/api"; // For local testing
-      "https://app.eziplug.app/api"; // Production URL
+      "http://127.0.0.1:8000/api"; // For local testing
+      // "https://app.eziplug.app/api"; // Production URL
 
   // App Info
   static const String appName = 'Eziplug';
@@ -97,6 +97,13 @@ class Constants {
   static const String statusCompleted = 'completed';
   static const String statusFailed = 'failed';
   static const String statusCancelled = 'cancelled';
+
+  // Notification Endpoints
+  static const String notifications = '$baseUrl/notifications';
+  static const String notificationsUnreadCount = '$baseUrl/notifications/unread-count';
+  static const String notificationsMarkAllRead = '$baseUrl/notifications/mark-all-read';
+  // For single notification: append /{id} to notifications
+  // For mark as read: POST to notifications/{id}/mark-read
 
   // Gift Card Types
   static const String giftCardTypeBuy = 'buy';

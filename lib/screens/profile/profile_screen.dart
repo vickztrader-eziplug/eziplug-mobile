@@ -49,15 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SliverToBoxAdapter(
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          AppColors.primary,
-                          AppColors.primary.withOpacity(0.8),
-                          const Color(0xFF1A237E),
-                        ],
-                      ),
+                      color: AppColors.primary,
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(sw * 0.08),
                         bottomRight: Radius.circular(sw * 0.08),
@@ -515,13 +507,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (hasPending)
-                          SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(tierColor),
-                            ),
+                          Icon(
+                            Icons.hourglass_empty_rounded,
+                            size: 14,
+                            color: tierColor,
                           )
                         else
                           Icon(

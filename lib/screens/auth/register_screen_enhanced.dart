@@ -238,7 +238,8 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
       if (e.toString().contains('TimeoutException')) {
         ToastHelper.showError("Request timed out. Please check your internet connection.");
       } else {
-        ToastHelper.showError("Network error: ${e.toString()}");
+        // Use sanitized error message for production
+        ToastHelper.showException(e, fallback: "Network error. Please try again.");
       }
     }
   }

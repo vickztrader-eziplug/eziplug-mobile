@@ -38,15 +38,7 @@ class MoreServicesScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primaryLight,
-                      AppColors.gradientEnd,
-                    ],
-                  ),
+                  color: AppColors.primary,
                 ),
                 child: SafeArea(
                   child: Padding(

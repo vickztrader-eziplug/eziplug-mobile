@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../services/auth_service.dart';
+import '../../services/notification_service.dart';
 import '../../routes.dart';
 import '../transactions/airtime_screen.dart';
 import '../transactions/data_screen.dart';
@@ -42,6 +43,10 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
   double _walletDollar = 0.0;
   bool _isLoadingUserData = true;
   bool _isRefreshing = false;
+
+  // Notification data
+  late NotificationService _notificationService;
+  int _unreadNotificationCount = 0;
 
   // Time-based greeting
   String get _greeting {
@@ -97,6 +102,15 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     
     _startAutoScroll();
     _fetchUserData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize notification service
+    final authService = Provider.of<AuthService>(context, listen: false);
+    _notificationService = NotificationService(authService);
+    _fetchUnreadCount();
   }
 
   Future<void> _fetchUserData() async {
@@ -156,10 +170,26 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     }
   }
 
+  Future<void> _fetchUnreadCount() async {
+    try {
+      final count = await _notificationService.fetchUnreadCount();
+      if (mounted) {
+        setState(() {
+          _unreadNotificationCount = count;
+        });
+      }
+    } catch (e) {
+      // Silently fail - notification count is not critical
+    }
+  }
+
   Future<void> _refreshData() async {
     setState(() => _isRefreshing = true);
     try {
-      await _fetchUserData();
+      await Future.wait([
+        _fetchUserData(),
+        _fetchUnreadCount(),
+      ]);
     } finally {
       if (mounted) setState(() => _isRefreshing = false);
     }
@@ -406,8 +436,10 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                           borderRadius: BorderRadius.circular(sw * 0.03),
                         ),
                         child: IconButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, AppRoutes.notification);
+                          onPressed: () async {
+                            await Navigator.pushNamed(context, AppRoutes.notification);
+                            // Refresh unread count when returning from notifications
+                            _fetchUnreadCount();
                           },
                           icon: Icon(
                             Icons.notifications_none_rounded,
@@ -416,29 +448,30 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                           ),
                         ),
                       ),
-                      Positioned(
-                        right: 4,
-                        top: 4,
-                        child: Container(
-                          width: sw * 0.045,
-                          height: sw * 0.045,
-                          decoration: BoxDecoration(
-                            color: AppColors.accentPink,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.primary, width: 2),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '3',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: sw * 0.022,
-                                fontWeight: FontWeight.bold,
+                      if (_unreadNotificationCount > 0)
+                        Positioned(
+                          right: 4,
+                          top: 4,
+                          child: Container(
+                            width: sw * 0.045,
+                            height: sw * 0.045,
+                            decoration: BoxDecoration(
+                              color: AppColors.accentPink,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.primary, width: 2),
+                            ),
+                            child: Center(
+                              child: Text(
+                                _unreadNotificationCount > 9 ? '9+' : '$_unreadNotificationCount',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: sw * 0.022,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ],
