@@ -327,9 +327,13 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Extract customer name from the response
+        // Backend returns: { "success": true, "message": "...", "data": { "code": "000", "content": { "Customer_Name": "..." } } }
+        final content = data['data']?['content'];
+        final customerName = content?['Customer_Name'] ?? content?['customer_name'];
+        
         setState(() {
-          _customerName =
-              data['results']['data']['content']['Customer_Name'] ?? 'Verified';
+          _customerName = customerName ?? 'Verified';
           _meterVerificationError = null;
         });
         print('Customer name: $_customerName');

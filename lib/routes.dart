@@ -23,6 +23,7 @@ import 'package:cashpoint/screens/transactions/education_pin_screen.dart';
 import 'package:cashpoint/screens/transactions/electricity.dart';
 import 'package:cashpoint/screens/transactions/gift_user.dart';
 import 'package:cashpoint/screens/transactions/lock_fund.dart';
+import 'package:cashpoint/screens/transactions/lock_fund_history.dart';
 import 'package:cashpoint/screens/transactions/more_services.dart';
 import 'package:cashpoint/screens/transactions/notification_screen.dart';
 import 'package:cashpoint/screens/transactions/rate_calculator.dart';
@@ -76,6 +77,7 @@ class AppRoutes {
   static const educationPin = '/educationPin';
   static const saveAndEarn = '/saveAndEarn';
   static const lockFund = '/lockFund';
+  static const lockFundHistory = '/lockFundHistory';
   static const notification = '/notification';
   static const notificationDetails = '/notification-details';
   static const kyc = '/kyc';
@@ -178,6 +180,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const SaveAndEarnScreen());
       case lockFund:
         return MaterialPageRoute(builder: (_) => const LockFundScreen());
+      case lockFundHistory:
+        return MaterialPageRoute(builder: (_) => const LockFundHistoryScreen());
       case rateCalculator:
         return MaterialPageRoute(builder: (_) => const RateCalculatorScreen());
       case notification:

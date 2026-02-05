@@ -133,18 +133,25 @@ class _GiftCardConfirmationScreenState
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 8),
                     // Icon and Type
-                    Icon(
-                      isBuy ? Icons.shopping_bag : Icons.sell,
-                      size: 48,
-                      color: Colors.white,
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isBuy ? Icons.shopping_bag : Icons.sell,
+                        size: 28,
+                        color: Colors.white,
+                      ),
                     ),
-                    // const SizedBox(height: 5),
+                    const SizedBox(height: 8),
                     Text(
                       '${isBuy ? 'Buying' : 'Selling'} Gift Card',
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class Constants {
   static const String baseUrl =
-      // "http://127.0.0.1:8000/api"; // For local testing
-      "https://app.eziplug.app/api"; // Production URL
+      "http://127.0.0.1:8000/api"; // For local testing
+      // "https://app.eziplug.app/api"; // Production URL
 
   // App Info
   static const String appName = 'Eziplug';
@@ -48,6 +48,8 @@ class Constants {
   static const lockFund = '$baseUrl/payout/lock';
   static const releaseFund = '$baseUrl/payout/release';
   static const lockHistory = '$baseUrl/payout/lock/history';
+  static const lockSummary = '$baseUrl/payout/lock/summary';
+  static const lockEarnHistory = '$baseUrl/payout/lock/earn-history';
   static const giftcardRates = '$baseUrl/giftcard/rates';
   static const cryptoRates = '$baseUrl/crypto/rates';
   static const airtimeSwapRate = '$baseUrl/vtu/airtime-swap/rate';

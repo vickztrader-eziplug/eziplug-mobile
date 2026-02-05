@@ -7,7 +7,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
-import '../reusable/pin_entry_screen.dart';
 import 'lock_fund.dart';
 
 class SaveAndEarnScreen extends StatefulWidget {
@@ -21,23 +20,13 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
   // Green color for Save & Earn
   static const Color _primaryColor = Color(0xFF4CAF50);
 
-  final TextEditingController _withdrawAmountController =
-      TextEditingController();
-
   double _walletNaira = 0.0;
   double _lockedBalance = 0.0;
   double _totalInterest = 0.0;
   double _totalInterestBal = 0.0;
   bool _isLoadingWallet = true;
   bool _isLoadingHistory = true;
-  bool _isLoading = false;
   List<Map<String, dynamic>> _lockHistory = [];
-
-  @override
-  void dispose() {
-    _withdrawAmountController.dispose();
-    super.dispose();
-  }
 
   @override
   void initState() {
@@ -64,21 +53,25 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
         },
       );
 
+      print('User API response status: ${response.statusCode}');
+      print('User API response body: ${response.body}');
+      
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
+        // API unwraps single-element arrays, so data is directly the user object
         final userData = responseData['data'] ?? responseData;
+        
+        print('Parsed userData: $userData');
+        print('wallet_naira value: ${userData['wallet_naira']}');
 
         if (mounted) {
           setState(() {
+            // Only set wallet balance here - locked balance comes from summary API
             _walletNaira =
                 double.tryParse(userData['wallet_naira']?.toString() ?? '0') ?? 0.0;
-            _lockedBalance =
-                double.tryParse(userData['locked_balance']?.toString() ?? '0') ??
-                0.0;
-            _totalInterestBal =
-                double.tryParse(userData['interest']?.toString() ?? '0') ?? 0.0;
             _isLoadingWallet = false;
           });
+          print('Set _walletNaira to: $_walletNaira');
         }
       }
     } catch (e) {
@@ -99,56 +92,102 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
         return;
       }
 
-      final response = await http.get(
-        Uri.parse(Constants.lockHistory),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
+      // Fetch both history and summary in parallel
+      final responses = await Future.wait([
+        http.get(
+          Uri.parse(Constants.lockHistory),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
+        http.get(
+          Uri.parse(Constants.lockSummary),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
+      ]);
 
-      print('Lock history response: ${response.body}');
+      final historyResponse = responses[0];
+      final summaryResponse = responses[1];
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      print('Lock history response: ${historyResponse.body}');
+      print('Lock summary response: ${summaryResponse.body}');
 
-        if (mounted) {
-          setState(() {
-            // Handle different response structures
-            final historyData = data['result'] ?? [];
+      if (mounted) {
+        // Parse summary FIRST to get totals
+        if (summaryResponse.statusCode == 200) {
+          final summaryData = jsonDecode(summaryResponse.body);
+          print('Summary data parsed: $summaryData');
+          
+          // API unwraps single-element arrays, so data is directly the summary object
+          final summary = summaryData['data'] ?? {};
+          print('Summary object: $summary');
 
-            if (historyData is List) {
-              _lockHistory = historyData
-                  .map(
-                    (item) => {
-                      'amount':
-                          double.tryParse(item['amount']?.toString() ?? '0') ??
-                          0.0,
-                      'date':
-                          item['date'] ??
-                          item['unlock_date'] ??
-                          item['created_at'] ??
-                          '',
-                      'interest':
-                          double.tryParse(
-                            item['interest']?.toString() ?? '0',
-                          ) ??
-                          0.0,
-                      'status': item['status'] ?? 'active',
-                    },
-                  )
-                  .toList();
-
-              // Calculate total interest from history (for reference)
-              _totalInterest = _lockHistory.fold(
-                0.0,
-                (sum, item) => sum + (item['interest'] as double),
-              );
-            }
-
-            _isLoadingHistory = false;
-          });
+          if (summary is Map) {
+            final totalLocked = double.tryParse(summary['total_locked']?.toString() ?? '0') ?? 0.0;
+            final totalInterestEarned = double.tryParse(summary['total_interest_earned']?.toString() ?? '0') ?? 0.0;
+            
+            print('Parsed total_locked: $totalLocked, total_interest_earned: $totalInterestEarned');
+            
+            _lockedBalance = totalLocked;
+            _totalInterest = totalInterestEarned;
+            _totalInterestBal = totalInterestEarned;
+          }
         }
+
+        // Parse history
+        if (historyResponse.statusCode == 200) {
+          final data = jsonDecode(historyResponse.body);
+          print('History data parsed: $data');
+          
+          // API unwraps single-element arrays, so data is directly the history array
+          final historyData = data['data'] ?? [];
+          print('History array: $historyData');
+
+          if (historyData is List) {
+            _lockHistory = historyData
+                .map(
+                  (item) => {
+                    'id': item['id'],
+                    'reference': item['reference'] ?? '',
+                    'amount':
+                        double.tryParse(item['principal_amount']?.toString() ?? '0') ??
+                        0.0,
+                    'date': item['unlock_date'] ?? item['created_at'] ?? '',
+                    'interest':
+                        double.tryParse(
+                          item['total_interest_earned']?.toString() ?? '0',
+                        ) ??
+                        0.0,
+                    'expected_interest':
+                        double.tryParse(
+                          item['expected_interest']?.toString() ?? '0',
+                        ) ??
+                        0.0,
+                    'interest_rate':
+                        double.tryParse(
+                          item['interest_rate']?.toString() ?? '0',
+                        ) ??
+                        0.0,
+                    'status': item['status'] ?? 'active',
+                    'remaining_days': item['remaining_days'] ?? 0,
+                    'lock_days': item['lock_days'] ?? 0,
+                  },
+                )
+                .toList()
+                .cast<Map<String, dynamic>>();
+            print('Parsed lock history count: ${_lockHistory.length}');
+          }
+        }
+
+        setState(() {
+          _isLoadingHistory = false;
+        });
+        
+        print('Final state: _lockedBalance=$_lockedBalance, _totalInterestBal=$_totalInterestBal, _lockHistory.length=${_lockHistory.length}');
       }
     } catch (e) {
       print('Error fetching lock history: $e');
@@ -156,333 +195,6 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
         setState(() => _isLoadingHistory = false);
       }
     }
-  }
-
-  void _showWithdrawModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: _primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.account_balance_wallet_outlined,
-                        color: _primaryColor,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Withdraw Funds',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Available: ₦${_formatBalance(_lockedBalance)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textColor.withOpacity(0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Amount Input using ModernFormWidgets
-                ModernFormWidgets.buildTextField(
-                  controller: _withdrawAmountController,
-                  hintText: 'Enter amount to withdraw',
-                  label: 'Amount',
-                  prefixIcon: Icons.monetization_on_outlined,
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 24),
-
-                // Confirm Button
-                ModernFormWidgets.buildPrimaryButton(
-                  label: 'Confirm Withdrawal',
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _proceedToWithdrawPin();
-                  },
-                  backgroundColor: _primaryColor,
-                  icon: Icons.check_circle_outline,
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _proceedToWithdrawPin() async {
-    // Validation
-    if (_withdrawAmountController.text.isEmpty) {
-      _showSnackBar('Please enter an amount', Colors.red);
-      return;
-    }
-
-    final amount =
-        double.tryParse(_withdrawAmountController.text.replaceAll(',', '')) ??
-        0.0;
-
-    if (amount <= 0) {
-      _showSnackBar('Please enter a valid amount', Colors.red);
-      return;
-    }
-
-    if (amount > _lockedBalance) {
-      _showSnackBar('Insufficient locked balance', Colors.red);
-      return;
-    }
-
-    // Check auth
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final token = await authService.getToken();
-
-    if (token == null || token.isEmpty) {
-      _showSnackBar('Please login to continue', Colors.red);
-      Navigator.pushReplacementNamed(context, '/login');
-      return;
-    }
-
-    // Navigate to PIN screen
-    if (!mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PinEntryScreen(
-          title: 'Confirm Withdrawal',
-          subtitle: 'Enter your 4 digit PIN to withdraw funds',
-          onPinComplete: (pin) => _processWithdrawal(pin),
-          onForgotPin: () {
-            Navigator.pop(context);
-            _showSnackBar('Contact support to reset PIN', Colors.orange);
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _processWithdrawal(String pin) async {
-    setState(() => _isLoading = true);
-
-    try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final token = await authService.getToken();
-
-      final amount =
-          double.tryParse(_withdrawAmountController.text.replaceAll(',', '')) ??
-          0.0;
-
-      final payload = {'amount': amount, 'pin': pin};
-
-      print('Withdrawal payload: $payload');
-
-      final response = await http.post(
-        Uri.parse('${Constants.baseUrl}/payout/release'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(payload),
-      );
-
-      final responseData = jsonDecode(response.body);
-      print('Withdrawal response: $responseData');
-
-      if (!mounted) return;
-
-      // Check if request was successful based on success field
-      final bool isSuccess = responseData['success'] == true;
-      final String message = responseData['message'] ?? '';
-
-      if (response.statusCode == 401) {
-        // Session expired
-        Navigator.pop(context);
-        _showSnackBar('Session expired. Please login again', Colors.red);
-        await authService.logout();
-        return;
-      }
-
-      if (isSuccess &&
-          (response.statusCode == 200 || response.statusCode == 201)) {
-        // Successful withdrawal
-        Navigator.pop(context);
-
-        // Clear input
-        _withdrawAmountController.clear();
-
-        // Refresh data
-        _fetchWalletAndLockedBalance();
-        _fetchLockHistory();
-
-        // Show success message
-        _showSuccessDialog(
-          message.isNotEmpty ? message : 'Withdrawal successful',
-          amount,
-        );
-      } else {
-        // Failed withdrawal
-        // Check if it's a PIN error
-        if (message.toLowerCase().contains('pin') ||
-            message.toLowerCase().contains('incorrect') ||
-            message.toLowerCase().contains('invalid')) {
-          // Keep PIN screen open for PIN errors
-          _showSnackBar(
-            message.isNotEmpty ? message : 'Invalid PIN',
-            Colors.red,
-          );
-          throw Exception(message);
-        } else {
-          // Close PIN screen for other errors (like locked funds)
-          Navigator.pop(context);
-          _showSnackBar(
-            message.isNotEmpty ? message : 'Failed to process withdrawal',
-            Colors.red,
-          );
-        }
-      }
-    } catch (e) {
-      if (!mounted) return;
-
-      // Only show snackbar if we haven't already shown one
-      String errorMessage = e.toString().replaceAll('Exception: ', '');
-
-      // Check if this is a PIN error we already displayed
-      bool isPinError =
-          errorMessage.toLowerCase().contains('pin') ||
-          errorMessage.toLowerCase().contains('incorrect') ||
-          errorMessage.toLowerCase().contains('invalid');
-
-      if (!isPinError) {
-        _showSnackBar(errorMessage, Colors.red);
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _showSuccessDialog(String message, double amount) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          contentPadding: const EdgeInsets.all(24),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: _primaryColor.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle,
-                  color: _primaryColor,
-                  size: 48,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Success!',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textColor,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textColor.withOpacity(0.7),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '₦${amount.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: _primaryColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Credited to your wallet',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textColor.withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(height: 24),
-              ModernFormWidgets.buildPrimaryButton(
-                label: 'Done',
-                onPressed: () => Navigator.pop(context),
-                backgroundColor: _primaryColor,
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   void _showSnackBar(String message, Color color) {
@@ -670,7 +382,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                                 if (_lockHistory.isNotEmpty)
                                   TextButton(
                                     onPressed: () {
-                                      // View all activities
+                                      Navigator.pushNamed(context, '/lockFundHistory');
                                     },
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -766,15 +478,6 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-
-                      // Withdraw Button
-                      ModernFormWidgets.buildPrimaryButton(
-                        label: 'Withdraw Savings',
-                        onPressed: _lockedBalance > 0 ? _showWithdrawModal : null,
-                        backgroundColor: _primaryColor,
-                        icon: Icons.account_balance_wallet_outlined,
-                      ),
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -782,18 +485,6 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
               ),
             ],
           ),
-
-          // Loading Overlay
-          if (_isLoading)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: CircularProgressIndicator(
-                  color: _primaryColor,
-                  strokeWidth: 3,
-                ),
-              ),
-            ),
         ],
       ),
     ),

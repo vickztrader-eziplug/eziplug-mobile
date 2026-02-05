@@ -1,6 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show InternetAddress, SocketException;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
@@ -145,10 +146,17 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
 
   /// Check if device has internet connectivity
   Future<bool> _hasInternetConnection() async {
+    // On web, skip this check - CORS blocks requests to external sites
+    // If the app loaded, the user has internet
+    if (kIsWeb) return true;
+    
     try {
+      // Use dart:io for native platforms (Android/iOS)
       final result = await InternetAddress.lookup('google.com');
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } on SocketException catch (_) {
+      return false;
+    } catch (_) {
       return false;
     }
   }
