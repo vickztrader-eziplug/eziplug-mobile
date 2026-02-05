@@ -136,23 +136,14 @@ class _GiftCardConfirmationScreenState
                     const SizedBox(height: 8),
                     // Icon and Type
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         isBuy ? Icons.shopping_bag : Icons.sell,
-                        size: 28,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${isBuy ? 'Buying' : 'Selling'} Gift Card',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        size: 24,
                         color: Colors.white,
                       ),
                     ),
@@ -628,11 +619,13 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Icon(Icons.article, size: 48, color: Colors.white),
-                    const SizedBox(height: 3),
-                    const Text(
-                      'Please read carefully',
-                      style: TextStyle(fontSize: 16, color: Colors.white70),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.article, size: 24, color: Colors.white),
                     ),
                   ],
                 ),

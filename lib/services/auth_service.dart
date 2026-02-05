@@ -867,4 +867,55 @@ class AuthService extends ChangeNotifier {
     }
     await _clearAuth();
   }
+
+  /// Update profile photo from liveness check (uses same endpoint as edit profile)
+  Future<Map<String, dynamic>> updateProfilePhoto(List<int> imageBytes, String filename) async {
+    final token = await getToken();
+    if (token == null) {
+      return {'success': false, 'message': 'Not authenticated'};
+    }
+
+    try {
+      final uri = Uri.parse('$baseUrl/passport');
+      final request = http.MultipartRequest('POST', uri);
+
+      request.headers['Authorization'] = 'Bearer $token';
+      request.headers['Accept'] = 'application/json';
+
+      // Add the image file - uses 'photo' field same as edit profile
+      request.files.add(http.MultipartFile.fromBytes(
+        'photo',
+        imageBytes,
+        filename: filename.isNotEmpty ? filename : 'liveness_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      ));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        
+        // Refresh user data to get the updated photo URL
+        await refreshUserData();
+        
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Photo updated successfully',
+          'data': data['data'],
+        };
+      } else {
+        final data = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to upload photo',
+        };
+      }
+    } catch (e) {
+      debugPrint('Error uploading profile photo: $e');
+      return {
+        'success': false,
+        'message': 'Error uploading photo: $e',
+      };
+    }
+  }
 }

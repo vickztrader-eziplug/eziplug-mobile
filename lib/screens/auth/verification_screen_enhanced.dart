@@ -141,12 +141,12 @@ class _VerificationScreenEnhancedState extends State<VerificationScreenEnhanced>
               // PIN already set, go to main screen
               Navigator.pushReplacementNamed(context, AppRoutes.main);
             } else {
-              // PIN not set, go to PIN setup
-              Navigator.pushReplacementNamed(context, AppRoutes.pinSetup);
+              // PIN not set, go to liveness check first
+              Navigator.pushReplacementNamed(context, AppRoutes.livenessCheck);
             }
           } else {
-            // If verifying after registration, go to PIN setup
-            Navigator.pushReplacementNamed(context, AppRoutes.pinSetup);
+            // If verifying after registration, go to liveness check first
+            Navigator.pushReplacementNamed(context, AppRoutes.livenessCheck);
           }
         }
       } else {

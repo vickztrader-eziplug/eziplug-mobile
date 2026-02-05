@@ -1,4 +1,5 @@
 import 'package:cashpoint/screens/auth/forgot_password_screen_enhanced.dart';
+import 'package:cashpoint/screens/auth/liveness_check_screen.dart';
 import 'package:cashpoint/screens/auth/pin_setup_screen.dart';
 import 'package:cashpoint/screens/home/main_screen.dart';
 import 'package:cashpoint/screens/profile/about_screen.dart';
@@ -83,6 +84,7 @@ class AppRoutes {
   static const kyc = '/kyc';
   static const payoutAccounts = '/payoutAccounts';
   static const debugLogs = '/debug-logs';
+  static const livenessCheck = '/liveness-check';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -116,6 +118,8 @@ class AppRoutes {
         );
       case pinSetup:
         return MaterialPageRoute(builder: (_) => const PinSetupScreen());
+      case livenessCheck:
+        return MaterialPageRoute(builder: (_) => const LivenessCheckScreen());
       case login:
         // ✅ FIXED: Pass savedEmail to LoginScreen
         final savedEmail = settings.arguments as String?;

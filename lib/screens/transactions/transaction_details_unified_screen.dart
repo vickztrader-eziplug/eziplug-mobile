@@ -1,18 +1,32 @@
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 // ignore: depend_on_referenced_packages
 import 'package:share_plus/share_plus.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/constants.dart';
 import '../../services/transaction_service.dart';
 import '../../services/pdf_service.dart';
+import '../../services/auth_service.dart';
 import 'transactions_screen.dart'; // For PdfService compatibility
 
 /// Unified Transaction Detail Screen using UnifiedTransaction model
-class TransactionDetailUnifiedScreen extends StatelessWidget {
+class TransactionDetailUnifiedScreen extends StatefulWidget {
   final UnifiedTransaction transaction;
 
   const TransactionDetailUnifiedScreen({super.key, required this.transaction});
+
+  @override
+  State<TransactionDetailUnifiedScreen> createState() => _TransactionDetailUnifiedScreenState();
+}
+
+class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifiedScreen> {
+  UnifiedTransaction get transaction => widget.transaction;
 
   Color _getStatusColor(String status) {
     final statusLower = status.toLowerCase();
@@ -117,37 +131,16 @@ class TransactionDetailUnifiedScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _contactSupport(BuildContext context) async {
-    final phoneNumber = '2347035743427';
-    final message = 'Hello, I need help with transaction ${transaction.reference}';
-    final whatsappUrl = 'https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}';
-
-    try {
-      final uri = Uri.parse(whatsappUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open WhatsApp. Please make sure it is installed.'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening WhatsApp: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+  void _showReportForm(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ReportFormSheet(
+        transactionReference: transaction.reference,
+        transactionType: transaction.type,
+      ),
+    );
   }
 
   /// Get display-friendly details from transaction
@@ -486,9 +479,9 @@ class TransactionDetailUnifiedScreen extends StatelessWidget {
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: () => _contactSupport(context),
-                              icon: const Icon(Icons.support_agent),
-                              label: const Text('Contact Support'),
+                              onPressed: () => _showReportForm(context),
+                              icon: const Icon(Icons.report_problem_outlined),
+                              label: const Text('Report'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.primary,
                                 side: const BorderSide(color: AppColors.primary),
@@ -504,7 +497,7 @@ class TransactionDetailUnifiedScreen extends StatelessWidget {
                             child: ElevatedButton.icon(
                               onPressed: () => _shareReceipt(context),
                               icon: const Icon(Icons.share),
-                              label: const Text('Share Receipt'),
+                              label: const Text('Share'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
@@ -628,6 +621,392 @@ class TransactionDetailUnifiedScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Report Form Bottom Sheet Widget
+class ReportFormSheet extends StatefulWidget {
+  final String transactionReference;
+  final String transactionType;
+
+  const ReportFormSheet({
+    super.key,
+    required this.transactionReference,
+    required this.transactionType,
+  });
+
+  @override
+  State<ReportFormSheet> createState() => _ReportFormSheetState();
+}
+
+class _ReportFormSheetState extends State<ReportFormSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _messageController = TextEditingController();
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes;
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 80,
+    );
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      setState(() {
+        _selectedImage = pickedFile;
+        _selectedImageBytes = bytes;
+      });
+    }
+  }
+
+  Future<void> _submitReport() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final token = authService.token;
+
+      final uri = Uri.parse('${Constants.baseUrl}/support/tickets');
+      final request = http.MultipartRequest('POST', uri);
+
+      request.headers['Authorization'] = 'Bearer $token';
+      request.headers['Accept'] = 'application/json';
+
+      request.fields['reference'] = widget.transactionReference;
+      request.fields['transaction_type'] = widget.transactionType;
+      request.fields['title'] = _titleController.text.trim();
+      request.fields['message'] = _messageController.text.trim();
+
+      if (_selectedImage != null && _selectedImageBytes != null) {
+        request.files.add(http.MultipartFile.fromBytes(
+          'attachment',
+          _selectedImageBytes!,
+          filename: _selectedImage!.name,
+        ));
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (!mounted) return;
+
+      if (response.statusCode == 201) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Report submitted successfully. We will get back to you soon.'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit report: ${response.body}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Widget _buildInputField({
+    required String label,
+    required String hint,
+    required IconData icon,
+    required TextEditingController controller,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: controller,
+            maxLines: maxLines,
+            style: const TextStyle(
+              fontSize: 16,
+              color: AppColors.textColor,
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+              prefixIcon: Container(
+                margin: EdgeInsets.only(left: 12, right: 8, bottom: maxLines > 1 ? 60 : 0),
+                child: Icon(
+                  icon,
+                  color: AppColors.primary.withOpacity(0.7),
+                  size: 22,
+                ),
+              ),
+              prefixIconConstraints: const BoxConstraints(minWidth: 50),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.grey.shade200,
+                  width: 1.5,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 2,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.red.shade300, width: 1.5),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red, width: 2),
+              ),
+            ),
+            validator: validator,
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Title
+              const Text(
+                'Report an Issue',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Reference: ${widget.transactionReference}',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Issue Title Field
+              _buildInputField(
+                label: 'Issue Title',
+                hint: 'e.g., Transaction not received',
+                icon: Icons.title,
+                controller: _titleController,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter an issue title';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Message Field
+              _buildInputField(
+                label: 'Describe the Issue',
+                hint: 'Please provide details about the problem...',
+                icon: Icons.message_outlined,
+                controller: _messageController,
+                maxLines: 4,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please describe the issue';
+                  }
+                  if (value.trim().length < 10) {
+                    return 'Please provide more details (at least 10 characters)';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Image Attachment
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: _selectedImageBytes != null
+                      ? Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.memory(
+                                _selectedImageBytes!,
+                                height: 150,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: GestureDetector(
+                                onTap: () => setState(() {
+                                  _selectedImage = null;
+                                  _selectedImageBytes = null;
+                                }),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            Icon(
+                              Icons.add_photo_alternate_outlined,
+                              size: 40,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Add Screenshot (Optional)',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Submit Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submitReport,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Submit Report',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
       ),
     );
   }
