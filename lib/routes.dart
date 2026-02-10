@@ -40,6 +40,7 @@ import 'screens/auth/register_screen_enhanced.dart';
 import 'screens/auth/verification_screen_enhanced.dart';
 import 'screens/auth/login_screen_enhanced.dart';
 import 'screens/profile/profile_screen.dart';
+import 'screens/security/app_lock_screen.dart';
 
 class AppRoutes {
   static const splash = '/';
@@ -85,6 +86,7 @@ class AppRoutes {
   static const payoutAccounts = '/payoutAccounts';
   static const debugLogs = '/debug-logs';
   static const livenessCheck = '/liveness-check';
+  static const appLock = '/app-lock';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -120,6 +122,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const PinSetupScreen());
       case livenessCheck:
         return MaterialPageRoute(builder: (_) => const LivenessCheckScreen());
+      case appLock:
+        return MaterialPageRoute(builder: (_) => const AppLockScreen());
       case login:
         // ✅ FIXED: Pass savedEmail to LoginScreen
         final savedEmail = settings.arguments as String?;

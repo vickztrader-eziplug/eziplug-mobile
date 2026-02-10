@@ -81,8 +81,8 @@ class _SplashScreenState extends State<SplashScreen>
         // Liveness complete but PIN not set → Go to PIN setup
         Navigator.of(context).pushReplacementNamed(AppRoutes.pinSetup);
       } else {
-        // All verifications complete → Home
-        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+        // All verifications complete → Show app lock screen for security
+        Navigator.of(context).pushReplacementNamed(AppRoutes.appLock);
       }
     } else if (authService.hasCompletedOnboarding) {
       // Returning user → Login with saved email

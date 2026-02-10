@@ -56,5 +56,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Eziplug uses Face ID to securely authenticate you when accessing the app.</string>
 </dict>
 </plist>
