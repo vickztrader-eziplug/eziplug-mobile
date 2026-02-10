@@ -46,8 +46,8 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
 
   // Thresholds
   static const double _smileThreshold = 0.7;
-  static const double _eyeOpenThreshold = 0.3;
-  static const double _headTurnThreshold = 25.0;
+  static const double _eyeOpenThreshold = 0.5; // Increased for better blink sensitivity
+  static const double _headTurnThreshold = 15.0; // Reduced for more natural head turns
 
   @override
   void initState() {
@@ -224,15 +224,17 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
         break;
 
       case LivenessStep.turnLeft:
-        final headY = face.headEulerAngleY ?? 0;
-        if (headY < -_headTurnThreshold) {
+        // Note: Front camera is mirrored, so positive headY means user sees themselves turning left
+        final headYLeft = face.headEulerAngleY ?? 0;
+        if (headYLeft > _headTurnThreshold) {
           stepPassed = true;
         }
         break;
 
       case LivenessStep.turnRight:
-        final headY = face.headEulerAngleY ?? 0;
-        if (headY > _headTurnThreshold) {
+        // Note: Front camera is mirrored, so negative headY means user sees themselves turning right
+        final headYRight = face.headEulerAngleY ?? 0;
+        if (headYRight < -_headTurnThreshold) {
           stepPassed = true;
         }
         break;
@@ -633,64 +635,80 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
       return _buildCapturedPhotoView();
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Camera preview with circular clip
-            if (_isCameraInitialized && _cameraController != null)
-              ClipOval(
-                child: SizedBox.expand(
-                  child: FittedBox(
-                    fit: BoxFit.cover,
-                    child: SizedBox(
-                      width: _cameraController!.value.previewSize?.height ?? 1,
-                      height: _cameraController!.value.previewSize?.width ?? 1,
-                      child: CameraPreview(_cameraController!),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Calculate circle size based on available width
+            final circleSize = constraints.maxWidth;
+            
+            return SizedBox(
+              width: circleSize,
+              height: circleSize,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Camera preview with circular clip - only shows inside the circle
+                  if (_isCameraInitialized && _cameraController != null)
+                    Container(
+                      width: circleSize,
+                      height: circleSize,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                      ),
+                      clipBehavior: Clip.hardEdge,
+                      child: Transform.scale(
+                        scale: 1.2, // Slight zoom to fill the circle better
+                        child: CameraPreview(_cameraController!),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: circleSize,
+                      height: circleSize,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+
+                  // Circular border with progress
+                  SizedBox(
+                    width: circleSize,
+                    height: circleSize,
+                    child: CustomPaint(
+                      painter: CircleProgressPainter(
+                        progress: _stepProgress,
+                        strokeWidth: 6,
+                        backgroundColor: Colors.white.withOpacity(0.3),
+                        progressColor: AppColors.primary,
+                      ),
                     ),
                   ),
-                ),
-              )
-            else
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              ),
 
-            // Circular border with progress
-            SizedBox.expand(
-              child: CustomPaint(
-                painter: CircleProgressPainter(
-                  progress: _stepProgress,
-                  strokeWidth: 6,
-                  backgroundColor: Colors.white.withOpacity(0.3),
-                  progressColor: AppColors.primary,
-                ),
+                  // Step icon overlay
+                  if (_currentStep == LivenessStep.capturing)
+                    Container(
+                      width: circleSize,
+                      height: circleSize,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ),
-
-            // Step icon overlay
-            if (_currentStep == LivenessStep.capturing)
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-          ],
+            );
+          },
         ),
       ),
     );
