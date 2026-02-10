@@ -74,11 +74,14 @@ class _SplashScreenState extends State<SplashScreen>
             'token': authService.token,
           },
         );
+      } else if (!authService.isLivenessComplete) {
+        // Email verified but liveness not complete → Go to liveness check
+        Navigator.of(context).pushReplacementNamed(AppRoutes.livenessCheck);
       } else if (!authService.isPinSet) {
-        // Email verified but PIN not set → Go to PIN setup
+        // Liveness complete but PIN not set → Go to PIN setup
         Navigator.of(context).pushReplacementNamed(AppRoutes.pinSetup);
       } else {
-        // Email verified and PIN set → Home
+        // All verifications complete → Home
         Navigator.of(context).pushReplacementNamed(AppRoutes.main);
       }
     } else if (authService.hasCompletedOnboarding) {

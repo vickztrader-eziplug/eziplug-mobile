@@ -212,10 +212,12 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
 
     try {
       if (result['success'] == true) {
-        // Check if email is verified
+        // Check verification status
         final isEmailVerified = result['isEmailVerified'] as bool? ?? true;
+        final isLivenessComplete = result['isLivenessComplete'] as bool? ?? false;
+        final isPinSet = result['isPinSet'] as bool? ?? false;
         
-        await debugLogger.log('LOGIN', 'Success! isEmailVerified: $isEmailVerified');
+        await debugLogger.log('LOGIN', 'Success! isEmailVerified: $isEmailVerified, isLivenessComplete: $isLivenessComplete, isPinSet: $isPinSet');
         
         if (!isEmailVerified) {
           // Email not verified - redirect to verification screen
@@ -231,8 +233,22 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
               },
             );
           }
+        } else if (!isLivenessComplete) {
+          // Email verified but liveness check not completed
+          await debugLogger.log('NAV', 'Navigating to liveness check screen');
+          ToastHelper.showInfo("Please complete identity verification");
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, AppRoutes.livenessCheck);
+          }
+        } else if (!isPinSet) {
+          // Liveness complete but PIN not set
+          await debugLogger.log('NAV', 'Navigating to PIN setup screen');
+          ToastHelper.showInfo("Please set up your PIN");
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, AppRoutes.pinSetup);
+          }
         } else {
-          // Email verified - proceed to main screen
+          // All verifications complete - proceed to main screen
           await debugLogger.log('NAV', 'Navigating to main screen...');
           ToastHelper.showSuccess(result['message'] ?? "Login successful");
           if (mounted) {

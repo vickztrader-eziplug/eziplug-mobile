@@ -53,6 +53,12 @@ class AuthService extends ChangeNotifier {
   
   /// Check if user has set up their PIN
   bool get isPinSet => _userData?['has_pin'] == true;
+  
+  /// Check if user has completed liveness check (has passport photo)
+  bool get isLivenessComplete {
+    final passport = _userData?['passport']?.toString() ?? '';
+    return passport.isNotEmpty;
+  }
 
   Future<void> initAuth() async {
     try {
@@ -272,7 +278,10 @@ class AuthService extends ChangeNotifier {
           }
           
           final isEmailVerified = userData?['email_verified_at'] != null;
-          await debugLogger.log('SUCCESS', 'Email verified: $isEmailVerified');
+          final isPinSet = userData?['has_pin'] == true;
+          final passport = userData?['passport']?.toString() ?? '';
+          final isLivenessComplete = passport.isNotEmpty;
+          await debugLogger.log('SUCCESS', 'Email verified: $isEmailVerified, PIN set: $isPinSet, Liveness complete: $isLivenessComplete');
           
           return {
             'success': true,
@@ -280,6 +289,8 @@ class AuthService extends ChangeNotifier {
             'user': userData,
             'token': apiResponse.token,
             'isEmailVerified': isEmailVerified,
+            'isPinSet': isPinSet,
+            'isLivenessComplete': isLivenessComplete,
           };
         } else {
           await debugLogger.log('WARNING', 'Login failed: ${apiResponse.message}');
