@@ -41,6 +41,10 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
   int _stepHoldCount = 0;
   static const int _requiredHoldFrames = 10; // Hold for ~10 frames to confirm
 
+  // Blink detection state tracking
+  bool _eyesWereOpen = false; // Track if eyes were open before blink
+  bool _blinkDetected = false; // Track if a blink (eyes closed) was detected
+
   XFile? _capturedImage;
   bool _isUploading = false;
 
@@ -242,9 +246,38 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
       case LivenessStep.blink:
         final leftEye = face.leftEyeOpenProbability ?? 1;
         final rightEye = face.rightEyeOpenProbability ?? 1;
-        // Eyes are closed
-        if (leftEye < _eyeOpenThreshold && rightEye < _eyeOpenThreshold) {
-          stepPassed = true;
+        final eyesOpen = leftEye > _eyeOpenThreshold && rightEye > _eyeOpenThreshold;
+        final eyesClosed = leftEye < _eyeOpenThreshold && rightEye < _eyeOpenThreshold;
+        
+        // Blink detection: track full cycle (open -> closed -> open)
+        if (!_eyesWereOpen && eyesOpen) {
+          // Step 1: Eyes are open (starting state)
+          _eyesWereOpen = true;
+          // Show partial progress to indicate ready state
+          if (mounted) {
+            setState(() {
+              _stepProgress = 0.33;
+            });
+          }
+        } else if (_eyesWereOpen && !_blinkDetected && eyesClosed) {
+          // Step 2: Eyes closed (blink in progress)
+          _blinkDetected = true;
+          // Show more progress during blink
+          if (mounted) {
+            setState(() {
+              _stepProgress = 0.66;
+            });
+          }
+        } else if (_eyesWereOpen && _blinkDetected && eyesOpen) {
+          // Step 3: Eyes open again (blink completed!)
+          // For blink, we immediately advance since it's an instantaneous action
+          if (mounted) {
+            setState(() {
+              _stepProgress = 1.0;
+            });
+          }
+          _advanceToNextStep();
+          return; // Exit early, blink doesn't need hold frames
         }
         break;
 
@@ -291,6 +324,9 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
           break;
         case LivenessStep.turnRight:
           _currentStep = LivenessStep.blink;
+          // Reset blink detection state for new blink step
+          _eyesWereOpen = false;
+          _blinkDetected = false;
           break;
         case LivenessStep.blink:
           _currentStep = LivenessStep.capturing;
@@ -715,45 +751,65 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
   }
 
   Widget _buildCapturedPhotoView() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            ClipOval(
-              child: Image.file(
-                File(_capturedImage!.path),
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Calculate circle size based on available width (same as camera section)
+            final circleSize = constraints.maxWidth;
+            
+            return SizedBox(
+              width: circleSize,
+              height: circleSize,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Captured photo with circular clip
+                  Container(
+                    width: circleSize,
+                    height: circleSize,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                    ),
+                    clipBehavior: Clip.hardEdge,
+                    child: Image.file(
+                      File(_capturedImage!.path),
+                      fit: BoxFit.cover,
+                      width: circleSize,
+                      height: circleSize,
+                    ),
+                  ),
+                  // Success overlay - circular border
+                  Container(
+                    width: circleSize,
+                    height: circleSize,
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.green, width: 4),
+                    ),
+                  ),
+                  // Check icon at bottom
+                  Positioned(
+                    bottom: 20,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            // Success overlay
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.3),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.green, width: 4),
-              ),
-            ),
-            Positioned(
-              bottom: 20,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: const BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
