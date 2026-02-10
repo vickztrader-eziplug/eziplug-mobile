@@ -74,9 +74,23 @@ class AuthService extends ChangeNotifier {
         _user = jsonDecode(userDataString);
       }
 
-      // Check if token is valid (you may already have this)
-      if (_token != null && _token!.isNotEmpty) {
-        await checkAuth();
+      // If we have cached credentials, trust them immediately for fast startup
+      // The token will be validated in the background
+      if (_token != null && _token!.isNotEmpty && _user != null) {
+        _isAuthenticated = true;
+        // Validate token in background (non-blocking) - don't await
+        _validateTokenInBackground();
+      } else if (_token != null && _token!.isNotEmpty) {
+        // We have token but no cached user - need to fetch user data
+        // This case should be rare, so we can await with a short timeout
+        await checkAuth().timeout(
+          const Duration(seconds: 3),
+          onTimeout: () {
+            // If timeout, still consider authenticated based on token presence
+            _isAuthenticated = true;
+            debugPrint('checkAuth timed out, using cached token');
+          },
+        );
       }
     } catch (e) {
       // If anything fails during init, continue anyway
@@ -86,6 +100,19 @@ class AuthService extends ChangeNotifier {
       _isInitialized = true;
       notifyListeners();
     }
+  }
+
+  /// Validates token in background without blocking app startup
+  void _validateTokenInBackground() {
+    // Fire and forget - don't block initialization
+    checkAuth().timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {
+        debugPrint('Background token validation timed out');
+      },
+    ).catchError((e) {
+      debugPrint('Background token validation error: $e');
+    });
   }
   // Future<void> initAuth() async {
   //   final prefs = await SharedPreferences.getInstance();
@@ -776,7 +803,7 @@ class AuthService extends ChangeNotifier {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
           },
-        ).timeout(const Duration(seconds: 10));
+        ).timeout(const Duration(seconds: 5)); // Reduced from 10s for faster startup
 
         if (response.statusCode == 200) {
           final result = jsonDecode(response.body);

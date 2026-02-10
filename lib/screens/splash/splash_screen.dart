@@ -52,9 +52,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     final authService = Provider.of<AuthService>(context, listen: false);
 
-    // Wait for initialization with a maximum timeout
+    // Wait for initialization with a shorter timeout (3 seconds max)
+    // initAuth should complete quickly now since it doesn't block on network
     int waitCount = 0;
-    const maxWaitCount = 100; // 10 seconds max (100 * 100ms)
+    const maxWaitCount = 30; // 3 seconds max (30 * 100ms)
     while (!authService.isInitialized && waitCount < maxWaitCount) {
       await Future.delayed(const Duration(milliseconds: 100));
       waitCount++;
