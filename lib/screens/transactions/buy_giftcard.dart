@@ -211,8 +211,8 @@ class _BuyGiftCardScreenState extends State<BuyGiftCardScreen> {
     ToastHelper.showSnackBar(context, message, color);
   }
 
-  // Theme color for Buy Giftcard
-  static const Color _themeColor = Color(0xFFFF6B6B);
+  // Use unified app primary color
+  static const Color _themeColor = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {

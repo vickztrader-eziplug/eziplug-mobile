@@ -26,39 +26,109 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
   bool _isLoading = false;
   bool _isVerifyingAccount = false;
   bool _showBankList = false;
+  bool _isLoadingBanks = false;
+  String? _bankLoadError;
+  List<Map<String, dynamic>> _banks = [];
   List<Map<String, dynamic>> _filteredBanks = [];
-
-  // Nigerian Banks with their codes
-  final List<Map<String, dynamic>> _nigerianBanks = [
-    {'name': 'Access Bank', 'code': '044', 'color': Color(0xFFFF6B00)},
-    {'name': 'GTBank', 'code': '058', 'color': Color(0xFFFF6600)},
-    {'name': 'Zenith Bank', 'code': '057', 'color': Color(0xFFE2001A)},
-    {'name': 'First Bank', 'code': '011', 'color': Color(0xFF003366)},
-    {'name': 'UBA', 'code': '033', 'color': Color(0xFFE31E24)},
-    {'name': 'Ecobank', 'code': '050', 'color': Color(0xFF003DA5)},
-    {'name': 'Fidelity Bank', 'code': '070', 'color': Color(0xFF6B3FA0)},
-    {'name': 'Union Bank', 'code': '032', 'color': Color(0xFF003366)},
-    {'name': 'FCMB', 'code': '214', 'color': Color(0xFFD4AF37)},
-    {'name': 'Sterling Bank', 'code': '232', 'color': Color(0xFFE31E24)},
-    {'name': 'Stanbic IBTC', 'code': '221', 'color': Color(0xFF003DA5)},
-    {'name': 'Polaris Bank', 'code': '076', 'color': Color(0xFF00539F)},
-    {'name': 'Wema Bank', 'code': '035', 'color': Color(0xFF5F259F)},
-    {'name': 'Keystone Bank', 'code': '082', 'color': Color(0xFF008080)},
-    {'name': 'Heritage Bank', 'code': '030', 'color': Color(0xFFFF6B00)},
-    {'name': 'Unity Bank', 'code': '215', 'color': Color(0xFF0066CC)},
-    {'name': 'Providus Bank', 'code': '101', 'color': Color(0xFF000080)},
-    {'name': 'Jaiz Bank', 'code': '301', 'color': Color(0xFF008000)},
-    {'name': 'Kuda Bank', 'code': '090267', 'color': Color(0xFF40196D)},
-    {'name': 'Opay', 'code': '999992', 'color': Color(0xFF00C853)},
-    {'name': 'PalmPay', 'code': '999991', 'color': Color(0xFF6C3FC1)},
-    {'name': 'Moniepoint', 'code': '50515', 'color': Color(0xFF1E88E5)},
-  ];
 
   @override
   void initState() {
     super.initState();
-    _filteredBanks = _nigerianBanks;
     _checkAuth();
+    _fetchBanks();
+  }
+
+  Future<void> _fetchBanks() async {
+    setState(() {
+      _isLoadingBanks = true;
+      _bankLoadError = null;
+    });
+
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final token = await authService.getToken();
+
+      final response = await http.get(
+        Uri.parse('${Constants.baseUrl}/payout/bank/list'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResult = jsonDecode(response.body);
+        final data = jsonResult['data'];
+        
+        List<dynamic> bankList = [];
+        if (data is Map && data['banks'] != null) {
+          bankList = data['banks'] as List<dynamic>;
+        } else if (data is List) {
+          bankList = data;
+        }
+
+        setState(() {
+          _banks = bankList.map((bank) {
+            return {
+              'name': bank['name'] ?? '',
+              'code': bank['code'] ?? '',
+              'color': _getBankColor(bank['name'] ?? ''),
+            };
+          }).toList();
+          _filteredBanks = _banks;
+          _isLoadingBanks = false;
+        });
+      } else {
+        setState(() {
+          _bankLoadError = 'Failed to load banks';
+          _isLoadingBanks = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _bankLoadError = 'Error loading banks: $e';
+        _isLoadingBanks = false;
+      });
+    }
+  }
+
+  Color _getBankColor(String bankName) {
+    // Map of known bank colors for visual distinction
+    final colorMap = {
+      'access': const Color(0xFFFF6B00),
+      'gtbank': const Color(0xFFFF6600),
+      'guaranty': const Color(0xFFFF6600),
+      'zenith': const Color(0xFFE2001A),
+      'first bank': const Color(0xFF003366),
+      'uba': const Color(0xFFE31E24),
+      'united bank': const Color(0xFFE31E24),
+      'ecobank': const Color(0xFF003DA5),
+      'fidelity': const Color(0xFF6B3FA0),
+      'union': const Color(0xFF003366),
+      'fcmb': const Color(0xFFD4AF37),
+      'sterling': const Color(0xFFE31E24),
+      'stanbic': const Color(0xFF003DA5),
+      'polaris': const Color(0xFF00539F),
+      'wema': const Color(0xFF5F259F),
+      'keystone': const Color(0xFF008080),
+      'heritage': const Color(0xFFFF6B00),
+      'unity': const Color(0xFF0066CC),
+      'providus': const Color(0xFF000080),
+      'jaiz': const Color(0xFF008000),
+      'kuda': const Color(0xFF40196D),
+      'opay': const Color(0xFF00C853),
+      'palmpay': const Color(0xFF6C3FC1),
+      'moniepoint': const Color(0xFF1E88E5),
+    };
+
+    final lowerName = bankName.toLowerCase();
+    for (final entry in colorMap.entries) {
+      if (lowerName.contains(entry.key)) {
+        return entry.value;
+      }
+    }
+    // Default color for unknown banks
+    return const Color(0xFF607D8B);
   }
 
   @override
@@ -72,11 +142,11 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
   void _filterBanks(String query) {
     setState(() {
       if (query.isEmpty) {
-        _filteredBanks = _nigerianBanks;
+        _filteredBanks = _banks;
       } else {
-        _filteredBanks = _nigerianBanks
+        _filteredBanks = _banks
             .where((bank) =>
-                bank['name'].toLowerCase().contains(query.toLowerCase()))
+                (bank['name'] as String? ?? '').toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
@@ -245,16 +315,21 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
 
   void _showBankSelector() {
     _searchController.clear();
-    _filteredBanks = _nigerianBanks;
+    
+    // Capture state in local variables for the modal
+    final isLoading = _isLoadingBanks;
+    final loadError = _bankLoadError;
+    var filteredList = List<Map<String, dynamic>>.from(_banks);
+    final allBanks = List<Map<String, dynamic>>.from(_banks);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
+      builder: (modalContext) => StatefulBuilder(
+        builder: (modalContext, setModalState) {
           return Container(
-            height: MediaQuery.of(context).size.height * 0.75,
+            height: MediaQuery.of(modalContext).size.height * 0.75,
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -285,7 +360,7 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
                       ),
                       const Spacer(),
                       IconButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => Navigator.pop(modalContext),
                         icon: const Icon(Icons.close),
                       ),
                     ],
@@ -315,10 +390,10 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
                     onChanged: (value) {
                       setModalState(() {
                         if (value.isEmpty) {
-                          _filteredBanks = _nigerianBanks;
+                          filteredList = List<Map<String, dynamic>>.from(allBanks);
                         } else {
-                          _filteredBanks = _nigerianBanks
-                              .where((bank) => bank['name']
+                          filteredList = allBanks
+                              .where((bank) => (bank['name'] as String? ?? '')
                                   .toLowerCase()
                                   .contains(value.toLowerCase()))
                               .toList();
@@ -330,11 +405,46 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
                 const SizedBox(height: 12),
                 // Bank list
                 Expanded(
-                  child: ListView.builder(
+                  child: isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : loadError != null && loadError.isNotEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.error_outline,
+                                      size: 48, color: Colors.grey[400]),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    loadError,
+                                    style: TextStyle(color: Colors.grey[600]),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(modalContext);
+                                      _fetchBanks();
+                                    },
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : filteredList.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    'No banks found',
+                                    style: TextStyle(color: Colors.grey[600]),
+                                  ),
+                                )
+                              : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    itemCount: _filteredBanks.length,
+                    itemCount: filteredList.length,
                     itemBuilder: (context, index) {
-                      final bank = _filteredBanks[index];
+                      final bank = filteredList[index];
                       final isSelected =
                           _selectedBank?['code'] == bank['code'];
 
@@ -356,20 +466,22 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
                               _selectedBank = bank;
                               _accountNameController.clear();
                             });
-                            Navigator.pop(context);
+                            Navigator.pop(modalContext);
                           },
                           leading: Container(
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: (bank['color'] as Color).withOpacity(0.1),
+                              color: (bank['color'] as Color? ?? const Color(0xFF607D8B)).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
                               child: Text(
-                                bank['name'].substring(0, 2).toUpperCase(),
+                                (bank['name'] as String? ?? '').length >= 2 
+                                    ? (bank['name'] as String).substring(0, 2).toUpperCase()
+                                    : (bank['name'] as String? ?? 'BK').toUpperCase(),
                                 style: TextStyle(
-                                  color: bank['color'],
+                                  color: bank['color'] as Color? ?? const Color(0xFF607D8B),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                 ),
@@ -377,7 +489,7 @@ class _CreatePayoutAccountScreenState extends State<CreatePayoutAccountScreen> {
                             ),
                           ),
                           title: Text(
-                            bank['name'],
+                            bank['name'] as String? ?? 'Unknown Bank',
                             style: TextStyle(
                               fontWeight: isSelected
                                   ? FontWeight.w600

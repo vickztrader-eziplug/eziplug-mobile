@@ -565,7 +565,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                 title: 'Electricity Bill',
                 walletBalance: _walletNaira,
                 isLoadingBalance: _isLoadingWallet,
-                primaryColor: AppColors.billsColor,
+                primaryColor: AppColors.primary,
               ),
 
               // Content
@@ -583,7 +583,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                             ModernFormWidgets.buildSectionLabel(
                               'Select Provider',
                               icon: Icons.electrical_services,
-                              iconColor: AppColors.billsColor,
+                              iconColor: AppColors.primary,
                             ),
                             const SizedBox(height: 12),
                             GestureDetector(
@@ -602,7 +602,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.billsColor.withOpacity(0.06),
+                                      color: AppColors.primary.withOpacity(0.06),
                                       blurRadius: 10,
                                       offset: const Offset(0, 3),
                                     ),
@@ -620,12 +620,12 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: AppColors.billsColor.withOpacity(0.1),
+                                          color: AppColors.primary.withOpacity(0.1),
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Icon(
                                           Icons.electric_bolt,
-                                          color: AppColors.billsColor,
+                                          color: AppColors.primary,
                                           size: 20,
                                         ),
                                       ),
@@ -645,7 +645,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                     ),
                                     Icon(
                                       Icons.keyboard_arrow_down_rounded,
-                                      color: AppColors.billsColor,
+                                      color: AppColors.primary,
                                     ),
                                   ],
                                 ),
@@ -664,7 +664,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                             ModernFormWidgets.buildSectionLabel(
                               'Meter Type',
                               icon: Icons.speed,
-                              iconColor: AppColors.billsColor,
+                              iconColor: AppColors.primary,
                             ),
                             const SizedBox(height: 12),
                             Row(
@@ -691,19 +691,19 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: isSelected
-                                            ? AppColors.billsColor.withOpacity(0.12)
+                                            ? AppColors.primary.withOpacity(0.12)
                                             : Colors.white,
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
                                           color: isSelected
-                                              ? AppColors.billsColor
+                                              ? AppColors.primary
                                               : Colors.grey.shade200,
                                           width: isSelected ? 1.5 : 1,
                                         ),
                                         boxShadow: isSelected
                                             ? [
                                                 BoxShadow(
-                                                  color: AppColors.billsColor
+                                                  color: AppColors.primary
                                                       .withOpacity(0.15),
                                                   blurRadius: 8,
                                                   offset: const Offset(0, 2),
@@ -720,7 +720,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                                 : Icons.receipt_long,
                                             size: 18,
                                             color: isSelected
-                                                ? AppColors.billsColor
+                                                ? AppColors.primary
                                                 : Colors.grey.shade600,
                                           ),
                                           const SizedBox(width: 8),
@@ -732,7 +732,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                                   ? FontWeight.w600
                                                   : FontWeight.w500,
                                               color: isSelected
-                                                  ? AppColors.billsColor
+                                                  ? AppColors.primary
                                                   : AppColors.textColor,
                                             ),
                                           ),
@@ -756,7 +756,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                             ModernFormWidgets.buildSectionLabel(
                               'Meter Number',
                               icon: Icons.numbers,
-                              iconColor: AppColors.billsColor,
+                              iconColor: AppColors.primary,
                             ),
                             const SizedBox(height: 12),
                             Row(
@@ -782,7 +782,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                         ? _verifyMeterNumber
                                         : null,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.billsColor,
+                                      backgroundColor: AppColors.primary,
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(14),
@@ -938,7 +938,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                 ModernFormWidgets.buildSectionLabel(
                                   'Select Amount',
                                   icon: Icons.payments_outlined,
-                                  iconColor: AppColors.billsColor,
+                                  iconColor: AppColors.primary,
                                 ),
                                 Row(
                                   children: [
@@ -965,7 +965,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                             }
                                           });
                                         },
-                                        activeColor: AppColors.billsColor,
+                                        activeColor: AppColors.primary,
                                       ),
                                     ),
                                   ],
@@ -995,7 +995,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                         message:
                             'Ensure your meter number is correct. Token will be sent to your phone number after successful purchase.',
                         icon: Icons.lightbulb_outline,
-                        color: AppColors.billsColor,
+                        color: AppColors.primary,
                       ),
                       const SizedBox(height: 24),
 
@@ -1004,7 +1004,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                         label: 'Proceed to Payment',
                         onPressed: _isLoading ? null : _proceedToPin,
                         isLoading: _isLoading,
-                        backgroundColor: AppColors.billsColor,
+                        backgroundColor: AppColors.primary,
                         icon: Icons.flash_on,
                       ),
                       const SizedBox(height: 20),
@@ -1021,7 +1021,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
               color: Colors.black.withOpacity(0.3),
               child: const Center(
                 child: CircularProgressIndicator(
-                  color: AppColors.billsColor,
+                  color: AppColors.primary,
                   strokeWidth: 3,
                 ),
               ),
@@ -1048,16 +1048,16 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.billsColor : Colors.white,
+              color: isSelected ? AppColors.primary : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected ? AppColors.billsColor : Colors.grey.shade200,
+                color: isSelected ? AppColors.primary : Colors.grey.shade200,
                 width: 1,
               ),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppColors.billsColor.withOpacity(0.2),
+                        color: AppColors.primary.withOpacity(0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -1104,7 +1104,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
   Widget _buildLogoImage(String? logoPath) {
     if (logoPath == null || logoPath.isEmpty) {
       return Center(
-        child: Icon(Icons.electric_bolt, color: AppColors.billsColor, size: 24),
+        child: Icon(Icons.electric_bolt, color: AppColors.primary, size: 24),
       );
     }
 
@@ -1114,7 +1114,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
         logoPath,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => Center(
-          child: Icon(Icons.electric_bolt, color: AppColors.billsColor, size: 24),
+          child: Icon(Icons.electric_bolt, color: AppColors.primary, size: 24),
         ),
       );
     }
@@ -1127,7 +1127,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
         errorBuilder: (context, error, stackTrace) {
           print('Error loading asset: $logoPath');
           return Center(
-            child: Icon(Icons.electric_bolt, color: AppColors.billsColor, size: 24),
+            child: Icon(Icons.electric_bolt, color: AppColors.primary, size: 24),
           );
         },
       );
@@ -1192,7 +1192,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
               child: _isFetchingProviders
                   ? Center(
                       child: CircularProgressIndicator(
-                        color: AppColors.billsColor,
+                        color: AppColors.primary,
                       ),
                     )
                   : _providers.isEmpty
@@ -1232,7 +1232,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                   vertical: 16,
                                 ),
                                 color: isSelected
-                                    ? AppColors.billsColor.withOpacity(0.08)
+                                    ? AppColors.primary.withOpacity(0.08)
                                     : Colors.transparent,
                                 child: Row(
                                   children: [
@@ -1256,7 +1256,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                     if (isSelected)
                                       Icon(
                                         Icons.check_circle,
-                                        color: AppColors.billsColor,
+                                        color: AppColors.primary,
                                         size: 24,
                                       ),
                                   ],

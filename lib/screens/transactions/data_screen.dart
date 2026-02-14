@@ -492,7 +492,7 @@ class _DataScreenState extends State<DataScreen> {
                 title: 'Buy Data',
                 walletBalance: _walletNaira,
                 isLoadingBalance: _isLoadingWallet,
-                primaryColor: AppColors.dataColor,
+                primaryColor: AppColors.primary,
               ),
               
               // Content Section
@@ -503,7 +503,7 @@ class _DataScreenState extends State<DataScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Network Selection
-                      ModernFormWidgets.buildSectionLabel('Select Network', icon: Icons.sim_card_outlined, iconColor: AppColors.dataColor),
+                      ModernFormWidgets.buildSectionLabel('Select Network', icon: Icons.sim_card_outlined, iconColor: AppColors.primary),
                       const SizedBox(height: 12),
                       ModernFormWidgets.buildNetworkGrid(
                         networks: _networks,
@@ -528,21 +528,21 @@ class _DataScreenState extends State<DataScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                ModernFormWidgets.buildSectionLabel('Phone Number', icon: Icons.phone_android, iconColor: AppColors.dataColor),
+                                ModernFormWidgets.buildSectionLabel('Phone Number', icon: Icons.phone_android, iconColor: AppColors.primary),
                                 TextButton.icon(
                                   onPressed: _selectContact,
-                                  icon: Icon(Icons.contacts, size: 16, color: AppColors.dataColor),
+                                  icon: Icon(Icons.contacts, size: 16, color: AppColors.primary),
                                   label: Text(
                                     'Contacts',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.dataColor,
+                                      color: AppColors.primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    backgroundColor: AppColors.dataColor.withOpacity(0.1),
+                                    backgroundColor: AppColors.primary.withOpacity(0.1),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -568,14 +568,14 @@ class _DataScreenState extends State<DataScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ModernFormWidgets.buildSectionLabel('Select Data Plan', icon: Icons.wifi_rounded, iconColor: AppColors.dataColor),
+                            ModernFormWidgets.buildSectionLabel('Select Data Plan', icon: Icons.wifi_rounded, iconColor: AppColors.primary),
                             const SizedBox(height: 14),
                             _isFetchingPlans
                                 ? const Center(
                                     child: Padding(
                                       padding: EdgeInsets.all(20.0),
                                   child: CircularProgressIndicator(
-                                    color: AppColors.dataColor,
+                                    color: AppColors.primary,
                                   ),
                                 ),
                               )
@@ -611,7 +611,7 @@ class _DataScreenState extends State<DataScreen> {
                       ModernFormWidgets.buildInfoCard(
                         message: 'Data will be credited instantly to the phone number provided.',
                         icon: Icons.info_outline,
-                        color: AppColors.dataColor,
+                        color: AppColors.primary,
                       ),
 
                       const SizedBox(height: 24),
@@ -621,7 +621,7 @@ class _DataScreenState extends State<DataScreen> {
                         label: 'Buy Data',
                         onPressed: _proceedToPin,
                         isLoading: _isLoading,
-                        backgroundColor: AppColors.dataColor,
+                        backgroundColor: AppColors.primary,
                         icon: Icons.send_rounded,
                       ),
 
@@ -666,16 +666,16 @@ class _DataScreenState extends State<DataScreen> {
         width: 90,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.dataColor : Colors.white,
+          color: isSelected ? AppColors.primary : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.dataColor : Colors.grey.shade200,
+            color: isSelected ? AppColors.primary : Colors.grey.shade200,
             width: isSelected ? 1.5 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.dataColor.withOpacity(0.2),
+                    color: AppColors.primary.withOpacity(0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),

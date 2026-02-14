@@ -22,8 +22,8 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
   final TextEditingController amountController = TextEditingController();
   final TextEditingController noteController = TextEditingController();
   
-  // Orange accent color for gift screen
-  static const Color _accentColor = Color(0xFFFF5722);
+  // Use unified app primary color
+  static const Color _accentColor = AppColors.primary;
 
   double _walletNaira = 0.0;
   bool _isLoadingWallet = true;

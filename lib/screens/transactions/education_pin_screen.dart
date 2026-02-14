@@ -19,8 +19,8 @@ class EducationPinScreen extends StatefulWidget {
 }
 
 class _EducationPinScreenState extends State<EducationPinScreen> {
-  // Accent color for the screen
-  static const Color _accentColor = Color(0xFF3F51B5);
+  // Use unified app primary color
+  static const Color _accentColor = AppColors.primary;
 
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController(

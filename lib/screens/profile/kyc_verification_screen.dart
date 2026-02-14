@@ -1269,8 +1269,12 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   }
 
   Widget _buildLimitsCard() {
-    final dailyLimit = _limits['daily_limit'] ?? 0;
-    final monthlyLimit = _limits['monthly_limit'] ?? 0;
+    final dailyLimit = (_limits['daily_limit'] ?? 0).toDouble();
+    final monthlyLimit = (_limits['monthly_limit'] ?? 0).toDouble();
+    final dailySpent = (_limits['daily_spent'] ?? 0).toDouble();
+    final monthlySpent = (_limits['monthly_spent'] ?? 0).toDouble();
+    final dailyRemaining = (_limits['daily_remaining'] ?? dailyLimit).toDouble();
+    final monthlyRemaining = (_limits['monthly_remaining'] ?? monthlyLimit).toDouble();
     
     return ModernFormWidgets.buildFormCard(
       padding: const EdgeInsets.all(20),
@@ -1283,11 +1287,161 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
             iconColor: AppColors.primary,
           ),
           const SizedBox(height: 16),
+          _buildLimitProgressItem(
+            label: 'Daily Limit',
+            icon: Icons.today_rounded,
+            spent: dailySpent,
+            limit: dailyLimit,
+            remaining: dailyRemaining,
+          ),
+          const SizedBox(height: 16),
+          _buildLimitProgressItem(
+            label: 'Monthly Limit',
+            icon: Icons.calendar_month_rounded,
+            spent: monthlySpent,
+            limit: monthlyLimit,
+            remaining: monthlyRemaining,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLimitProgressItem({
+    required String label,
+    required IconData icon,
+    required double spent,
+    required double limit,
+    required double remaining,
+  }) {
+    final progress = limit > 0 ? (spent / limit).clamp(0.0, 1.0) : 0.0;
+    final progressColor = progress < 0.7 
+        ? AppColors.success 
+        : progress < 0.9 
+            ? Colors.orange 
+            : AppColors.error;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Row(
             children: [
-              Expanded(child: _buildLimitItem('Daily Limit', '₦${_formatAmount(dailyLimit)}', Icons.today_rounded)),
-              const SizedBox(width: 12),
-              Expanded(child: _buildLimitItem('Monthly Limit', '₦${_formatAmount(monthlyLimit)}', Icons.calendar_month_rounded)),
+              Icon(icon, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: progressColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${(progress * 100).toStringAsFixed(0)}% used',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: progressColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.grey.shade300,
+              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+              minHeight: 6,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Spent',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '₦${_formatAmount(spent)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.text,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Limit',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '₦${_formatAmount(limit)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Remaining',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '₦${_formatAmount(remaining)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: progressColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ],

@@ -8,8 +8,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../core/utils/api_response.dart';
 import '../../core/widgets/modern_form_widgets.dart';
+import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/pin_entry_screen.dart';
 import '../reusable/receipt_screen.dart';
 
 class AirtimeSwapScreen extends StatefulWidget {
@@ -22,10 +22,6 @@ class AirtimeSwapScreen extends StatefulWidget {
 class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _accountNumberController =
-      TextEditingController();
-  final TextEditingController _accountNameController = TextEditingController();
-  final TextEditingController _bankNameController = TextEditingController();
 
   String? _selectedNetwork;
   String? _selectedNetworkName;
@@ -34,6 +30,15 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
   bool _isLoading = false;
   double _cashAmount = 0.0;
   int _conversionRate = 85; // Default 85%
+  bool _hasConfirmedAirtimeSent = false; // Confirmation state
+  
+  // Transfer numbers for each network
+  final Map<String, String> _transferNumbers = {
+    '1': '08031234567', // MTN
+    '4': '08051234567', // GLO
+    '2': '08021234567', // AIRTEL
+    '3': '08091234567', // 9MOBILE
+  };
 
   final List<Map<String, dynamic>> _networks = [
     {
@@ -66,9 +71,6 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
   void dispose() {
     _phoneController.dispose();
     _amountController.dispose();
-    _accountNumberController.dispose();
-    _accountNameController.dispose();
-    _bankNameController.dispose();
     super.dispose();
   }
 
@@ -126,7 +128,7 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
       if (token == null || token.isEmpty) return;
 
       final response = await http.get(
-        Uri.parse('${Constants.baseUrl}/airtime-swap/rate'),
+        Uri.parse('${Constants.baseUrl}/vtu/airtime-swap/rate'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -234,6 +236,12 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
       return;
     }
 
+    // Check confirmation
+    if (!_hasConfirmedAirtimeSent) {
+      _showSnackBar('Please confirm you have sent the airtime', Colors.orange);
+      return;
+    }
+
     // Check auth
     final authService = Provider.of<AuthService>(context, listen: false);
     final token = await authService.getToken();
@@ -244,23 +252,24 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
       return;
     }
 
-    // Navigate to PIN screen
+    // Show PIN modal
     if (!mounted) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PinEntryScreen(
-          title: 'Confirm Swap',
-          subtitle: 'Enter your 4 digit PIN to swap airtime',
-          onPinComplete: (pin) => _processSwap(pin),
-          onForgotPin: () {
-            Navigator.pop(context);
-            _showSnackBar('Contact support to reset PIN', Colors.orange);
-          },
-        ),
-      ),
+    final pin = await PinVerificationModal.show(
+      context: context,
+      title: 'Confirm Airtime Swap',
+      subtitle: 'Enter your PIN to swap ₦${airtimeAmount.toStringAsFixed(0)} airtime',
+      amount: '₦${_cashAmount.toStringAsFixed(2)}',
+      transactionType: 'Airtime Swap',
+      recipient: _phoneController.text,
+      onForgotPin: () {
+        _showSnackBar('Contact support to reset PIN', Colors.orange);
+      },
     );
+
+    if (pin != null && pin.length == 4) {
+      _processSwap(pin);
+    }
   }
 
   Future<void> _processSwap(String pin) async {
@@ -277,15 +286,6 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
         'phone_number': _phoneController.text,
         'network': _selectedNetwork,
         'airtime_amount': airtimeAmount,
-        'account_number': _accountNumberController.text.isNotEmpty
-            ? _accountNumberController.text
-            : null,
-        'account_name': _accountNameController.text.isNotEmpty
-            ? _accountNameController.text
-            : null,
-        'bank_name': _bankNameController.text.isNotEmpty
-            ? _bankNameController.text
-            : null,
         'pin': pin,
       };
 
@@ -307,18 +307,17 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        Navigator.pop(context); // Close PIN screen
-
+        final data = responseData['data'] ?? {};
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => ReceiptScreen(
               title: 'Swap Request Submitted',
-              subtitle: 'Your airtime swap request is pending verification',
+              subtitle: 'Your airtime swap request is pending verification. Once approved, funds will be credited to your wallet.',
               details: [
                 ReceiptDetail(
                   label: 'Transaction ID',
-                  value: responseData['transaction_id'] ?? 'N/A',
+                  value: data['transaction_id']?.toString() ?? 'N/A',
                 ),
                 ReceiptDetail(
                   label: 'Phone Number',
@@ -337,20 +336,10 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                   label: 'Expected Cash',
                   value: '₦${_cashAmount.toStringAsFixed(2)}',
                 ),
-                if (_accountNumberController.text.isNotEmpty) ...[
-                  ReceiptDetail(
-                    label: 'Account Number',
-                    value: _accountNumberController.text,
-                  ),
-                  ReceiptDetail(
-                    label: 'Account Name',
-                    value: _accountNameController.text,
-                  ),
-                  ReceiptDetail(
-                    label: 'Bank Name',
-                    value: _bankNameController.text,
-                  ),
-                ],
+                ReceiptDetail(
+                  label: 'Credit To',
+                  value: 'Wallet (Can withdraw after credit)',
+                ),
                 ReceiptDetail(label: 'Status', value: 'Pending Verification'),
                 ReceiptDetail(
                   label: 'Date',
@@ -361,14 +350,12 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
           ),
         );
       } else if (response.statusCode == 401) {
-        Navigator.pop(context); // Close PIN screen
         _showSnackBar('Session expired. Please login again', Colors.red);
         await authService.logout();
       } else if (response.statusCode == 400 &&
           responseData['message']?.toString().contains('PIN') == true) {
         throw Exception(responseData['message'] ?? 'Invalid PIN');
       } else {
-        Navigator.pop(context);
         _showSnackBar(
           responseData['message'] ?? 'Failed to swap airtime',
           Colors.red,
@@ -377,7 +364,6 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
     } catch (e) {
       if (!mounted) return;
       _showSnackBar(e.toString().replaceAll('Exception: ', ''), Colors.red);
-      rethrow;
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -403,8 +389,8 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
         );
   }
 
-  // Purple accent color for airtime swap
-  static const Color _accentColor = Color(0xFF9C27B0);
+  // Use unified app primary color
+  static const Color _accentColor = AppColors.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -622,89 +608,155 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Bank Details (Optional)
+                      // Step-by-Step Instructions Card
                       ModernFormWidgets.buildFormCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                ModernFormWidgets.buildSectionLabel(
-                                  'Bank Details',
-                                  icon: Icons.account_balance_outlined,
-                                  iconColor: Colors.blue,
-                                ),
-                                const SizedBox(width: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.grey.shade200,
-                                    borderRadius: BorderRadius.circular(6),
+                                    color: Colors.blue.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Text(
-                                    'Optional',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey.shade600,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                  child: Icon(
+                                    Icons.format_list_numbered_rounded,
+                                    color: Colors.blue.shade700,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'How to Transfer Airtime',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.grey.shade800,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Provide your bank details for direct transfer instead of wallet credit',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade500,
-                              ),
+                            const SizedBox(height: 16),
+                            _buildInstructionStep(
+                              stepNumber: 1,
+                              instruction: 'Dial your network\'s airtime transfer code',
+                              subText: _getTransferCode(),
                             ),
-                            const SizedBox(height: 14),
-                            ModernFormWidgets.buildTextField(
-                              controller: _accountNumberController,
-                              hintText: 'Account number (10 digits)',
-                              prefixIcon: Icons.credit_card_outlined,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                                LengthLimitingTextInputFormatter(10),
-                              ],
+                            _buildInstructionStep(
+                              stepNumber: 2,
+                              instruction: 'Enter the amount you want to transfer',
+                              subText: _amountController.text.isNotEmpty 
+                                  ? '₦${_amountController.text}' 
+                                  : 'Enter amount above',
                             ),
-                            const SizedBox(height: 12),
-                            ModernFormWidgets.buildTextField(
-                              controller: _accountNameController,
-                              hintText: 'Account name',
-                              prefixIcon: Icons.person_outline,
-                              keyboardType: TextInputType.name,
+                            _buildInstructionStep(
+                              stepNumber: 3,
+                              instruction: 'Enter our receiving number',
+                              subText: _selectedNetwork != null 
+                                  ? _transferNumbers[_selectedNetwork] ?? 'Select network first'
+                                  : 'Select network first',
+                              canCopy: _selectedNetwork != null,
                             ),
-                            const SizedBox(height: 12),
-                            ModernFormWidgets.buildTextField(
-                              controller: _bankNameController,
-                              hintText: 'Bank name',
-                              prefixIcon: Icons.business_outlined,
-                              keyboardType: TextInputType.text,
+                            _buildInstructionStep(
+                              stepNumber: 4,
+                              instruction: 'Enter your transfer PIN and confirm',
+                              subText: 'Complete the transfer on your phone',
+                              isLast: true,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
-                      // Tips Info Card
+                      // Confirmation Checkbox Card
+                      ModernFormWidgets.buildFormCard(
+                        backgroundColor: _hasConfirmedAirtimeSent 
+                            ? Colors.green.withOpacity(0.08) 
+                            : Colors.orange.withOpacity(0.08),
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _hasConfirmedAirtimeSent = !_hasConfirmedAirtimeSent;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: _hasConfirmedAirtimeSent 
+                                        ? Colors.green 
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: _hasConfirmedAirtimeSent 
+                                          ? Colors.green 
+                                          : Colors.grey.shade400,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: _hasConfirmedAirtimeSent
+                                      ? const Icon(
+                                          Icons.check_rounded,
+                                          color: Colors.white,
+                                          size: 18,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'I Have Sent the Airtime',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: _hasConfirmedAirtimeSent 
+                                              ? Colors.green.shade700 
+                                              : Colors.grey.shade800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Tap to confirm you have transferred the airtime',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Wallet Credit Info
                       ModernFormWidgets.buildInfoCard(
-                        message: 'After submitting, transfer the airtime amount to our designated number. Your swap will be processed after verification.',
-                        icon: Icons.lightbulb_outline_rounded,
-                        color: Colors.orange,
+                        message: 'Once approved, funds will be credited directly to your Eziplug wallet. You can then withdraw to your bank account anytime.',
+                        icon: Icons.account_balance_wallet_outlined,
+                        color: Colors.green,
                       ),
                       const SizedBox(height: 24),
 
-                      // Primary Action Button
+                      // Primary Action Button - Only enabled after confirmation
                       ModernFormWidgets.buildPrimaryButton(
-                        label: 'Swap Airtime',
-                        onPressed: _proceedToPin,
+                        label: _hasConfirmedAirtimeSent ? 'Submit Swap Request' : 'Confirm Airtime Sent First',
+                        onPressed: _hasConfirmedAirtimeSent ? _proceedToPin : null,
                         isLoading: _isLoading,
-                        backgroundColor: _accentColor,
-                        icon: Icons.swap_horiz_rounded,
+                        backgroundColor: _hasConfirmedAirtimeSent ? _accentColor : Colors.grey,
+                        icon: _hasConfirmedAirtimeSent ? Icons.send_rounded : Icons.hourglass_empty_rounded,
                       ),
                       const SizedBox(height: 30),
                     ],
@@ -747,6 +799,127 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
             ),
         ],
       ),
+    );
+  }
+
+  // Helper method to get transfer code based on network
+  String _getTransferCode() {
+    switch (_selectedNetwork) {
+      case '1': // MTN
+        return '*600*recipient*amount# or *777*recipient*amount#';
+      case '4': // GLO
+        return '*131*recipient*amount#';
+      case '2': // AIRTEL
+        return '*432*recipient*amount#';
+      case '3': // 9MOBILE
+        return '*223*PIN*amount*recipient#';
+      default:
+        return 'Select a network to see transfer code';
+    }
+  }
+
+  // Helper widget for instruction steps
+  Widget _buildInstructionStep({
+    required int stepNumber,
+    required String instruction,
+    required String subText,
+    bool isLast = false,
+    bool canCopy = false,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: _accentColor,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  '$stepNumber',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            if (!isLast)
+              Container(
+                width: 2,
+                height: 40,
+                color: _accentColor.withOpacity(0.3),
+              ),
+          ],
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  instruction,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          subText,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (canCopy) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          Clipboard.setData(ClipboardData(text: subText));
+                          _showSnackBar('Number copied!', Colors.green);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: _accentColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(
+                            Icons.copy_rounded,
+                            size: 16,
+                            color: _accentColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

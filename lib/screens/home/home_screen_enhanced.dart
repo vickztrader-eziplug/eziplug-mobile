@@ -17,6 +17,7 @@ import '../transactions/more_services.dart';
 import '../transactions/rate_calculator.dart';
 import '../transactions/sell_giftcard.dart';
 import '../transactions/trade_crypto.dart';
+import '../profile/referral_screen.dart';
 
 class HomeScreenEnhanced extends StatefulWidget {
   const HomeScreenEnhanced({super.key});
@@ -639,8 +640,6 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                         ),
                       ],
                     ),
-                    // KYC Tier Badge
-                    _buildKycBadge(),
                   ],
                 ),
                 Row(
@@ -678,7 +677,10 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                       label: 'Bonus',
                       icon: Icons.star_rounded,
                       bgColor: Colors.white.withOpacity(0.2),
-                      onTap: () {},
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ReferralScreen()),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     _buildCardButton(

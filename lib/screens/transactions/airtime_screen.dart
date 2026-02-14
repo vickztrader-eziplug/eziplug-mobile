@@ -434,7 +434,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                 title: 'Buy Airtime',
                 walletBalance: _walletNaira,
                 isLoadingBalance: _isLoadingWallet,
-                primaryColor: AppColors.airtimeColor,
+                primaryColor: AppColors.primary,
               ),
               
               // Content Section
@@ -445,7 +445,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Network Selection
-                      ModernFormWidgets.buildSectionLabel('Select Network', icon: Icons.sim_card_outlined, iconColor: AppColors.airtimeColor),
+                      ModernFormWidgets.buildSectionLabel('Select Network', icon: Icons.sim_card_outlined, iconColor: AppColors.primary),
                       const SizedBox(height: 12),
                       ModernFormWidgets.buildNetworkGrid(
                         networks: _networks,
@@ -469,21 +469,21 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                ModernFormWidgets.buildSectionLabel('Phone Number', icon: Icons.phone_android, iconColor: AppColors.airtimeColor),
+                                ModernFormWidgets.buildSectionLabel('Phone Number', icon: Icons.phone_android, iconColor: AppColors.primary),
                                 TextButton.icon(
                                   onPressed: _selectContact,
-                                  icon: Icon(Icons.contacts, size: 16, color: AppColors.airtimeColor),
+                                  icon: Icon(Icons.contacts, size: 16, color: AppColors.primary),
                                   label: Text(
                                     'Contacts',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.airtimeColor,
+                                      color: AppColors.primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    backgroundColor: AppColors.airtimeColor.withOpacity(0.1),
+                                    backgroundColor: AppColors.primary.withOpacity(0.1),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -512,7 +512,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                ModernFormWidgets.buildSectionLabel('Select Amount', icon: Icons.payments_outlined, iconColor: AppColors.airtimeColor),
+                                ModernFormWidgets.buildSectionLabel('Select Amount', icon: Icons.payments_outlined, iconColor: AppColors.primary),
                                 Row(
                                   children: [
                                     Text(
@@ -537,7 +537,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                                             }
                                           });
                                         },
-                                        activeColor: AppColors.airtimeColor,
+                                        activeColor: AppColors.primary,
                                       ),
                                     ),
                                   ],
@@ -572,7 +572,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                       ModernFormWidgets.buildInfoCard(
                         message: 'Airtime will be credited instantly to the phone number provided.',
                         icon: Icons.info_outline,
-                        color: AppColors.airtimeColor,
+                        color: AppColors.primary,
                       ),
 
                       const SizedBox(height: 24),
@@ -582,7 +582,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                         label: 'Buy Airtime',
                         onPressed: _proceedToPin,
                         isLoading: _isLoading,
-                        backgroundColor: AppColors.airtimeColor,
+                        backgroundColor: AppColors.primary,
                         icon: Icons.send_rounded,
                       ),
 

@@ -18,8 +18,8 @@ class RateCalculatorScreen extends StatefulWidget {
 }
 
 class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
-  // Cyan/Teal color for Rate Calculator (AppColors.calculatorColor)
-  static const Color _primaryColor = Color(0xFF26C6DA);
+  // Use unified app primary color
+  static const Color _primaryColor = AppColors.primary;
 
   bool isGiftcardRate = true;
   String? selectedGiftcard;

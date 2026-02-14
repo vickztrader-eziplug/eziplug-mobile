@@ -17,8 +17,8 @@ class BettingScreen extends StatefulWidget {
 }
 
 class _BettingScreenState extends State<BettingScreen> {
-  // Betting theme color
-  static const Color _accentColor = Color(0xFF00BCD4);
+  // Use unified app primary color
+  static const Color _accentColor = AppColors.primary;
   
   final TextEditingController _bettingIdController = TextEditingController();
 

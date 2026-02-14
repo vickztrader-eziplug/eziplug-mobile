@@ -748,7 +748,7 @@ class _CableScreenState extends State<CableScreen> {
                 title: 'Cable TV',
                 walletBalance: _walletNaira,
                 isLoadingBalance: _isLoadingWallet,
-                primaryColor: AppColors.cableColor,
+                primaryColor: AppColors.primary,
               ),
               
               // Main Content
@@ -766,7 +766,7 @@ class _CableScreenState extends State<CableScreen> {
                             ModernFormWidgets.buildSectionLabel(
                               'Select Provider',
                               icon: Icons.tv,
-                              iconColor: AppColors.cableColor,
+                              iconColor: AppColors.primary,
                             ),
                             const SizedBox(height: 16),
                             _isFetchingProviders
@@ -774,7 +774,7 @@ class _CableScreenState extends State<CableScreen> {
                                     child: Padding(
                                       padding: EdgeInsets.all(20),
                                       child: CircularProgressIndicator(
-                                        color: AppColors.cableColor,
+                                        color: AppColors.primary,
                                         strokeWidth: 2,
                                       ),
                                     ),
@@ -794,7 +794,7 @@ class _CableScreenState extends State<CableScreen> {
                             ModernFormWidgets.buildSectionLabel(
                               'IUC / Smart Card Number',
                               icon: Icons.credit_card,
-                              iconColor: AppColors.cableColor,
+                              iconColor: AppColors.primary,
                             ),
                             const SizedBox(height: 12),
                             ModernFormWidgets.buildTextField(
@@ -825,7 +825,7 @@ class _CableScreenState extends State<CableScreen> {
                               ModernFormWidgets.buildSectionLabel(
                                 'Select Plan',
                                 icon: Icons.subscriptions,
-                                iconColor: AppColors.cableColor,
+                                iconColor: AppColors.primary,
                               ),
                               const SizedBox(height: 12),
                               _buildPlanSelector(),
@@ -847,20 +847,20 @@ class _CableScreenState extends State<CableScreen> {
                                 ModernFormWidgets.buildSectionLabel(
                                   'Phone Number',
                                   icon: Icons.phone,
-                                  iconColor: AppColors.cableColor,
+                                  iconColor: AppColors.primary,
                                 ),
                                 TextButton.icon(
                                   onPressed: _selectContact,
                                   icon: const Icon(
                                     Icons.contacts,
                                     size: 16,
-                                    color: AppColors.cableColor,
+                                    color: AppColors.primary,
                                   ),
                                   label: const Text(
                                     'Contacts',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.cableColor,
+                                      color: AppColors.primary,
                                     ),
                                   ),
                                   style: TextButton.styleFrom(
@@ -894,7 +894,7 @@ class _CableScreenState extends State<CableScreen> {
                         message: 'Ensure you enter the correct IUC/Smart Card number. '
                             'The subscription will be activated immediately after payment.',
                         icon: Icons.lightbulb_outline,
-                        color: AppColors.cableColor,
+                        color: AppColors.primary,
                       ),
                       
                       const SizedBox(height: 24),
@@ -904,7 +904,7 @@ class _CableScreenState extends State<CableScreen> {
                         label: 'Subscribe Now',
                         onPressed: _canProceed() ? _proceedToPin : null,
                         isLoading: _isLoading,
-                        backgroundColor: AppColors.cableColor,
+                        backgroundColor: AppColors.primary,
                         icon: Icons.payment,
                       ),
                       
@@ -922,7 +922,7 @@ class _CableScreenState extends State<CableScreen> {
               color: Colors.black54,
               child: const Center(
                 child: CircularProgressIndicator(
-                  color: AppColors.cableColor,
+                  color: AppColors.primary,
                   strokeWidth: 3,
                 ),
               ),
@@ -959,19 +959,19 @@ class _CableScreenState extends State<CableScreen> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.cableColor.withOpacity(0.12)
+                    ? AppColors.primary.withOpacity(0.12)
                     : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelected
-                      ? AppColors.cableColor
+                      ? AppColors.primary
                       : Colors.grey.shade200,
                   width: isSelected ? 1.5 : 1,
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: AppColors.cableColor.withOpacity(0.15),
+                          color: AppColors.primary.withOpacity(0.15),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -992,7 +992,7 @@ class _CableScreenState extends State<CableScreen> {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: AppColors.cableColor.withOpacity(0.1),
+                          color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Center(
@@ -1001,7 +1001,7 @@ class _CableScreenState extends State<CableScreen> {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.cableColor,
+                              color: AppColors.primary,
                             ),
                           ),
                         ),
@@ -1015,7 +1015,7 @@ class _CableScreenState extends State<CableScreen> {
                       fontSize: 10,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected
-                          ? AppColors.cableColor
+                          ? AppColors.primary
                           : AppColors.textColor,
                     ),
                     textAlign: TextAlign.center,
@@ -1040,7 +1040,7 @@ class _CableScreenState extends State<CableScreen> {
           height: 20,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: AppColors.cableColor,
+            color: AppColors.primary,
           ),
         ),
       );
@@ -1058,7 +1058,7 @@ class _CableScreenState extends State<CableScreen> {
           fontWeight: FontWeight.w600,
           color: _selectedProviderIdentifier != null &&
                   _iucController.text.length >= 10
-              ? AppColors.cableColor
+              ? AppColors.primary
               : Colors.grey,
         ),
       ),
@@ -1161,7 +1161,7 @@ class _CableScreenState extends State<CableScreen> {
           padding: EdgeInsets.all(20),
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: AppColors.cableColor,
+            color: AppColors.primary,
           ),
         ),
       );
@@ -1210,19 +1210,19 @@ class _CableScreenState extends State<CableScreen> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.cableColor
+                  ? AppColors.primary
                   : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected
-                    ? AppColors.cableColor
+                    ? AppColors.primary
                     : Colors.grey.shade200,
                 width: isSelected ? 1.5 : 1,
               ),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppColors.cableColor.withOpacity(0.25),
+                        color: AppColors.primary.withOpacity(0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -1250,7 +1250,7 @@ class _CableScreenState extends State<CableScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : AppColors.cableColor,
+                    color: isSelected ? Colors.white : AppColors.primary,
                   ),
                 ),
                 const SizedBox(height: 2),

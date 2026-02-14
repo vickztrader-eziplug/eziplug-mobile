@@ -17,8 +17,8 @@ class SaveAndEarnScreen extends StatefulWidget {
 }
 
 class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
-  // Green color for Save & Earn
-  static const Color _primaryColor = Color(0xFF4CAF50);
+  // Use unified app primary color
+  static const Color _primaryColor = AppColors.primary;
 
   double _walletNaira = 0.0;
   double _lockedBalance = 0.0;

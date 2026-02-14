@@ -141,12 +141,12 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
     final sw = size.width;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: _getNotificationColor(_notification.type),
+      value: const SystemUiOverlayStyle(
+        statusBarColor: AppColors.primary,
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: _getNotificationColor(_notification.type),
+        backgroundColor: AppColors.primary,
         body: Column(
           children: [
             // Header Section
