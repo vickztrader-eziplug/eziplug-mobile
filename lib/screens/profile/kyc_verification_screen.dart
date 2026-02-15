@@ -21,6 +21,16 @@ class KycVerificationScreen extends StatefulWidget {
 class _KycVerificationScreenState extends State<KycVerificationScreen> {
   bool _isLoading = true;
   bool _isSubmitting = false;
+
+  /// Safely parse a value to double, handling both String and numeric types
+  double _parseToDouble(dynamic value, [double defaultValue = 0.0]) {
+    if (value == null) return defaultValue;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? defaultValue;
+    }
+    return defaultValue;
+  }
   
   // Field validation errors
   Map<String, String> _fieldErrors = {};
@@ -1269,12 +1279,12 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   }
 
   Widget _buildLimitsCard() {
-    final dailyLimit = (_limits['daily_limit'] ?? 0).toDouble();
-    final monthlyLimit = (_limits['monthly_limit'] ?? 0).toDouble();
-    final dailySpent = (_limits['daily_spent'] ?? 0).toDouble();
-    final monthlySpent = (_limits['monthly_spent'] ?? 0).toDouble();
-    final dailyRemaining = (_limits['daily_remaining'] ?? dailyLimit).toDouble();
-    final monthlyRemaining = (_limits['monthly_remaining'] ?? monthlyLimit).toDouble();
+    final dailyLimit = _parseToDouble(_limits['daily_limit']);
+    final monthlyLimit = _parseToDouble(_limits['monthly_limit']);
+    final dailySpent = _parseToDouble(_limits['daily_spent']);
+    final monthlySpent = _parseToDouble(_limits['monthly_spent']);
+    final dailyRemaining = _parseToDouble(_limits['daily_remaining'], dailyLimit);
+    final monthlyRemaining = _parseToDouble(_limits['monthly_remaining'], monthlyLimit);
     
     return ModernFormWidgets.buildFormCard(
       padding: const EdgeInsets.all(20),
