@@ -57,8 +57,8 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     return 'Good Evening';
   }
 
-  // Advert data with gradients
-  final List<Map<String, dynamic>> _adverts = [
+  // Advert data with gradients - will be replaced by API data
+  List<Map<String, dynamic>> _adverts = [
     {
       'title': 'Trade Gift Cards',
       'description': 'Get the best rates for iTunes, Amazon & Steam cards',
@@ -103,6 +103,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     
     _startAutoScroll();
     _fetchUserData();
+    _fetchPromotions();
   }
 
   @override
@@ -184,12 +185,109 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     }
   }
 
+  /// Fetch promotions from API and update the adverts list
+  Future<void> _fetchPromotions() async {
+    try {
+      debugPrint('[PROMO] Fetching promotions from: ${Constants.baseUrl}/promotions');
+      final response = await http.get(
+        Uri.parse('${Constants.baseUrl}/promotions'),
+        headers: {
+          'Accept': 'application/json',
+        },
+      );
+
+      debugPrint('[PROMO] Response status: ${response.statusCode}');
+      debugPrint('[PROMO] Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        debugPrint('[PROMO] Parsed data: $responseData');
+        
+        // Handle multiple response formats:
+        // Format 1: { data: { promotions: [...] } }
+        // Format 2: { data: [...] }
+        List<dynamic> promotions = [];
+        final data = responseData['data'];
+        if (data is List) {
+          promotions = data;
+        } else if (data is Map && data['promotions'] is List) {
+          promotions = data['promotions'];
+        }
+        
+        debugPrint('[PROMO] Found ${promotions.length} promotions');
+        
+        if (promotions.isNotEmpty && mounted) {
+          setState(() {
+            _adverts = promotions.map((promo) {
+              // Parse gradient colors from hex strings
+              Color gradientStart = _parseColor(promo['gradient_start'] ?? '#FF6B6B');
+              Color gradientEnd = _parseColor(promo['gradient_end'] ?? '#FF8E8E');
+              
+              // Map icon name to IconData
+              IconData icon = _mapIconName(promo['icon'] ?? 'local_offer');
+              
+              // Debug image URL
+              final imageUrl = promo['image_url'];
+              debugPrint('[PROMO] Promotion "${promo['title']}" image_url: $imageUrl');
+              
+              return {
+                'id': promo['id'],
+                'title': promo['title'] ?? '',
+                'description': promo['description'] ?? '',
+                'image_url': imageUrl,
+                'icon': icon,
+                'gradient': [gradientStart, gradientEnd],
+                'link_type': promo['link_type'] ?? 'none',
+                'link_url': promo['link_url'],
+              };
+            }).toList();
+          });
+          debugPrint('[PROMO] Updated _adverts with ${_adverts.length} items');
+        }
+      }
+    } catch (e) {
+      // Silently fail - keep default adverts
+      debugPrint('Failed to fetch promotions: $e');
+    }
+  }
+
+  /// Parse hex color string to Color
+  Color _parseColor(String hexColor) {
+    hexColor = hexColor.replaceAll('#', '');
+    if (hexColor.length == 6) {
+      hexColor = 'FF$hexColor';
+    }
+    return Color(int.parse(hexColor, radix: 16));
+  }
+
+  /// Map Material icon name to IconData
+  IconData _mapIconName(String iconName) {
+    final iconMap = {
+      'local_offer': Icons.local_offer_rounded,
+      'card_giftcard': Icons.card_giftcard_rounded,
+      'currency_bitcoin': Icons.currency_bitcoin_rounded,
+      'receipt_long': Icons.receipt_long_rounded,
+      'phone_android': Icons.phone_android_rounded,
+      'savings': Icons.savings_rounded,
+      'percent': Icons.percent_rounded,
+      'celebration': Icons.celebration_rounded,
+      'star': Icons.star_rounded,
+      'trending_up': Icons.trending_up_rounded,
+      'bolt': Icons.bolt_rounded,
+      'flash_on': Icons.flash_on_rounded,
+      'rocket_launch': Icons.rocket_launch_rounded,
+      'verified': Icons.verified_rounded,
+    };
+    return iconMap[iconName] ?? Icons.local_offer_rounded;
+  }
+
   Future<void> _refreshData() async {
     setState(() => _isRefreshing = true);
     try {
       await Future.wait([
         _fetchUserData(),
         _fetchUnreadCount(),
+        _fetchPromotions(),
       ]);
     } finally {
       if (mounted) setState(() => _isRefreshing = false);
@@ -850,7 +948,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
         'label': 'Trade Giftcard',
         'subtitle': 'Enjoy sweet rates with swift payment',
         'color': AppColors.giftcardColor,
-        'bgColor': AppColors.giftcardColor.withOpacity(0.12),
+        'bgColor': AppColors.primary.withOpacity(0.12),
         'destination': const SellGiftCardScreen(),
       },
       {
@@ -858,7 +956,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
         'label': 'Trade Crypto',
         'subtitle': 'Trade BTC, ETH, BNB & More for instant cash',
         'color': AppColors.cryptoColor,
-        'bgColor': AppColors.cryptoColor.withOpacity(0.12),
+        'bgColor': AppColors.primary.withOpacity(0.12),
         'destination': const TradeCryptoScreen(),
       },
       {
@@ -866,7 +964,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
         'label': 'Rate Calculator',
         'subtitle': 'Use rate calculator to preview currency rate',
         'color': AppColors.calculatorColor,
-        'bgColor': AppColors.calculatorColor.withOpacity(0.12),
+        'bgColor': AppColors.primary.withOpacity(0.12),
         'destination': const RateCalculatorScreen(),
       },
       {
@@ -874,7 +972,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
         'label': 'More Services',
         'subtitle': 'Buy data, purchase airtime and utilities',
         'color': AppColors.moreServicesColor,
-        'bgColor': AppColors.moreServicesColor.withOpacity(0.12),
+        'bgColor': AppColors.primary.withOpacity(0.12),
         'destination': const MoreServicesScreen(),
       },
     ];
@@ -982,87 +1080,157 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
         itemCount: _adverts.length,
         itemBuilder: (context, index) {
           final advert = _adverts[index];
-          return Padding(
-            padding: EdgeInsets.only(right: sw * 0.03),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(sw * 0.04),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: advert['gradient'] as List<Color>,
-                ),
-              ),
-              child: Stack(
-                children: [
-                  // Background decoration
-                  Positioned(
-                    right: -sw * 0.05,
-                    bottom: -sw * 0.05,
-                    child: Icon(
-                      advert['icon'] as IconData,
-                      size: sw * 0.2,
-                      color: Colors.white.withOpacity(0.15),
-                    ),
-                  ),
-                  // Content
-                  Padding(
-                    padding: EdgeInsets.all(sw * 0.03),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  advert['title'] as String,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: sw * 0.035,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Flexible(
-                                child: Text(
-                                  advert['description'] as String,
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: sw * 0.025,
-                                    height: 1.2,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.all(sw * 0.02),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(sw * 0.025),
-                          ),
-                          child: Icon(
-                            advert['icon'] as IconData,
-                            color: Colors.white,
-                            size: sw * 0.06,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+          final imageUrl = advert['image_url'];
+          final hasImage = imageUrl != null && imageUrl is String && imageUrl.isNotEmpty;
+          
+          debugPrint('[PROMO] Building card ${advert['title']}: hasImage=$hasImage, imageUrl=$imageUrl');
+          
+          return GestureDetector(
+            onTap: () => _handlePromoTap(advert),
+            child: Padding(
+              padding: EdgeInsets.only(right: sw * 0.03),
+              child: hasImage
+                  ? _buildImagePromoCard(advert, sw, promoHeight)
+                  : _buildGradientPromoCard(advert, sw),
             ),
           );
         },
+      ),
+    );
+  }
+
+  /// Handle promotion card tap based on link_type
+  void _handlePromoTap(Map<String, dynamic> advert) {
+    final linkType = advert['link_type'] ?? 'none';
+    final linkUrl = advert['link_url'];
+    
+    if (linkType == 'none' || linkUrl == null || linkUrl.isEmpty) return;
+    
+    if (linkType == 'internal') {
+      // Navigate to internal route
+      Navigator.pushNamed(context, linkUrl);
+    } else if (linkType == 'external') {
+      // Open external URL (you can use url_launcher package)
+      // For now, just print it
+      debugPrint('Opening external URL: $linkUrl');
+    }
+  }
+
+  /// Build image-based promo card
+  Widget _buildImagePromoCard(Map<String, dynamic> advert, double sw, double promoHeight) {
+    final rawImageUrl = advert['image_url'] as String;
+    final imageUrl = Constants.fixLocalUrl(rawImageUrl);
+    debugPrint('[PROMO] Loading image from: $imageUrl');
+    
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(sw * 0.04),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(sw * 0.04),
+        child: Image.network(
+          imageUrl,
+          width: double.infinity,
+          height: promoHeight,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            debugPrint('[PROMO] Image loading... ${loadingProgress.cumulativeBytesLoaded}/${loadingProgress.expectedTotalBytes ?? 0}');
+            return _buildGradientPromoCard(advert, sw); // Show gradient while loading
+          },
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('[PROMO] Image load error: $error');
+            return _buildGradientPromoCard(advert, sw); // Fallback to gradient on error
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Build gradient-based promo card (original design)
+  Widget _buildGradientPromoCard(Map<String, dynamic> advert, double sw) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(sw * 0.04),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: advert['gradient'] as List<Color>,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Background decoration
+          Positioned(
+            right: -sw * 0.05,
+            bottom: -sw * 0.05,
+            child: Icon(
+              advert['icon'] as IconData,
+              size: sw * 0.2,
+              color: Colors.white.withOpacity(0.15),
+            ),
+          ),
+          // Content
+          Padding(
+            padding: EdgeInsets.all(sw * 0.03),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          advert['title'] as String,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: sw * 0.035,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Flexible(
+                        child: Text(
+                          advert['description'] as String,
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: sw * 0.025,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.all(sw * 0.02),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(sw * 0.025),
+                  ),
+                  child: Icon(
+                    advert['icon'] as IconData,
+                    color: Colors.white,
+                    size: sw * 0.06,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

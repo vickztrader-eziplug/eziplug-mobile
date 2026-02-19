@@ -77,12 +77,9 @@ class _SupportScreenState extends State<SupportScreen>
   Future<void> _launchUrl(String urlString) async {
     try {
       final Uri url = Uri.parse(urlString);
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ToastHelper.showError('Could not open link');
-        }
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ToastHelper.showError('Could not open link');
       }
     } catch (e) {
       if (mounted) {

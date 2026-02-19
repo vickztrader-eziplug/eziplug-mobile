@@ -7,8 +7,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
+import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/pin_entry_screen.dart';
 
 class GiftUserScreen extends StatefulWidget {
   const GiftUserScreen({Key? key}) : super(key: key);
@@ -121,23 +121,24 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
       return;
     }
 
-    // Navigate to PIN screen
+    // Show PIN verification modal
     if (!mounted) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PinEntryScreen(
-          title: 'Confirm Gift',
-          subtitle: 'Enter your 4 digit PIN to gift ${usernameController.text}',
-          onPinComplete: (pin) => _processGift(pin),
-          onForgotPin: () {
-            Navigator.pop(context);
-            _showSnackBar('Contact support to reset PIN', Colors.orange);
-          },
-        ),
-      ),
+    final pin = await PinVerificationModal.show(
+      context: context,
+      title: 'Confirm Gift',
+      subtitle: 'Enter your 4-digit PIN to confirm this gift',
+      transactionType: 'Gift User',
+      recipient: usernameController.text,
+      amount: '₦${amount.toStringAsFixed(0)}',
+      onForgotPin: () {
+        _showSnackBar('Go to Profile > PIN Management to reset your PIN', Colors.orange);
+      },
     );
+
+    if (pin != null && pin.length == 4) {
+      _processGift(pin);
+    }
   }
 
   Future<void> _processGift(String pin) async {
@@ -174,8 +175,6 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        Navigator.pop(context); // Close PIN screen
-
         // Refresh wallet balance
         _fetchWalletBalance();
 
@@ -191,14 +190,29 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
         amountController.clear();
         noteController.clear();
       } else if (response.statusCode == 401) {
-        Navigator.pop(context); // Close PIN screen
         _showSnackBar('Session expired. Please login again', Colors.red);
         await authService.logout();
       } else if (response.statusCode == 400 &&
           responseData['message']?.toString().contains('PIN') == true) {
         throw Exception(responseData['message'] ?? 'Invalid PIN');
+      } else if (response.statusCode == 422) {
+        // Handle validation errors
+        String errorMessage = 'Validation failed';
+        if (responseData['errors'] != null && responseData['errors'] is Map) {
+          final errors = responseData['errors'] as Map;
+          // Get first error message from errors object
+          if (errors.isNotEmpty) {
+            final firstField = errors.keys.first;
+            final fieldErrors = errors[firstField];
+            if (fieldErrors is List && fieldErrors.isNotEmpty) {
+              errorMessage = fieldErrors.first.toString();
+            }
+          }
+        } else if (responseData['message'] != null) {
+          errorMessage = responseData['message'];
+        }
+        _showSnackBar(errorMessage, Colors.red);
       } else {
-        Navigator.pop(context);
         _showSnackBar(
           responseData['message'] ?? 'Failed to send gift',
           Colors.red,
@@ -384,7 +398,7 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
                             ModernFormWidgets.buildTextField(
                               controller: amountController,
                               hintText: 'Enter amount to gift',
-                              prefixIcon: Icons.attach_money,
+                              prefixIcon: Icons.account_balance_wallet_outlined,
                               keyboardType: TextInputType.number,
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,

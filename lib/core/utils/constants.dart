@@ -1,9 +1,45 @@
 import 'package:flutter/material.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class Constants {
   static const String baseUrl =
-      // "http://127.0.0.1:8000/api"; // For local testing
-      "https://app.eziplug.app/api"; // Production URL
+      "http://127.0.0.1:8000/api"; // For local testing
+      // "https://app.eziplug.app/api"; // Production URL
+
+  // Storage URL (for images, files, etc.)
+  static String get storageUrl {
+    // Extract base domain from baseUrl and append /storage
+    final uri = Uri.parse(baseUrl);
+    return '${uri.scheme}://${uri.host}:${uri.port}/storage';
+  }
+
+  /// Fix localhost URLs for different platforms
+  /// Android emulator uses 10.0.2.2 to reach host machine's localhost
+  static String fixLocalUrl(String url) {
+    if (url.isEmpty) return url;
+    
+    // Only fix URLs that point to localhost/127.0.0.1
+    if (!url.contains('127.0.0.1') && !url.contains('localhost')) {
+      return url;
+    }
+    
+    // For web, localhost works fine
+    if (kIsWeb) return url;
+    
+    // For Android emulator, replace localhost with 10.0.2.2
+    try {
+      if (Platform.isAndroid) {
+        return url
+            .replaceAll('127.0.0.1', '10.0.2.2')
+            .replaceAll('localhost', '10.0.2.2');
+      }
+    } catch (e) {
+      // Platform not available, return as-is
+    }
+    
+    return url;
+  }
 
   // App Info
   static const String appName = 'Eziplug';

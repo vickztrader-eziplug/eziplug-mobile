@@ -129,9 +129,11 @@ class ModernFormWidgets {
     String? label,
     IconData? prefixIcon,
     Widget? suffixWidget,
+    Widget? suffixIcon,
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     int maxLines = 1,
+    int? maxLength,
     List<TextInputFormatter>? inputFormatters,
     void Function(String)? onChanged,
     bool readOnly = false,
@@ -161,6 +163,7 @@ class ModernFormWidgets {
             keyboardType: keyboardType,
             obscureText: obscureText,
             maxLines: maxLines,
+            maxLength: maxLength,
             readOnly: readOnly,
             onTap: onTap,
             onChanged: onChanged,
@@ -177,10 +180,11 @@ class ModernFormWidgets {
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),
+              counterText: '', // Hide maxLength counter
               prefixIcon: prefixIcon != null
                   ? Icon(prefixIcon, color: AppColors.primary, size: 20)
                   : null,
-              suffixIcon: suffixWidget,
+              suffixIcon: suffixIcon ?? suffixWidget,
               filled: true,
               fillColor: Colors.white,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
