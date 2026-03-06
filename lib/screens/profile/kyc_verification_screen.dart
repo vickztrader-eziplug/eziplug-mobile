@@ -475,7 +475,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
       enableDrag: true,
       builder: (sheetContext) {
         bool isVerifying = false;
-        String? sheetDebugOtp = _debugOtp;
+        bool isResending = false;
         
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -603,30 +603,6 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                               ),
                             ),
                           ],
-                          // Debug OTP for testing
-                          if (sheetDebugOtp != null) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.orange.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Text(
-                                'Test OTP: $sheetDebugOtp',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.orange,
-                                ),
-                              ),
-                            ),
-                          ],
                           const SizedBox(height: 24),
                           
                           // OTP Input Field
@@ -749,30 +725,60 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                                   color: Colors.grey[600],
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () async {
-                                  try {
-                                    await _resendOtp();
-                                    setSheetState(() {
-                                      sheetDebugOtp = _debugOtp;
-                                    });
-                                    _showSnackBar('OTP resent successfully');
-                                  } catch (e) {
-                                    _showSnackBar(
-                                      'Error: ${e.toString().replaceAll('Exception: ', '')}',
-                                      isError: true,
-                                    );
-                                  }
-                                },
-                                child: const Text(
-                                  'Resend',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
+                              isResending
+                                  ? Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const SizedBox(
+                                          height: 14,
+                                          width: 14,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Sending...',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primary.withOpacity(0.7),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : TextButton(
+                                      onPressed: () async {
+                                        setSheetState(() => isResending = true);
+                                        try {
+                                          await _resendOtp();
+                                          _showSnackBar('OTP resent successfully');
+                                        } catch (e) {
+                                          _showSnackBar(
+                                            'Error: ${e.toString().replaceAll('Exception: ', '')}',
+                                            isError: true,
+                                          );
+                                        } finally {
+                                          if (mounted) {
+                                            setSheetState(() => isResending = false);
+                                          }
+                                        }
+                                      },
+                                      style: TextButton.styleFrom(
+                                        padding: EdgeInsets.zero,
+                                        minimumSize: const Size(0, 0),
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      child: const Text(
+                                        'Resend',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    ),
                             ],
                           ),
                         ],
@@ -1601,6 +1607,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                       _verifiedName!,
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                     ),
+                    // Show match details if available, regardless of overall match success
                     if (_matchDetails != null) ...[
                       const SizedBox(height: 12),
                       const Divider(),

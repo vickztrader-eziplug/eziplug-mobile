@@ -161,7 +161,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   Future<List<TransactionModel>> _fetchCryptoHistory(String token) async {
     try {
       final response = await http.get(
-        Uri.parse(Constants.cryotoHistory),
+        Uri.parse(Constants.cryptoHistory),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',

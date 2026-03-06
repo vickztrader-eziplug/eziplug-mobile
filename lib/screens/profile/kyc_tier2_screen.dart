@@ -312,7 +312,7 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
       enableDrag: true,
       builder: (sheetContext) {
         bool isVerifying = false;
-        String? dialogDebugOtp = _debugOtp;
+        bool isResending = false;
         
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -439,31 +439,6 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                                 color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                          // Debug OTP display for testing
-                          if (dialogDebugOtp != null) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.orange.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Text(
-                                'Test OTP: $dialogDebugOtp',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.orange,
-                                ),
                               ),
                             ),
                           ],
@@ -626,22 +601,54 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                                   color: Colors.grey[600],
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () async {
-                                  await _resendOtp();
-                                  setSheetState(() {
-                                    dialogDebugOtp = _debugOtp;
-                                  });
-                                },
-                                child: const Text(
-                                  'Resend',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
+                              isResending
+                                  ? Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const SizedBox(
+                                          height: 14,
+                                          width: 14,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Sending...',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primary.withOpacity(0.7),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : TextButton(
+                                      onPressed: () async {
+                                        setSheetState(() => isResending = true);
+                                        try {
+                                          await _resendOtp();
+                                        } finally {
+                                          if (mounted) {
+                                            setSheetState(() => isResending = false);
+                                          }
+                                        }
+                                      },
+                                      style: TextButton.styleFrom(
+                                        padding: EdgeInsets.zero,
+                                        minimumSize: const Size(0, 0),
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      child: const Text(
+                                        'Resend',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    ),
                             ],
                           ),
                         ],
@@ -1099,6 +1106,7 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                                   color: AppColors.textColor,
                                 ),
                               ),
+                              // Show match details if available, regardless of overall match success
                               if (_matchDetails != null) ...[
                                 const SizedBox(height: 12),
                                 const Divider(),

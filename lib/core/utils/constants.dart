@@ -59,7 +59,11 @@ class Constants {
   static const String paystackSecreteKey = "sk_live_5873ce22b9e6f34bad22bf5bf330d6e7133a2cda";
   static const sellGiftCardUrl = '$baseUrl/giftcard/sell';
   static const buyGiftCardUrl = '$baseUrl/giftcard/buy';
-  static const buyCryptoUrl = '$baseUrl/wallet/withdraw';
+  static const buyCryptoUrl = '$baseUrl/crypto/buy';
+  static const sellCryptoUrl = '$baseUrl/crypto/sell';
+  static const uidSellCryptoUrl = '$baseUrl/crypto/uid-sell';
+  static const cryptoTradeStatusUrl = '$baseUrl/crypto/trade-status';
+  static const cryptoTypes = '$baseUrl/cryptos';
 
   static const giftCards = '$baseUrl/giftcard';
   static const buyGiftCard = '$baseUrl/giftcard/buy';
@@ -67,8 +71,6 @@ class Constants {
   static const calculateGiftCard = '$baseUrl/giftcard/calculate';
   static const giftCardTransactions = '$baseUrl/giftcard/transactions';
 
-  static const createWalletUrl = '$baseUrl/wallet/create';
-  static const depositCryptoUrl = '$baseUrl/giftcard/buy';
   static const networks = '$baseUrl/networks';
   static const airtime = '$baseUrl/vtu/airtime';
   static const bills = '$baseUrl/vtu/bills';
@@ -99,7 +101,7 @@ class Constants {
   static const paymentHistory = '$baseUrl/payment/history';
   static const giftuserHistory = '$baseUrl/payout/giftuser/history';
   static const giftCardHistory = '$baseUrl/giftcard/history';
-  static const cryotoHistory = '$baseUrl/crypto/history';
+  static const cryptoHistory = '$baseUrl/crypto/history';
   
   // Leaderboard Endpoints
   static const leaderboard = '$baseUrl/leaderboard';

@@ -6,75 +6,279 @@ import 'dart:convert';
 import 'dart:async';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
+import '../../core/utils/error_handler.dart';
 import '../../core/utils/toast_helper.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
+import 'crypto_sell_success_screen.dart';
 
 class SellCryptoScreen extends StatefulWidget {
   final String cryptoName;
-  const SellCryptoScreen({super.key, required this.cryptoName});
+  final String cryptoId;
+  const SellCryptoScreen({super.key, required this.cryptoName, required this.cryptoId});
 
   @override
   State<SellCryptoScreen> createState() => _SellCryptoScreenState();
 }
 
-class _SellCryptoScreenState extends State<SellCryptoScreen> {
-  String? _selectedWallet;
+class _SellCryptoScreenState extends State<SellCryptoScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _amountController = TextEditingController();
-  final List<String> _wallets = ['btc', 'usdt'];
+  bool _isLoading = false;
+  bool _isLoadingWallet = true;
+  bool _isLoadingCoins = true;
+  bool _isGeneratingWallet = false;
+  double _walletNaira = 0.0;
+  double _currentRate = 0.0;
+
+  String? _selectedCoin;
+  String? _selectedCoinId;
+  List<Map<String, dynamic>> _coins = [];
 
   String? _walletAddress;
   String? _qrCodeData;
-  bool _isLoading = false;
-  bool _isGeneratingWallet = false;
-  double _conversionRate = 1500.00; // Temporary rate
+  int? _tradeId;
   Timer? _expiryTimer;
-  int _remainingSeconds = 900; // 15 minutes in seconds
+  Timer? _pollTimer;
+  int _remainingSeconds = 900; // 15 minutes
+
+  late AnimationController _timerPulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _timerPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    // Initialize with cached balance immediately so it doesn't show 0
+    final authService = Provider.of<AuthService>(context, listen: false);
+    _walletNaira = authService.walletNaira;
+    if (_walletNaira > 0) {
+      _isLoadingWallet = false;
+    }
+    _fetchWalletBalance();
+    _fetchCoins();
+  }
 
   @override
   void dispose() {
     _amountController.dispose();
     _expiryTimer?.cancel();
+    _pollTimer?.cancel();
+    _timerPulseController.dispose();
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _checkAuth();
+  Future<void> _fetchWalletBalance() async {
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final token = await authService.getToken();
+
+      if (token == null || token.isEmpty) {
+        setState(() => _isLoadingWallet = false);
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse(Constants.user),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        final userData = responseData['data'] ?? responseData;
+
+        if (mounted) {
+          setState(() {
+            _walletNaira =
+                double.tryParse(userData['wallet_naira']?.toString() ?? '0') ?? 0.0;
+            _isLoadingWallet = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingWallet = false);
+    }
   }
 
-  Future<void> _checkAuth() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final token = await authService.getToken();
+  Future<void> _fetchCoins() async {
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final token = await authService.getToken();
 
-    if ((token == null || token.isEmpty) && mounted) {
-      print('not authenticated: $token');
+      final response = await http.get(
+        Uri.parse(Constants.cryptoTypes),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        final data = responseData['data'] ?? responseData['results'] ?? responseData;
+
+        List<dynamic> coinsList = [];
+        if (data is List) {
+          coinsList = data;
+        } else if (data is Map && data['data'] is List) {
+          coinsList = data['data'];
+        }
+
+        if (mounted) {
+          setState(() {
+            _coins = coinsList.map<Map<String, dynamic>>((coin) => {
+              'id': coin['id']?.toString() ?? '',
+              'symbol': (coin['symbol'] ?? coin['name'] ?? '').toString().toUpperCase(),
+              'name': coin['name'] ?? coin['symbol'] ?? '',
+              'sell_rate_ngn': double.tryParse(coin['sell_rate_ngn']?.toString() ?? '0') ?? 0.0,
+            }).toList();
+            _isLoadingCoins = false;
+
+            // Auto-select coin if matching (prefer id, fallback to symbol)
+            Map<String, dynamic>? match;
+            if (widget.cryptoId.isNotEmpty) {
+              match = _coins.cast<Map<String, dynamic>?>().firstWhere(
+                (c) => c!['id'] == widget.cryptoId,
+                orElse: () => null,
+              );
+            }
+            match ??= _coins.cast<Map<String, dynamic>?>().firstWhere(
+              (c) => c!['symbol'] == widget.cryptoName.toUpperCase(),
+              orElse: () => null,
+            );
+            if (match != null) {
+              _selectedCoin = match['symbol'];
+              _selectedCoinId = match['id'];
+              _currentRate = match['sell_rate_ngn'] ?? 0.0;
+            }
+          });
+        }
+      } else {
+        _loadFallbackCoins();
+      }
+    } catch (e) {
+      _loadFallbackCoins();
     }
+  }
+
+  void _loadFallbackCoins() {
+    if (mounted) {
+      setState(() {
+        _coins = [
+          {'id': '1', 'symbol': 'BTC', 'name': 'Bitcoin', 'sell_rate_ngn': 0.0},
+          {'id': '2', 'symbol': 'USDT', 'name': 'Tether', 'sell_rate_ngn': 0.0},
+        ];
+        _isLoadingCoins = false;
+      });
+    }
+  }
+
+  void _onCoinSelected(String coinId) {
+    final coin = _coins.firstWhere(
+      (c) => c['id'] == coinId,
+      orElse: () => {},
+    );
+    setState(() {
+      _selectedCoin = coin['symbol']?.toString();
+      _selectedCoinId = coinId;
+      _currentRate = coin['sell_rate_ngn'] ?? 0.0;
+      // Reset wallet address when coin changes
+      _walletAddress = null;
+      _qrCodeData = null;
+      _expiryTimer?.cancel();
+    });
   }
 
   void _startExpiryTimer() {
     _expiryTimer?.cancel();
-    setState(() {
-      _remainingSeconds = 900; // Reset to 15 minutes
-    });
+    setState(() => _remainingSeconds = 900);
+    _timerPulseController.repeat(reverse: true);
 
     _expiryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds > 0) {
-        setState(() {
-          _remainingSeconds--;
-        });
+        setState(() => _remainingSeconds--);
       } else {
         timer.cancel();
-        _showSnackBar(
-          'Wallet address has expired. Please generate a new one.',
-          Colors.orange,
-        );
+        _timerPulseController.stop();
+        _pollTimer?.cancel();
+        _showSnackBar('Address has expired. Please generate a new one.', Colors.orange);
         setState(() {
           _walletAddress = null;
           _qrCodeData = null;
+          _tradeId = null;
         });
       }
     });
+  }
+
+  void _startDepositPolling() {
+    _pollTimer?.cancel();
+    if (_tradeId == null) return;
+
+    _pollTimer = Timer.periodic(const Duration(seconds: 15), (timer) async {
+      if (!mounted || _tradeId == null) {
+        timer.cancel();
+        return;
+      }
+
+      try {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final token = await authService.getToken();
+        if (token == null) return;
+
+        final response = await http.get(
+          Uri.parse('${Constants.cryptoTradeStatusUrl}/$_tradeId'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+
+        if (!mounted) return;
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final tradeStatus = data['data']?['trade_status'] ?? '';
+
+          if (tradeStatus == 'confirmed' || tradeStatus == 'completed') {
+            timer.cancel();
+            _expiryTimer?.cancel();
+            _timerPulseController.stop();
+
+            final nairaAmount = data['data']?['naira_equivalent'];
+            final confirmedAmount = data['data']?['confirmed_amount_crypto'];
+
+            _showSuccessDialog(
+              confirmedAmount?.toString() ?? _amountController.text,
+              nairaAmount?.toString() ?? '0',
+            );
+          }
+        }
+      } catch (_) {
+        // Silently ignore polling errors
+      }
+    });
+  }
+
+  void _showSuccessDialog(String cryptoAmount, String nairaAmount) {
+    if (!mounted) return;
+
+    // Navigate to full-screen success page
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => CryptoSellSuccessScreen(
+          cryptoAmount: cryptoAmount,
+          coinSymbol: _selectedCoin ?? widget.cryptoName,
+          nairaAmount: nairaAmount,
+          depositAddress: _walletAddress,
+        ),
+      ),
+    );
   }
 
   String _formatTime(int seconds) {
@@ -83,10 +287,15 @@ class _SellCryptoScreenState extends State<SellCryptoScreen> {
     return '$minutes:$secs';
   }
 
+  Color _getTimerColor() {
+    if (_remainingSeconds > 600) return AppColors.success;
+    if (_remainingSeconds > 300) return AppColors.warning;
+    return AppColors.error;
+  }
+
   Future<void> _generateWalletAddress() async {
-    // Validation
-    if (_selectedWallet == null) {
-      _showSnackBar('Please select a wallet', Colors.red);
+    if (_selectedCoin == null) {
+      _showSnackBar('Please select a coin', Colors.red);
       return;
     }
 
@@ -109,68 +318,69 @@ class _SellCryptoScreenState extends State<SellCryptoScreen> {
 
       if (token == null || token.isEmpty) {
         _showSnackBar('Please login to continue', Colors.red);
-        // ignore: use_build_context_synchronously
         Navigator.pushReplacementNamed(context, '/login');
         return;
       }
 
-      // Step 1: Create wallet
-      final createWalletResponse = await http.post(
-        Uri.parse(Constants.createWalletUrl),
+      // Single API call to the new sell endpoint
+      final response = await http.post(
+        Uri.parse(Constants.sellCryptoUrl),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'coin': widget.cryptoName.toLowerCase()}),
+        body: jsonEncode({
+          'crypto_id': _selectedCoinId ?? widget.cryptoId,
+          'amount_crypto': amount,
+        }),
       );
 
-      if (createWalletResponse.statusCode != 200 &&
-          createWalletResponse.statusCode != 201) {
-        final errorData = jsonDecode(createWalletResponse.body);
-        print('createWalletResponse: $errorData');
-        throw Exception(errorData['message'] ?? 'Failed to create wallet');
-      }
-
-      // Step 2: Generate deposit address
-      final depositResponse = await http.post(
-        Uri.parse(Constants.depositCryptoUrl),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'blockchain': widget.cryptoName.toLowerCase()}),
-      );
-
-      final depositData = jsonDecode(depositResponse.body);
+      final responseData = jsonDecode(response.body);
 
       if (!mounted) return;
-      print('depositData: $depositData');
 
-      if (depositResponse.statusCode == 200 ||
-          depositResponse.statusCode == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Parse address from multiple possible response structures
+        final resultsData = responseData['results']?['data'];
+        final depositAddress = responseData['deposit_address'] ??
+            resultsData?['deposit_address'] ??
+            responseData['data']?['deposit_address'] ??
+            responseData['address'];
+        final qrCode = responseData['qr_code'] ??
+            resultsData?['qr_code'];
+        final expiresAtStr = responseData['expires_at'] ??
+            resultsData?['expires_at'];
+
         setState(() {
-          _walletAddress =
-              depositData['address'] ?? depositData['wallet_address'];
+          _walletAddress = depositAddress;
           _qrCodeData = _walletAddress;
+          _tradeId = resultsData?['trade_id'] ??
+              responseData['trade_id'];
+
+          // Use backend-provided expiry or default to 15 minutes
+          if (expiresAtStr != null) {
+            final expiresAt = DateTime.tryParse(expiresAtStr.toString());
+            if (expiresAt != null) {
+              _remainingSeconds = expiresAt.difference(DateTime.now()).inSeconds;
+              if (_remainingSeconds < 0) _remainingSeconds = 0;
+            }
+          }
         });
-
-        // Start expiry countdown
         _startExpiryTimer();
-
-        _showSnackBar('Wallet address generated successfully', Colors.green);
-      } else if (depositResponse.statusCode == 401) {
+        _startDepositPolling();
+        _showSnackBar('Deposit address generated. Send crypto to this address.', Colors.green);
+      } else if (response.statusCode == 401) {
         _showSnackBar('Session expired. Please login again', Colors.red);
         await authService.logout();
       } else {
         throw Exception(
-          depositData['message'] ?? 'Failed to generate deposit address',
+          responseData['message'] ?? 'Failed to generate deposit address',
         );
       }
     } catch (e) {
       if (!mounted) return;
-      _showSnackBar(e.toString().replaceAll('Exception: ', ''), Colors.red);
+      _showSnackBar(ErrorHandler.getUserFriendlyMessage(e), Colors.red);
     } finally {
       if (mounted) setState(() => _isGeneratingWallet = false);
     }
@@ -179,390 +389,392 @@ class _SellCryptoScreenState extends State<SellCryptoScreen> {
   void _copyToClipboard() {
     if (_walletAddress != null) {
       Clipboard.setData(ClipboardData(text: _walletAddress!));
-      _showSnackBar('Wallet address copied to clipboard', Colors.green);
+      HapticFeedback.mediumImpact();
+      _showSnackBar('Address copied to clipboard', Colors.green);
     }
   }
 
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
-    // Use ToastHelper for consistent top-positioned toasts
     ToastHelper.showSnackBar(context, message, color);
+  }
+
+  String _formatBalance(double balance) {
+    return balance
+        .toStringAsFixed(2)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            if (_isLoading)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                    strokeWidth: 3,
-                  ),
-                ),
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Modern Gradient Header
+              ModernFormWidgets.buildGradientHeader(
+                context: context,
+                title: 'Sell ${_selectedCoin ?? widget.cryptoName}',
+                subtitle: 'Send crypto, receive Naira',
+                walletBalance: _walletNaira,
+                isLoadingBalance: _isLoadingWallet,
+                primaryColor: AppColors.primary,
               ),
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 220,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 30),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'Sell Crypto - ${widget.cryptoName}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
 
-            // Content Section with curved top
-            Positioned(
-              top: 130,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
+              // Content Section
+              Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Select Wallet Dropdown
-                      _buildLabel('Select Coin'),
-                      const SizedBox(height: 8),
-                      _buildDropdown(
-                        hint: 'Select Coin',
-                        value: _selectedWallet,
-                        items: _wallets,
-                        onChanged: (value) {
-                          setState(() => _selectedWallet = value);
-                        },
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Amount TextField
-                      _buildLabel('Amount'),
-                      const SizedBox(height: 8),
-                      _buildTextField(
-                        controller: _amountController,
-                        hintText: 'Enter amount to fund',
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Conversion Rate
-                      _buildLabel('Conversion Rate'),
-                      const SizedBox(height: 8),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.lightGrey.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text(
-                          '₦${_conversionRate.toStringAsFixed(2)} = 1 ${widget.cryptoName}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-
-                      // Generate Wallet Address Button
-                      if (_walletAddress == null)
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _isGeneratingWallet
-                                ? null
-                                : _generateWalletAddress,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.textColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                              disabledBackgroundColor: AppColors.lightGrey,
+                      // Coin Selection
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Select Coin',
+                              icon: Icons.currency_bitcoin_rounded,
+                              iconColor: AppColors.cryptoColor,
                             ),
-                            child: _isGeneratingWallet
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
+                            const SizedBox(height: 12),
+                            _isLoadingCoins
+                                ? const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: CircularProgressIndicator(strokeWidth: 2),
                                     ),
                                   )
-                                : const Text(
-                                    'Generate Wallet Address',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                : Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: _coins.map((coin) {
+                                      final coinId = coin['id'] as String;
+                                      final name = coin['name'] as String;
+                                      final symbol = coin['symbol'] as String;
+                                      final isSelected = _selectedCoinId == coinId;
+                                      return ModernFormWidgets.buildSelectableChip(
+                                        label: '$name ($symbol)',
+                                        isSelected: isSelected,
+                                        onTap: () => _onCoinSelected(coinId),
+                                        selectedColor: AppColors.primary,
+                                      );
+                                    }).toList(),
                                   ),
-                          ),
+                          ],
                         ),
+                      ),
+                      const SizedBox(height: 16),
 
-                      // Wallet Address Display
-                      if (_walletAddress != null) ...[
-                        Center(
-                          child: Column(
+                      // Amount Input
+                      ModernFormWidgets.buildFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Amount (Crypto)',
+                              icon: Icons.payments_outlined,
+                              iconColor: AppColors.primary,
+                            ),
+                            const SizedBox(height: 12),
+                            ModernFormWidgets.buildTextField(
+                              controller: _amountController,
+                              hintText: 'Enter crypto amount to sell',
+                              prefixIcon: Icons.money,
+                              keyboardType: TextInputType.number,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Rate Display
+                      if (_currentRate > 0)
+                        ModernFormWidgets.buildFormCard(
+                          backgroundColor: AppColors.primary.withOpacity(0.04),
+                          child: Row(
                             children: [
-                              // QR Code
                               Container(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: AppColors.lightGrey,
-                                    width: 2,
-                                  ),
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
+                                child: const Icon(
+                                  Icons.trending_up_rounded,
+                                  color: AppColors.primary,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
                                 child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
-                                      'Scan QR code',
+                                    Text(
+                                      'Sell Rate',
                                       style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
+                                        fontSize: 11,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '₦${_formatBalance(_currentRate)} = 1 ${_selectedCoin ?? 'Crypto'}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
                                         color: AppColors.textColor,
                                       ),
                                     ),
-                                    const SizedBox(height: 12),
-                                    Container(
-                                      width: 150,
-                                      height: 150,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Image.network(
-                                        'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=$_qrCodeData',
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                              return Container(
-                                                color: AppColors.lightGrey
-                                                    .withOpacity(0.3),
-                                                child: const Icon(
-                                                  Icons.qr_code,
-                                                  size: 80,
-                                                  color: AppColors.textColor,
-                                                ),
-                                              );
-                                            },
-                                      ),
-                                    ),
                                   ],
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-
-                              // Wallet Address with Copy
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.lightGrey.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        _walletAddress!,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: AppColors.primary,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    GestureDetector(
-                                      onTap: _copyToClipboard,
-                                      child: const Icon(
-                                        Icons.copy,
-                                        size: 18,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-
-                              // Expiry Info
-                              Text(
-                                'Expires in ${_formatTime(_remainingSeconds)}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: _remainingSeconds < 300
-                                      ? Colors.red
-                                      : AppColors.textColor.withOpacity(0.6),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Payment should be made within 15 minutes',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textColor.withOpacity(0.6),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-
-                              // Regenerate Button
-                              TextButton(
-                                onPressed: _generateWalletAddress,
-                                child: const Text(
-                                  'Generate New Address',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
+                      if (_currentRate > 0) const SizedBox(height: 16),
+
+                      // Generate Address or Show Address
+                      if (_walletAddress == null)
+                        ModernFormWidgets.buildPrimaryButton(
+                          label: 'Generate Deposit Address',
+                          onPressed: _generateWalletAddress,
+                          isLoading: _isGeneratingWallet,
+                          backgroundColor: AppColors.primary,
+                          icon: Icons.qr_code_rounded,
+                        ),
+
+                      // Wallet Address Display Section
+                      if (_walletAddress != null) ...[
+                        _buildDepositAddressCard(),
+                        const SizedBox(height: 16),
                       ],
+
+                      const SizedBox(height: 16),
+
+                      // Info tip
+                      ModernFormWidgets.buildInfoCard(
+                        message: _walletAddress != null
+                            ? 'Send the exact amount to the address above. Your Naira wallet will be credited after blockchain confirmation (3-60 minutes).'
+                            : 'Generate a deposit address, then send crypto from your external wallet (Trust Wallet, Binance, etc.) to receive Naira credit.',
+                        icon: Icons.info_outline_rounded,
+                        color: AppColors.primary,
+                      ),
+
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
+            ],
+          ),
+
+          // Loading overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black38,
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textColor,
-      ),
-    );
-  }
+  Widget _buildDepositAddressCard() {
+    final timerColor = _getTimerColor();
 
-  Widget _buildDropdown({
-    required String hint,
-    required String? value,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.lightGrey, width: 2),
-      ),
-      child: DropdownButton<String>(
-        value: value,
-        hint: Text(
-          hint,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
+    return ModernFormWidgets.buildFormCard(
+      child: Column(
+        children: [
+          // Timer Banner
+          AnimatedBuilder(
+            animation: _timerPulseController,
+            builder: (context, child) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      timerColor.withOpacity(0.1 + _timerPulseController.value * 0.05),
+                      timerColor.withOpacity(0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: timerColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.timer_rounded, color: timerColor, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Expires in ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: timerColor.withOpacity(0.8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      _formatTime(_remainingSeconds),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: timerColor,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
-        ),
-        isExpanded: true,
-        underline: const SizedBox(),
-        icon: const Icon(Icons.keyboard_arrow_down),
-        items: items.map((String item) {
-          return DropdownMenuItem<String>(value: item, child: Text(item));
-        }).toList(),
-        onChanged: onChanged,
-      ),
-    );
-  }
+          const SizedBox(height: 20),
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.lightGrey, width: 2),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(fontSize: 14, color: AppColors.textColor),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
+          // QR Code
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.05),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Scan to send ${_selectedCoin ?? 'crypto'}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: 160,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=$_qrCodeData',
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: AppColors.background,
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.qr_code_rounded, size: 64, color: AppColors.primary),
+                              SizedBox(height: 8),
+                              Text(
+                                'QR Code',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
+          const SizedBox(height: 16),
+
+          // Wallet Address
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.link_rounded, size: 16, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _walletAddress!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primary,
+                      fontFamily: 'monospace',
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _copyToClipboard,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.copy_rounded,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: 12),
+
+          // Payment Instructions
+          Text(
+            'Send payment within 15 minutes',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Regenerate Button
+          TextButton.icon(
+            onPressed: _generateWalletAddress,
+            icon: const Icon(Icons.refresh_rounded, size: 16),
+            label: const Text(
+              'Generate New Address',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+          ),
+        ],
       ),
     );
   }

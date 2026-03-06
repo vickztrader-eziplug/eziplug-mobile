@@ -774,31 +774,37 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                     _buildCardButton(
                       label: 'Bonus',
                       icon: Icons.star_rounded,
-                      bgColor: Colors.white.withOpacity(0.2),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ReferralScreen()),
-                      ),
+                      bgColor: currency == '₦' ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.05),
+                      onTap: currency == '₦'
+                          ? () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ReferralScreen()),
+                              )
+                          : () {},
                     ),
                     const SizedBox(width: 8),
                     _buildCardButton(
                       label: 'Save & Earn',
                       icon: Icons.savings_rounded,
-                      bgColor: Colors.white.withOpacity(0.2),
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.saveAndEarn),
+                      bgColor: currency == '₦' ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.05),
+                      onTap: currency == '₦'
+                          ? () => Navigator.pushNamed(context, AppRoutes.saveAndEarn)
+                          : () {},
                     ),
                     const Spacer(),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const FundScreen()),
-                        );
-                      },
+                      onTap: currency == '₦'
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const FundScreen()),
+                              );
+                            }
+                          : () {},
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: currency == '₦' ? Colors.white : Colors.white.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
@@ -806,14 +812,14 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                           children: [
                             Icon(
                               Icons.add_rounded,
-                              color: cardColor,
+                              color: currency == '₦' ? cardColor : Colors.white.withOpacity(0.5),
                               size: 18,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               'Fund',
                               style: TextStyle(
-                                color: cardColor,
+                                color: currency == '₦' ? cardColor : Colors.white.withOpacity(0.5),
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -829,7 +835,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
           ),
           // Card branding
           Positioned(
-            bottom: 14,
+            top: 20,
             right: 18,
             child: Text(
               'EZIPLUG',

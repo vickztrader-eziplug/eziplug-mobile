@@ -157,12 +157,20 @@ class AppRoutes {
       case sellGiftcard:
         return MaterialPageRoute(builder: (_) => const SellGiftCardScreen());
       case buyCrypto:
+        final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => const BuyCryptoScreen(cryptoName: ''),
+          builder: (_) => BuyCryptoScreen(
+            cryptoName: args?['cryptoName'] ?? '',
+            cryptoId: args?['cryptoId'] ?? '',
+          ),
         );
       case sellCrypto:
+        final sellArgs = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => const SellCryptoScreen(cryptoName: ''),
+          builder: (_) => SellCryptoScreen(
+            cryptoName: sellArgs?['cryptoName'] ?? '',
+            cryptoId: sellArgs?['cryptoId'] ?? '',
+          ),
         );
       case bet:
         return MaterialPageRoute(builder: (_) => const BettingScreen());
