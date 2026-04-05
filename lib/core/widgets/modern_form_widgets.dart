@@ -338,9 +338,10 @@ class ModernFormWidgets {
                 borderRadius: BorderRadius.circular(6),
                 child: Image.asset(
                   imagePath,
-                  width: 24,
-                  height: 24,
+                  width: 34,
+                  height: 34,
                   fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
                   errorBuilder: (_, __, ___) => Icon(
                     Icons.image_not_supported,
                     size: 20,
@@ -474,12 +475,13 @@ class ModernFormWidgets {
                       borderRadius: BorderRadius.circular(8),
                       child: Image.asset(
                         assetPath,
-                        width: 36,
-                        height: 36,
+                        width: 46,
+                        height: 46,
                         fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
                         errorBuilder: (_, __, ___) => Container(
-                          width: 36,
-                          height: 36,
+                          width: 46,
+                          height: 46,
                           decoration: BoxDecoration(
                             color: AppColors.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),

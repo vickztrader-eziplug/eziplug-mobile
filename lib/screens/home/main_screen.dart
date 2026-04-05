@@ -30,7 +30,7 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
@@ -60,6 +60,9 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
     final isSelected = _currentIndex == index;
+    final theme = Theme.of(context);
+    final selectedColor = theme.bottomNavigationBarTheme.selectedItemColor ?? AppColors.primary;
+    final unselectedColor = theme.bottomNavigationBarTheme.unselectedItemColor ?? AppColors.textSecondary;
     
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
@@ -71,7 +74,7 @@ class _MainScreenState extends State<MainScreen> {
           vertical: 8,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+          color: isSelected ? selectedColor.withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -79,7 +82,7 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             Icon(
               isSelected ? activeIcon : inactiveIcon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              color: isSelected ? selectedColor : unselectedColor,
               size: 24,
             ),
             if (isSelected) ...[
@@ -87,7 +90,7 @@ class _MainScreenState extends State<MainScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: selectedColor,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),

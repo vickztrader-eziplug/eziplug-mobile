@@ -369,10 +369,7 @@ class _CableScreenState extends State<CableScreen> {
                       responseData['data']?['reference']?.toString() ??
                       'N/A',
                 ),
-                ReceiptDetail(
-                  label: 'Provider',
-                  value: _selectedProviderName ?? '',
-                ),
+
                 ReceiptDetail(
                   label: 'Customer Name',
                   value: _customerName ?? '',

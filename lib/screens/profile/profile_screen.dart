@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../providers/theme_provider.dart';
 import '../../routes.dart';
 import '../../services/auth_service.dart';
 
@@ -31,6 +32,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final sw = MediaQuery.of(context).size.width;
     final sh = MediaQuery.of(context).size.height;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Consumer<AuthService>(
       builder: (context, authService, child) {
@@ -39,7 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final userProfilePicture = authService.userProfilePicture;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF5F7FA),
+          backgroundColor: theme.scaffoldBackgroundColor,
           body: RefreshIndicator(
             onRefresh: _refreshUserData,
             color: AppColors.primary,
@@ -183,12 +186,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 8),
-                        
-                        // Account Section
-                        _buildSectionTitle('Account'),
+
+                        // ── Appearance Section ──────────────────────────────
+                        _buildSectionTitle('Appearance', theme),
                         const SizedBox(height: 12),
-                        _buildMenuCard([
+                        _buildAppearanceCard(theme, isDark),
+
+                        const SizedBox(height: 24),
+
+                        // Account Section
+                        _buildSectionTitle('Account', theme),
+                        const SizedBox(height: 12),
+                        _buildMenuCard(theme, [
                           _buildMenuItem(
+                            theme: theme,
                             icon: Icons.person_outline_rounded,
                             iconColor: AppColors.primary,
                             title: 'Personal Information',
@@ -196,6 +207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onTap: () => Navigator.pushNamed(context, AppRoutes.editProfile),
                           ),
                           _buildMenuItem(
+                            theme: theme,
                             icon: Icons.account_balance_outlined,
                             iconColor: const Color(0xFF00BFA5),
                             title: 'Payout Accounts',
@@ -203,6 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onTap: () => Navigator.pushNamed(context, AppRoutes.payoutAccounts),
                           ),
                           _buildMenuItem(
+                            theme: theme,
                             icon: Icons.leaderboard_rounded,
                             iconColor: const Color(0xFFFF9800),
                             title: 'Leaderboard',
@@ -215,18 +228,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 24),
 
                         // Security Section
-                        _buildSectionTitle('Security'),
+                        _buildSectionTitle('Security', theme),
                         const SizedBox(height: 12),
-                        _buildMenuCard([
+                        _buildMenuCard(theme, [
                           _buildMenuItem(
+                            theme: theme,
                             icon: Icons.lock_outline_rounded,
                             iconColor: const Color(0xFF7C4DFF),
                             title: 'Change Password',
                             subtitle: 'Update your account password',
                             onTap: () => Navigator.pushNamed(context, AppRoutes.changePassword),
                           ),
-                          _buildKycMenuItem(authService),
+                          _buildKycMenuItem(authService, theme),
                           _buildMenuItem(
+                            theme: theme,
                             icon: Icons.pin_outlined,
                             iconColor: const Color(0xFFE91E63),
                             title: 'PIN Management',
@@ -239,10 +254,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 24),
 
                         // Support Section
-                        _buildSectionTitle('Support'),
+                        _buildSectionTitle('Support', theme),
                         const SizedBox(height: 12),
-                        _buildMenuCard([
+                        _buildMenuCard(theme, [
                           _buildMenuItem(
+                            theme: theme,
                             icon: Icons.help_outline_rounded,
                             iconColor: const Color(0xFF2196F3),
                             title: 'Help & Support',
@@ -250,6 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onTap: () => Navigator.pushNamed(context, AppRoutes.support),
                           ),
                           _buildMenuItem(
+                            theme: theme,
                             icon: Icons.info_outline_rounded,
                             iconColor: const Color(0xFF607D8B),
                             title: 'About Us',
@@ -257,6 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onTap: () => Navigator.pushNamed(context, AppRoutes.about),
                           ),
                           _buildMenuItem(
+                            theme: theme,
                             icon: Icons.description_outlined,
                             iconColor: const Color(0xFF795548),
                             title: 'Terms & Conditions',
@@ -264,6 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onTap: () => Navigator.pushNamed(context, AppRoutes.termOfUse),
                           ),
                           _buildMenuItem(
+                            theme: theme,
                             icon: Icons.shield_outlined,
                             iconColor: const Color(0xFF009688),
                             title: 'Privacy Policy',
@@ -276,7 +295,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 24),
 
                         // Logout Button
-                        _buildLogoutButton(authService),
+                        _buildLogoutButton(authService, theme),
 
                         const SizedBox(height: 30),
 
@@ -285,7 +304,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Text(
                             'Version 1.0.0',
                             style: TextStyle(
-                              color: Colors.grey.shade500,
+                              color: theme.textTheme.bodySmall?.color,
                               fontSize: 12,
                             ),
                           ),
@@ -303,26 +322,106 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  // ── Appearance Card ──────────────────────────────────────────────────────
+
+  Widget _buildAppearanceCard(ThemeData theme, bool isDark) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                // Icon container
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    themeProvider.isDarkMode
+                        ? Icons.dark_mode_rounded
+                        : Icons.light_mode_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Label
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        themeProvider.isDarkMode ? 'Dark Mode' : 'Light Mode',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        themeProvider.isDarkMode
+                            ? 'Switch to light theme'
+                            : 'Switch to dark theme',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.textTheme.bodySmall?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Toggle Switch
+                Switch(
+                  value: themeProvider.isDarkMode,
+                  onChanged: (_) => themeProvider.toggleTheme(),
+                  activeColor: AppColors.primary,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Section title ────────────────────────────────────────────────────────
+
+  Widget _buildSectionTitle(String title, ThemeData theme) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w700,
-        color: Colors.black87,
+        color: theme.textTheme.titleMedium?.color,
         letterSpacing: 0.3,
       ),
     );
   }
 
-  Widget _buildMenuCard(List<Widget> children) {
+  Widget _buildMenuCard(ThemeData theme, List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -333,6 +432,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildMenuItem({
+    required ThemeData theme,
     required IconData icon,
     required Color iconColor,
     required String title,
@@ -369,10 +469,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 15,
-                            color: Colors.black87,
+                            color: theme.textTheme.bodyLarge?.color,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -380,7 +480,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           subtitle,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade600,
+                            color: theme.textTheme.bodySmall?.color,
                           ),
                         ),
                       ],
@@ -390,7 +490,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 16,
-                    color: Colors.grey.shade400,
+                    color: theme.dividerColor,
                   ),
                 ],
               ),
@@ -399,7 +499,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         if (showDivider)
           Divider(
-            color: Colors.grey.shade200,
+            color: theme.dividerColor,
             height: 1,
             indent: 74,
             endIndent: 16,
@@ -408,16 +508,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildKycMenuItem(AuthService authService) {
-    // Get KYC tier from user data (default to 1)
+  Widget _buildKycMenuItem(AuthService authService, ThemeData theme) {
     final kycTier = authService.user?['current_kyc_tier'] ?? 1;
     final hasPending = authService.user?['has_pending_kyc'] ?? false;
-    
-    // Determine badge color and text based on tier
+
     Color tierColor;
     String tierText;
     IconData tierIcon;
-    
+
     if (hasPending) {
       tierColor = Colors.orange;
       tierText = 'Pending';
@@ -456,7 +554,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
-                  // Icon Container
                   Container(
                     width: 44,
                     height: 44,
@@ -467,35 +564,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Icon(tierIcon, color: tierColor, size: 22),
                   ),
                   const SizedBox(width: 14),
-                  // Title and Subtitle
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'KYC Verification',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 15,
-                            color: Colors.black87,
+                            color: theme.textTheme.bodyLarge?.color,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          hasPending 
+                          hasPending
                               ? 'Verification in progress'
-                              : kycTier >= 3 
-                                  ? 'Fully verified' 
+                              : kycTier >= 3
+                                  ? 'Fully verified'
                                   : 'Upgrade to unlock more features',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade600,
+                            color: theme.textTheme.bodySmall?.color,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  // Tier Badge
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
@@ -507,11 +602,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (hasPending)
-                          Icon(
-                            Icons.hourglass_empty_rounded,
-                            size: 14,
-                            color: tierColor,
-                          )
+                          Icon(Icons.hourglass_empty_rounded, size: 14, color: tierColor)
                         else
                           Icon(
                             kycTier >= 3 ? Icons.check_circle : Icons.arrow_upward_rounded,
@@ -531,11 +622,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Arrow
                   Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 16,
-                    color: Colors.grey.shade400,
+                    color: theme.dividerColor,
                   ),
                 ],
               ),
@@ -543,7 +633,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         Divider(
-          color: Colors.grey.shade200,
+          color: theme.dividerColor,
           height: 1,
           indent: 74,
           endIndent: 16,
@@ -552,7 +642,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildLogoutButton(AuthService authService) {
+  Widget _buildLogoutButton(AuthService authService, ThemeData theme) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -560,6 +650,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final shouldLogout = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
+              backgroundColor: theme.cardColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -574,16 +665,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Icon(Icons.logout_rounded, color: Colors.red.shade400, size: 20),
                   ),
                   const SizedBox(width: 12),
-                  const Text('Logout'),
+                  Text(
+                    'Logout',
+                    style: TextStyle(color: theme.textTheme.titleMedium?.color),
+                  ),
                 ],
               ),
-              content: const Text('Are you sure you want to sign out of your account?'),
+              content: Text(
+                'Are you sure you want to sign out of your account?',
+                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
                   child: Text(
                     'Cancel',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(color: theme.textTheme.bodySmall?.color),
                   ),
                 ),
                 ElevatedButton(
@@ -612,7 +709,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.red.shade200),
             boxShadow: [

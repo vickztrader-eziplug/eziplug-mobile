@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class Constants {
   static const String baseUrl =
-      // "http://127.0.0.1:8000/api"; // For local testing
-      "https://app.eziplug.app/api"; // Production URL.
+      "http://127.0.0.1:8000/api"; // For local testing
+      // "https://app.eziplug.app/api"; // Production URL.
 
   // Storage URL (for images, files, etc.)
   static String get storageUrl {
@@ -44,7 +44,7 @@ class Constants {
   // App Info
   static const String appName = 'Eziplug';
   static const String appVersion = '1.0.0';
-  static const String supportEmail = 'support@eziplug.ng';
+  static const String supportEmail = 'supported@eziplug.app';
   static const String supportPhone = '+234 806 791 5587';
 
   // Storage Keys

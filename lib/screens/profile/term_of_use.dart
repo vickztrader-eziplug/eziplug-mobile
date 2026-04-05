@@ -85,7 +85,7 @@ class _TermOfUserScreenState extends State<TermOfUserScreen>
       'icon': Icons.email_outlined,
       'color': AppColors.primary,
       'title': 'Contact',
-      'content': 'For support, inquiries, or complaints, contact: support@eziplug.ng',
+      'content': 'For support, inquiries, or complaints, contact: supported@eziplug.app',
     },
   ];
 

@@ -626,8 +626,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SizedBox.expand(
         child: Stack(
           children: [
@@ -728,9 +729,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -749,14 +750,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             Icon(
                               Icons.error_outline,
                               size: 64,
-                              color: AppColors.textColor.withOpacity(0.3),
+                              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.3) ?? AppColors.textColor.withOpacity(0.3),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               'Failed to load transactions',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: AppColors.textColor.withOpacity(0.6),
+                                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? AppColors.textColor.withOpacity(0.6),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -780,14 +781,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             Icon(
                               Icons.receipt_long,
                               size: 64,
-                              color: AppColors.textColor.withOpacity(0.3),
+                              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.3) ?? AppColors.textColor.withOpacity(0.3),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               'No transactions found',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: AppColors.textColor.withOpacity(0.6),
+                                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? AppColors.textColor.withOpacity(0.6),
                               ),
                             ),
                           ],
@@ -816,6 +817,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Widget _buildTransactionCard(TransactionModel transaction) {
+    final theme = Theme.of(context);
     final isPositive = transaction.type == 'Payment';
     final isGiftReceived =
         transaction.type == 'User Gift' &&
@@ -828,11 +830,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       onTap: () => _navigateToDetail(transaction),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.03),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -865,10 +867,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         Expanded(
                           child: Text(
                             transaction.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textColor,
+                              color: theme.textTheme.bodyLarge?.color ?? AppColors.textColor,
                             ),
                           ),
                         ),
@@ -897,7 +899,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       transaction.details,
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textColor.withOpacity(0.7),
+                        color: theme.textTheme.bodySmall?.color ?? AppColors.textColor.withOpacity(0.7),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -907,7 +909,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       'Ref: ${transaction.reference}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textColor.withOpacity(0.6),
+                        color: theme.textTheme.bodySmall?.color?.withOpacity(0.8) ?? AppColors.textColor.withOpacity(0.6),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -915,7 +917,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       _formatDateTime(transaction.date),
                       style: TextStyle(
                         fontSize: 10,
-                        color: AppColors.textColor.withOpacity(0.5),
+                        color: theme.textTheme.bodySmall?.color?.withOpacity(0.7) ?? AppColors.textColor.withOpacity(0.5),
                       ),
                     ),
                   ],
@@ -932,14 +934,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       fontWeight: FontWeight.w600,
                       color: (isPositive || isGiftReceived)
                           ? Colors.green
-                          : AppColors.textColor,
+                          : theme.textTheme.bodyLarge?.color ?? AppColors.textColor,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Icon(
                     Icons.chevron_right,
                     size: 20,
-                    color: AppColors.textColor.withOpacity(0.3),
+                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.5) ?? AppColors.textColor.withOpacity(0.3),
                   ),
                 ],
               ),

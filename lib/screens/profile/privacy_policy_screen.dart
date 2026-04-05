@@ -61,7 +61,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
       'icon': Icons.email_outlined,
       'color': AppColors.primary,
       'title': 'Contact',
-      'content': 'For questions or concerns, please contact us at: support@eziplug.ng',
+      'content': 'For questions or concerns, please contact us at: supported@eziplug.app',
     },
   ];
 

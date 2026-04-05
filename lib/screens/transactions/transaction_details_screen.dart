@@ -194,8 +194,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       case 'Bill':
         details['Provider'] = data['bill']?['name']?.toString() ?? 'N/A';
         details['Meter Number'] = data['account_number']?.toString() ?? 'N/A';
-        if (data['token'] != null && data['token'].toString().isNotEmpty) {
-          details['Token'] = data['token']?.toString() ?? 'N/A';
+        final tokenVal = data['token'] ?? data['purchased_code'] ?? data['pin'] ?? data['results']?['token'] ?? data['results']?['purchased_code'] ?? data['data']?['purchased_code'] ?? data['data']?['token'] ?? data['data']?['pin'];
+        if (tokenVal != null && tokenVal.toString().isNotEmpty) {
+          details['Token'] = tokenVal.toString();
         }
         break;
 
@@ -376,6 +377,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     final isPositive = _isPositiveTransaction();
     final transactionDetails = _getTransactionDetails();
 
+    final theme = Theme.of(context);
+
     // Set status bar color to match header
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: typeColor,
@@ -383,7 +386,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     ));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SizedBox.expand(
         child: Stack(
           children: [
@@ -497,9 +500,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -674,13 +677,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     required String title,
     required List<Widget> children,
   }) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -693,14 +697,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textColor,
+                color: theme.textTheme.titleMedium?.color ?? AppColors.textColor,
               ),
             ),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: theme.dividerColor),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(children: children),
@@ -718,6 +722,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     TextStyle? valueStyle,
     Color? valueColor,
   }) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -728,7 +733,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             label,
             style: TextStyle(
               fontSize: 13,
-              color: AppColors.textColor.withOpacity(0.6),
+              color: theme.textTheme.bodySmall?.color ?? AppColors.textColor.withOpacity(0.6),
             ),
           ),
           const SizedBox(width: 16),
@@ -745,7 +750,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: valueColor ?? AppColors.textColor,
+                          color: valueColor ?? theme.textTheme.bodyLarge?.color ?? AppColors.textColor,
                         ),
                   ),
                 ),
@@ -756,7 +761,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     child: Icon(
                       Icons.copy,
                       size: 16,
-                      color: AppColors.textColor.withOpacity(0.5),
+                      color: theme.textTheme.bodySmall?.color ?? AppColors.textColor.withOpacity(0.5),
                     ),
                   ),
                 ],
@@ -771,7 +776,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Divider(height: 1, color: AppColors.lightGrey.withOpacity(0.3)),
+      child: Divider(height: 1, color: Theme.of(context).dividerColor),
     );
   }
 }

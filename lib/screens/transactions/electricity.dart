@@ -8,6 +8,7 @@ import '../../core/utils/constants.dart';
 import '../../core/utils/error_handler.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
+import '../../core/utils/api_response.dart';
 import '../../services/auth_service.dart';
 import '../reusable/pin_entry_screen.dart';
 import '../reusable/receipt_screen.dart';
@@ -137,35 +138,35 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(response.body);
 
-        // Handle different possible response structures
-        dynamic billsData;
-
-        if (responseBody['results'] != null) {
-          final results = responseBody['results'];
-          billsData = results['data'] ?? results;
-        } else if (responseBody['data'] != null) {
-          billsData = responseBody['data'];
-        } else {
-          billsData = responseBody;
+        final rawData = getResponseData(responseBody);
+        
+        List billsData = [];
+        if (rawData is List) {
+          billsData = rawData;
+        } else if (rawData is Map) {
+          billsData = rawData['data'] ?? rawData['results'] ?? [];
         }
 
         print('Bills data: $billsData');
 
-        if (mounted && billsData is List) {
+        if (mounted) {
           setState(() {
             _providers = billsData
                 .where(
                   (bill) =>
-                      bill['category']?.toLowerCase() == 'electricity' ||
-                      bill['type']?.toLowerCase() == 'electricity' ||
+                      bill['category']?.toString().toLowerCase() == 'electricity' ||
+                      bill['type']?.toString().toLowerCase() == 'electricity' ||
                       bill['identifier'] != null,
                 )
                 .map<Map<String, dynamic>>(
                   (provider) => {
                     'id': provider['id'],
-                    'serviceID': provider['serviceID'] ?? '',
-                    'name': provider['name'] ?? '',
-                    'logo': provider['logo'] ?? provider['image'] ?? '',
+                    'serviceID': provider['serviceID']?.toString() ?? '',
+                    'name': provider['name']?.toString() ?? '',
+                    'logo': _getProviderLocalLogo(
+                        provider['serviceID']?.toString() ?? '',
+                        provider['name']?.toString() ?? '',
+                        provider['logo'] ?? provider['image'] ?? ''),
                   },
                 )
                 .toList();
@@ -235,7 +236,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
             'id': 8,
             'serviceID': 'jos-electric',
             'name': 'JED - Jos Electric',
-            'logo': 'assets/images/biller/jedc.png',
+            'logo': 'assets/images/biller/jedc.jpeg',
           },
           {
             'id': 9,
@@ -247,7 +248,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
             'id': 10,
             'serviceID': 'kaduna-electric',
             'name': 'KAEDCO - Kaduna Electricity',
-            'logo': 'assets/images/biller/kaedco.png',
+            'logo': 'assets/images/biller/kaedc.png',
           },
           {
             'id': 11,
@@ -481,10 +482,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                   label: 'Transaction ID',
                   value: responseData['reference']?.toString() ?? 'N/A',
                 ),
-                ReceiptDetail(
-                  label: 'Provider',
-                  value: _selectedProviderName ?? '',
-                ),
+
                 ReceiptDetail(
                   label: 'Customer Name',
                   value: _customerName ?? '',
@@ -499,10 +497,10 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                   value: _phoneController.text,
                 ),
                 ReceiptDetail(label: 'Amount', value: '₦${amount.toString()}'),
-                if (responseData['results']?['token'] != null)
+                if (responseData['results']?['token'] != null || responseData['results']?['purchased_code'] != null || responseData['data']?['purchased_code'] != null || responseData['data']?['token'] != null || responseData['data']?['pin'] != null)
                   ReceiptDetail(
                     label: 'Token',
-                    value: responseData['results']['token'].toString(),
+                    value: (responseData['results']?['token'] ?? responseData['results']?['purchased_code'] ?? responseData['data']?['purchased_code'] ?? responseData['data']?['token'] ?? responseData['data']?['pin']).toString(),
                   ),
                 ReceiptDetail(
                   label: 'Date',
@@ -613,7 +611,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                     if (_selectedProviderLogo != null) ...[
                                       _buildProviderLogo(
                                         _selectedProviderLogo,
-                                        size: 32,
+                                        size: 42,
                                       ),
                                       const SizedBox(width: 12),
                                     ] else ...[
@@ -1085,18 +1083,50 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
     return amount.toString();
   }
 
-  Widget _buildProviderLogo(String? logoPath, {double size = 48}) {
+  String _getProviderLocalLogo(String serviceId, String name, dynamic apiLogo) {
+    final searchStr = '$serviceId $name'.toLowerCase();
+
+    if (searchStr.contains('abuja') || searchStr.contains('aedc')) return 'assets/images/biller/aedc.png';
+    if (searchStr.contains('eko') || searchStr.contains('ekedc')) return 'assets/images/biller/ekedc.png';
+    if (searchStr.contains('ikeja') || searchStr.contains('ikedc')) return 'assets/images/biller/ikedc.png';
+    if (searchStr.contains('ibadan') || searchStr.contains('ibedc')) return 'assets/images/biller/ibedc.png';
+    if (searchStr.contains('enugu') || searchStr.contains('eedc')) return 'assets/images/biller/eedc.png';
+    if (searchStr.contains('benin') || searchStr.contains('bedc')) return 'assets/images/biller/bedc.png';
+    if (searchStr.contains('jos') || searchStr.contains('jed')) return 'assets/images/biller/jedc.jpeg';
+    if (searchStr.contains('kano') || searchStr.contains('kedco')) return 'assets/images/biller/kedco.png';
+    if (searchStr.contains('kaduna') || searchStr.contains('kaed')) return 'assets/images/biller/kaedc.png';
+    if (searchStr.contains('portharcourt') || searchStr.contains('phedc')) return 'assets/images/biller/phedc.png';
+    if (searchStr.contains('yola') || searchStr.contains('yedc')) return 'assets/images/biller/yedc.png';
+    if (searchStr.contains('aba') || searchStr.contains('aple')) return 'assets/images/biller/abedc.png';
+
+    // Safe conversion of apiLogo to string
+    String logoUrl = '';
+    if (apiLogo != null) {
+      if (apiLogo is String) {
+        logoUrl = apiLogo;
+      } else {
+        logoUrl = apiLogo.toString();
+      }
+    }
+    
+    return logoUrl;
+  }
+
+  Widget _buildProviderLogo(String? logoPath, {double size = 58}) {
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey[200]!, width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: _buildLogoImage(logoPath),
+        child: Padding(
+          padding: const EdgeInsets.all(2.0),
+          child: _buildLogoImage(logoPath),
+        ),
       ),
     );
   }
@@ -1112,7 +1142,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
     if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
       return Image.network(
         logoPath,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) => Center(
           child: Icon(Icons.electric_bolt, color: AppColors.primary, size: 24),
         ),
@@ -1123,7 +1153,8 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
     if (logoPath.startsWith('assets/')) {
       return Image.asset(
         logoPath,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
         errorBuilder: (context, error, stackTrace) {
           print('Error loading asset: $logoPath');
           return Center(

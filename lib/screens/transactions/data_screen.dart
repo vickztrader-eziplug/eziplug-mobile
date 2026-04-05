@@ -144,12 +144,16 @@ class _DataScreenState extends State<DataScreen> {
         // Handle different response structures using helper
         final networksData = getResponseData(data);
 
+        List rawNetworksList = [];
+        if (networksData is List) {
+          rawNetworksList = networksData;
+        } else if (networksData is Map) {
+          rawNetworksList = networksData['networks'] ?? networksData['data'] ?? [];
+        }
+
         if (mounted) {
           setState(() {
-            _networks =
-                (networksData['networks'] ??
-                        networksData['data'] ??
-                        networksData)
+            _networks = rawNetworksList
                     .map<Map<String, dynamic>>(
                       (network) => {
                         'id': network['id']?.toString() ?? '',
@@ -406,10 +410,7 @@ class _DataScreenState extends State<DataScreen> {
                       responseData['data']?['reference']?.toString() ??
                       'N/A',
                 ),
-                ReceiptDetail(
-                  label: 'Network',
-                  value: _selectedNetworkName ?? '',
-                ),
+
                 ReceiptDetail(
                   label: 'Phone Number',
                   value: _phoneController.text,

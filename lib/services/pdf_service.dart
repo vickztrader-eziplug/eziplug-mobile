@@ -13,7 +13,7 @@ class PdfService {
     final pdf = pw.Document();
 
     // Define colors
-    final primaryColor = PdfColor.fromHex('#1E88E5');
+    final primaryColor = PdfColor.fromHex('#3B2FE2');
     final textColor = PdfColor.fromHex('#2C3E50');
     final lightGray = PdfColor.fromHex('#ECF0F1');
 
@@ -93,8 +93,9 @@ class PdfService {
         case 'Bill':
           details['Provider'] = data['bill']?['name']?.toString() ?? 'N/A';
           details['Meter Number'] = data['account_number']?.toString() ?? 'N/A';
-          if (data['token'] != null && data['token'].toString().isNotEmpty) {
-            details['Token'] = data['token']?.toString() ?? 'N/A';
+          final tokenVal = data['token'] ?? data['purchased_code'] ?? data['pin'] ?? data['results']?['token'] ?? data['results']?['purchased_code'] ?? data['data']?['purchased_code'] ?? data['data']?['token'] ?? data['data']?['pin'];
+          if (tokenVal != null && tokenVal.toString().isNotEmpty) {
+            details['Token'] = tokenVal.toString();
           }
           break;
 
@@ -156,7 +157,7 @@ class PdfService {
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
                     pw.Text(
-                      'TRANSACTION RECEIPT',
+                      'EZIPLUG RECEIPT',
                       style: pw.TextStyle(
                         fontSize: 24,
                         fontWeight: pw.FontWeight.bold,
@@ -257,7 +258,7 @@ class PdfService {
                 child: pw.Column(
                   children: [
                     pw.Text(
-                      'Thank you for using our service!',
+                      'Thank you for using Eziplug!',
                       style: pw.TextStyle(
                         fontSize: 12,
                         color: textColor,
@@ -266,7 +267,7 @@ class PdfService {
                     ),
                     pw.SizedBox(height: 5),
                     pw.Text(
-                      'Generated on ${DateTime.now().toString().split('.')[0]}',
+                      'Support: supported@eziplug.app | Generated on ${DateTime.now().toString().split('.')[0]}',
                       style: pw.TextStyle(
                         fontSize: 8,
                         color: PdfColor.fromHex('#95A5A6'),

@@ -285,11 +285,11 @@ class _SupportScreenState extends State<SupportScreen>
           _buildContactTile(
             icon: Icons.email_outlined,
             title: 'Email Us',
-            subtitle: 'support@eziplug.ng',
+            subtitle: 'supported@eziplug.app',
             color: Colors.red,
-            onTap: () => _launchUrl('mailto:support@eziplug.ng'),
+            onTap: () => _launchUrl('mailto:supported@eziplug.app'),
             onLongPress: () {
-              Clipboard.setData(const ClipboardData(text: 'support@eziplug.ng'));
+              Clipboard.setData(const ClipboardData(text: 'supported@eziplug.app'));
               ToastHelper.showSuccess('Email copied to clipboard');
             },
           ),

@@ -135,8 +135,14 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
 
         if (mounted) {
           setState(() {
-            // Assuming API returns: {networks: [{id: "1", name: "MTN", ...}]}
-            _networks = (data['networks'] ?? data['data'] ?? data ?? [])
+            List rawNetworksList = [];
+            if (data is List) {
+              rawNetworksList = data;
+            } else if (data is Map) {
+              rawNetworksList = data['networks'] ?? data['data'] ?? [];
+            }
+            
+            _networks = rawNetworksList
                 .map<Map<String, dynamic>>(
                   (network) => {
                     'id': network['id']?.toString() ?? '',
@@ -355,10 +361,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                   label: 'Transaction ID',
                   value: responseData['reference']?.toString() ?? 'N/A',
                 ),
-                ReceiptDetail(
-                  label: 'Network',
-                  value: _selectedNetworkName ?? '',
-                ),
+
                 ReceiptDetail(
                   label: 'Phone Number',
                   value: _phoneController.text,

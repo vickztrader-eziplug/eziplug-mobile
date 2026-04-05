@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'dart:math' as math;
@@ -334,11 +335,11 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
         statusBarBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: RefreshIndicator(
         onRefresh: _refreshData,
         color: AppColors.primary,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -1016,6 +1017,9 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     required Color bgColor,
     required Widget destination,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBg = isDark ? theme.cardColor : bgColor;
     return GestureDetector(
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
@@ -1023,7 +1027,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: bgColor,
+          color: cardBg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withOpacity(0.2), width: 1),
         ),
@@ -1050,10 +1054,10 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
             Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
-                color: Colors.black,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             const SizedBox(height: 2),
@@ -1062,9 +1066,9 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: Colors.black54,
+                color: Theme.of(context).textTheme.bodySmall?.color,
                 height: 1.2,
               ),
             ),
@@ -1106,19 +1110,28 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
   }
 
   /// Handle promotion card tap based on link_type
-  void _handlePromoTap(Map<String, dynamic> advert) {
+  Future<void> _handlePromoTap(Map<String, dynamic> advert) async {
     final linkType = advert['link_type'] ?? 'none';
     final linkUrl = advert['link_url'];
-    
-    if (linkType == 'none' || linkUrl == null || linkUrl.isEmpty) return;
-    
+
+    if (linkType == 'none' || linkUrl == null || (linkUrl as String).isEmpty) {
+      return;
+    }
+
     if (linkType == 'internal') {
       // Navigate to internal route
       Navigator.pushNamed(context, linkUrl);
     } else if (linkType == 'external') {
-      // Open external URL (you can use url_launcher package)
-      // For now, just print it
-      debugPrint('Opening external URL: $linkUrl');
+      // Open in device browser
+      final uri = Uri.tryParse(linkUrl);
+      if (uri != null) {
+        final canOpen = await canLaunchUrl(uri);
+        if (canOpen) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          debugPrint('[PROMO] Cannot open URL: $linkUrl');
+        }
+      }
     }
   }
 

@@ -8,6 +8,7 @@ import 'services/api_client.dart';
 import 'theme.dart';
 import 'routes.dart';
 import 'screens/splash/splash_screen.dart';
+import 'providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,8 +37,11 @@ void main() async {
   }
 
   runApp(
-    ChangeNotifierProvider<AuthService>.value(
-      value: authService,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthService>.value(value: authService),
+        ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -68,12 +72,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Eziplug',
-      theme: AppTheme.light(),
-      debugShowCheckedModeBanner: false,
-      onGenerateRoute: AppRoutes.generateRoute,
-      home: const SplashScreen(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'Eziplug',
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: themeProvider.themeMode,
+          debugShowCheckedModeBanner: false,
+          onGenerateRoute: AppRoutes.generateRoute,
+          home: const SplashScreen(),
+        );
+      },
     );
   }
 }
