@@ -21,7 +21,11 @@ class ReceiptScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SizedBox.expand(
         child: Stack(
           children: [
@@ -29,9 +33,12 @@ class ReceiptScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               height: 220,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
+                  colors: [
+                    isDark ? AppColors.primaryDark : AppColors.primary,
+                    isDark ? AppColors.primaryDark : AppColors.primary,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -75,9 +82,9 @@ class ReceiptScreen extends StatelessWidget {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -102,10 +109,10 @@ class ReceiptScreen extends StatelessWidget {
                       const SizedBox(height: 16),
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textColor,
+                          color: theme.textTheme.titleLarge?.color,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -114,17 +121,17 @@ class ReceiptScreen extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textColor.withOpacity(0.6),
+                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
                         ),
                       ),
                       const SizedBox(height: 24),
                       
-                      const Text(
+                      Text(
                         'Transaction Details',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                          color: isDark ? AppColors.primaryLight : AppColors.primary,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -132,10 +139,10 @@ class ReceiptScreen extends StatelessWidget {
                       // Transaction Details
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardColor,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.lightGrey,
+                            color: isDark ? const Color(0xFF2D3141) : AppColors.lightGrey,
                             width: 1,
                           ),
                         ),
@@ -146,8 +153,8 @@ class ReceiptScreen extends StatelessWidget {
                               final detail = entry.value;
                               return Column(
                                 children: [
-                                  _buildDetailRow(detail.label, detail.value),
-                                  if (index < details.length - 1) _buildDivider(),
+                                  _buildDetailRow(context, detail.label, detail.value),
+                                  if (index < details.length - 1) _buildDivider(context),
                                 ],
                               );
                             }),
@@ -173,12 +180,12 @@ class ReceiptScreen extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Repeat Transaction',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: AppColors.textColor,
+                                    color: theme.textTheme.bodyLarge?.color,
                                   ),
                                 ),
                               ),
@@ -191,7 +198,7 @@ class ReceiptScreen extends StatelessWidget {
                                 onPressed: onShare,
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 16),
-                                  backgroundColor: AppColors.textColor,
+                                  backgroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -247,7 +254,10 @@ class ReceiptScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -257,15 +267,15 @@ class ReceiptScreen extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 13,
-              color: AppColors.textColor.withOpacity(0.6),
+              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.textColor,
+              color: theme.textTheme.bodyLarge?.color,
             ),
           ),
         ],
@@ -273,10 +283,11 @@ class ReceiptScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDivider() {
+  Widget _buildDivider(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Divider(
       height: 1,
-      color: AppColors.lightGrey.withOpacity(0.5),
+      color: (isDark ? const Color(0xFF2D3141) : AppColors.lightGrey).withOpacity(0.5),
     );
   }
 }

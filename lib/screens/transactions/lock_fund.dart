@@ -450,9 +450,12 @@ class _LockFundScreenState extends State<LockFundScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: AppColors.primary,
+      value: SystemUiOverlayStyle(
+        statusBarColor: isDark ? AppColors.primaryDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
       ),
       child: Stack(
@@ -657,7 +660,7 @@ class _LockFundScreenState extends State<LockFundScreen> {
                               _buildSummaryRow(
                                 'Principal Amount',
                                 '₦${_formatBalance(_getAmountValue())}',
-                                AppColors.textColor,
+                                theme.textTheme.titleMedium?.color ?? AppColors.textColor,
                               ),
                               const SizedBox(height: 12),
                               _buildSummaryRow(
@@ -681,7 +684,7 @@ class _LockFundScreenState extends State<LockFundScreen> {
                         const SizedBox(height: 32),
 
                         // Lock Button
-                        _buildLockButton(),
+                        _buildLockButton(theme, isDark),
                         const SizedBox(height: 20),
                       ],
                     ),
@@ -693,295 +696,271 @@ class _LockFundScreenState extends State<LockFundScreen> {
         ),
       ),
       // Loading Overlay
-      if (_isLoading)
-        Container(
-          color: Colors.black.withOpacity(0.5),
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(
-                    width: 50,
-                    height: 50,
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                      strokeWidth: 3,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Locking Funds...',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Please wait while we process your request',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textColor.withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
+      _buildLoadingOverlay(theme, isDark),
+    ],
+  ),
+);
+}
+
+Widget _buildInfoCard() {
+  return ModernFormWidgets.buildInfoCard(
+    message: 'Locked funds cannot be withdrawn until the chosen unlock date. Interest is calculated daily and added to your balance upon unlock.',
+    icon: Icons.info_outline_rounded,
+    color: AppColors.primary,
+  );
+}
+
+Widget _buildLoadingOverlay(ThemeData theme, bool isDark) {
+  if (!_isLoading) return const SizedBox.shrink();
+  
+  return Container(
+    color: Colors.black.withOpacity(0.5),
+    child: Center(
+      child: Container(
+        padding: const EdgeInsets.all(30),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
-          ),
+          ],
         ),
-      ],
-    ),
-    );
-  }
-
-  Widget _buildInterestRateRow() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.success.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.trending_up_rounded,
-                color: AppColors.success,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Interest Rate',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textColor,
-                ),
-              ),
-            ],
-          ),
-          Text(
-            _getInterestRate(_selectedDays),
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.success,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLockPeriodSelector() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: _lockPeriods.map((days) {
-        final isSelected = _selectedDays == days;
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedDays = days;
-              _selectedDate = DateTime.now().add(Duration(days: days));
-            });
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isSelected ? AppColors.primary : AppColors.lightGrey,
-                width: 1,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Text(
-              '$days days',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.textColor,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildDatePicker() {
-    return GestureDetector(
-      onTap: _selectDate,
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.calendar_today_rounded,
-              color: AppColors.primary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Unlock Date',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textColor.withOpacity(0.5),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _selectedDate != null
-                      ? _formatDate(_selectedDate!)
-                      : _formatDate(
-                          DateTime.now().add(Duration(days: _selectedDays))),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: AppColors.textColor.withOpacity(0.4),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCard() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.info_outline_rounded,
-              color: AppColors.warning,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Locked funds cannot be withdrawn until the unlock date. Interest is calculated based on the lock period.',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textColor.withOpacity(0.7),
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryRow(String label, String value, Color valueColor,
-      {bool isTotal = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: isTotal ? 15 : 14,
-            fontWeight: isTotal ? FontWeight.w600 : FontWeight.w500,
-            color: AppColors.textColor.withOpacity(isTotal ? 1 : 0.7),
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isTotal ? 20 : 15,
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-            color: valueColor,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLockButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _proceedToPin,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.textColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          elevation: 0,
-          disabledBackgroundColor: AppColors.lightGrey,
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.lock_outline_rounded, size: 20, color: Colors.white),
-            SizedBox(width: 10),
+            SizedBox(
+              width: 50,
+              height: 50,
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 3,
+              ),
+            ),
+            const SizedBox(height: 20),
             Text(
-              'Lock Funds',
+              'Locking Funds...',
               style: TextStyle(
-                color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
+                color: theme.textTheme.titleMedium?.color,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Please wait while we process your request',
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+Widget _buildLockPeriodSelector() {
+  return Wrap(
+    spacing: 10,
+    runSpacing: 10,
+    children: _lockPeriods.map((days) {
+      final isSelected = _selectedDays == days;
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedDays = days;
+            _selectedDate = DateTime.now().add(Duration(days: days));
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : AppColors.primary.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.primary.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            '$days Days',
+            style: TextStyle(
+              color: isSelected ? Colors.white : AppColors.primary,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      );
+    }).toList(),
+  );
+}
+
+Widget _buildDatePicker() {
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+
+  return GestureDetector(
+    onTap: _selectDate,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ModernFormWidgets.buildSectionLabel(
+          'Custom Unlock Date',
+          icon: Icons.calendar_today_rounded,
+          iconColor: AppColors.primary,
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200]!,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.event_available_rounded,
+                color: isDark ? AppColors.primaryLight : AppColors.primary,
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Funds will unlock on',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _selectedDate != null ? _formatDate(_selectedDate!) : 'Select Date',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: theme.textTheme.titleMedium?.color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.edit_calendar_rounded,
+                color: isDark ? AppColors.primaryLight.withOpacity(0.5) : Colors.grey[400],
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildInterestRateRow() {
+  final theme = Theme.of(context);
+  return Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: AppColors.success.withOpacity(0.08),
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.trending_up_rounded,
+              color: AppColors.success,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Interest Rate',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        Text(
+          _getInterestRate(_selectedDays),
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: AppColors.success,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildSummaryRow(String label, String value, Color valueColor, {bool isTotal = false}) {
+  final theme = Theme.of(context);
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(
+        label,
+        style: TextStyle(
+          fontSize: isTotal ? 15 : 14,
+          fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
+          color: theme.textTheme.bodyMedium?.color?.withOpacity(isTotal ? 1.0 : 0.7),
+        ),
+      ),
+      Text(
+        value,
+        style: TextStyle(
+          fontSize: isTotal ? 18 : 15,
+          fontWeight: FontWeight.bold,
+          color: valueColor,
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _buildLockButton(ThemeData theme, bool isDark) {
+  return SizedBox(
+    width: double.infinity,
+    child: ElevatedButton(
+      onPressed: _isLoading ? null : _proceedToPin,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        elevation: 4,
+        shadowColor: AppColors.primary.withOpacity(0.3),
+      ),
+      child: const Text(
+        'Lock Funds Now',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
+      ),
+    ),
+  );
+}
+
 }

@@ -9,8 +9,11 @@ class MoreServicesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           // Gradient App Bar
@@ -19,7 +22,7 @@ class MoreServicesScreen extends StatelessWidget {
             floating: false,
             pinned: true,
             elevation: 0,
-            backgroundColor: AppColors.primary,
+            backgroundColor: isDark ? theme.appBarTheme.backgroundColor : AppColors.primary,
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(8),
@@ -37,8 +40,8 @@ class MoreServicesScreen extends StatelessWidget {
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
+                decoration: BoxDecoration(
+                  color: isDark ? theme.cardColor : AppColors.primary,
                 ),
                 child: SafeArea(
                   child: Padding(
@@ -47,10 +50,10 @@ class MoreServicesScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        const Text(
+                        Text(
                           'All Services',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
                           ),
@@ -59,7 +62,7 @@ class MoreServicesScreen extends StatelessWidget {
                         Text(
                           'Explore our complete range of services',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.85),
+                            color: isDark ? theme.textTheme.bodyMedium?.color?.withOpacity(0.7) : Colors.white.withOpacity(0.85),
                             fontSize: 14,
                           ),
                         ),
@@ -77,7 +80,7 @@ class MoreServicesScreen extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // Gift Cards Section
-                _buildSectionHeader('Gift Cards', Icons.card_giftcard_rounded, AppColors.giftcardColor),
+                _buildSectionHeader('Gift Cards', Icons.card_giftcard_rounded, AppColors.giftcardColor, context),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -108,7 +111,7 @@ class MoreServicesScreen extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // Airtime & Data Section
-                _buildSectionHeader('Airtime & Data', Icons.phone_android_rounded, AppColors.airtimeColor),
+                _buildSectionHeader('Airtime & Data', Icons.phone_android_rounded, AppColors.airtimeColor, context),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -149,7 +152,7 @@ class MoreServicesScreen extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // Bills Payment Section
-                _buildSectionHeader('Bills & Utilities', Icons.receipt_long_rounded, AppColors.billsColor),
+                _buildSectionHeader('Bills & Utilities', Icons.receipt_long_rounded, AppColors.billsColor, context),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -180,7 +183,7 @@ class MoreServicesScreen extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // Entertainment & Gaming Section
-                _buildSectionHeader('Entertainment', Icons.sports_esports_rounded, const Color(0xFF00BCD4)),
+                _buildSectionHeader('Entertainment', Icons.sports_esports_rounded, const Color(0xFF00BCD4), context),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -211,7 +214,7 @@ class MoreServicesScreen extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // Education & Finance Section
-                _buildSectionHeader('Education & Finance', Icons.school_rounded, const Color(0xFF3F51B5)),
+                _buildSectionHeader('Education & Finance', Icons.school_rounded, const Color(0xFF3F51B5), context),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -242,7 +245,7 @@ class MoreServicesScreen extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // Tools Section
-                _buildSectionHeader('Tools', Icons.build_rounded, AppColors.calculatorColor),
+                _buildSectionHeader('Tools', Icons.build_rounded, AppColors.calculatorColor, context),
                 const SizedBox(height: 12),
                 _buildEnhancedServiceCard(
                   context: context,
@@ -263,7 +266,7 @@ class MoreServicesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+  Widget _buildSectionHeader(String title, IconData icon, Color color, BuildContext context) {
     return Row(
       children: [
         Container(
@@ -277,10 +280,10 @@ class MoreServicesScreen extends StatelessWidget {
         const SizedBox(width: 10),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: AppColors.text,
+            color: Theme.of(context).textTheme.titleLarge?.color,
           ),
         ),
       ],
@@ -307,7 +310,7 @@ class MoreServicesScreen extends StatelessWidget {
             vertical: 12,
           ),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
@@ -316,7 +319,9 @@ class MoreServicesScreen extends StatelessWidget {
                 offset: const Offset(0, 3),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.black.withOpacity(0.2) 
+                    : Colors.black.withOpacity(0.02),
                 blurRadius: 4,
                 offset: const Offset(0, 1),
               ),
@@ -353,10 +358,10 @@ class MoreServicesScreen extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.text,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

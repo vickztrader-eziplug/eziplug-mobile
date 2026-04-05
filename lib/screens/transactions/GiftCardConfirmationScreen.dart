@@ -84,6 +84,8 @@ class _GiftCardConfirmationScreenState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final totalAmount = widget.amountNgn * widget.quantity;
     final isBuy = widget.type == 'buy';
 
@@ -159,9 +161,9 @@ class _GiftCardConfirmationScreenState
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -175,11 +177,11 @@ class _GiftCardConfirmationScreenState
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardColor,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -188,12 +190,12 @@ class _GiftCardConfirmationScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                             Text(
                               'Transaction Details',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textColor,
+                                color: theme.textTheme.titleLarge?.color,
                               ),
                             ),
                             const Divider(height: 24),
@@ -244,11 +246,11 @@ class _GiftCardConfirmationScreenState
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: isBuy
-                              ? AppColors.primary.withOpacity(0.1)
-                              : Colors.green.withOpacity(0.1),
+                              ? AppColors.primary.withOpacity(0.12)
+                              : Colors.green.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isBuy ? AppColors.primary : Colors.green,
+                            color: isBuy ? (isDark ? AppColors.primaryLight : AppColors.primary) : Colors.green,
                             width: 2,
                           ),
                         ),
@@ -267,7 +269,7 @@ class _GiftCardConfirmationScreenState
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: isBuy ? AppColors.primary : Colors.green,
+                                color: isBuy ? (isDark ? AppColors.primaryLight : AppColors.primary) : Colors.green,
                               ),
                             ),
                           ],
@@ -309,6 +311,7 @@ class _GiftCardConfirmationScreenState
   }
 
   Widget _buildDetailRow(String label, String value, {bool isBold = false}) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -318,7 +321,7 @@ class _GiftCardConfirmationScreenState
             label,
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textColor.withOpacity(0.7),
+              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
             ),
           ),
           Flexible(
@@ -328,7 +331,7 @@ class _GiftCardConfirmationScreenState
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-                color: AppColors.textColor,
+                color: theme.textTheme.bodyLarge?.color,
               ),
             ),
           ),
@@ -571,6 +574,8 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isBuy = widget.type == 'buy';
 
     return Scaffold(
@@ -639,9 +644,9 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -654,7 +659,7 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: theme.cardColor,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Column(
@@ -662,10 +667,10 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
                             children: [
                               Text(
                                 'Gift Card ${isBuy ? 'Purchase' : 'Sale'} Terms',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.textColor,
+                                  color: theme.textTheme.titleLarge?.color,
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -692,9 +697,9 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.primary),
+                                  border: Border.all(color: isDark ? AppColors.primaryLight : AppColors.primary),
                                 ),
                                 child: Row(
                                   children: [
@@ -724,10 +729,10 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.cardColor,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.05),
                             blurRadius: 10,
                             offset: const Offset(0, -4),
                           ),
@@ -741,11 +746,11 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
                               ? _proceedToPin
                               : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            disabledBackgroundColor: AppColors.lightGrey,
+                            disabledBackgroundColor: isDark ? const Color(0xFF2D3141) : AppColors.lightGrey,
                           ),
                           child: _isProcessing
                               ? const SizedBox(

@@ -277,11 +277,12 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
     ToastHelper.showSnackBar(context, message, color);
   }
 
-  // Use unified app primary color
-  static const Color _themeColor = AppColors.primary;
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final _themeColor = AppColors.primary;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: _themeColor,
@@ -289,7 +290,7 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
         statusBarBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: theme.scaffoldBackgroundColor,
         body: Column(
         children: [
           // Modern Gradient Header
@@ -467,6 +468,8 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
   }
 
   Widget _buildEmptyState() {
+    final theme = Theme.of(context);
+    final _themeColor = AppColors.primary;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -484,12 +487,12 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'No gift cards available',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: AppColors.textColor,
+              color: theme.textTheme.titleLarge?.color,
             ),
           ),
           const SizedBox(height: 8),
@@ -497,7 +500,7 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
             'Please check back later',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade600,
+              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
             ),
           ),
           const SizedBox(height: 24),
@@ -515,26 +518,24 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
   }
 
   Widget _buildAmountPreview() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final _themeColor = AppColors.primary;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            _themeColor.withOpacity(0.1),
-            _themeColor.withOpacity(0.05),
-          ],
-        ),
+        color: isDark ? theme.cardColor : _themeColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _themeColor.withOpacity(0.3)),
+        border: Border.all(color: isDark ? theme.dividerColor : _themeColor.withOpacity(0.3)),
       ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Exchange Rate',
-                style: TextStyle(fontSize: 14, color: AppColors.textColor),
+                style: TextStyle(fontSize: 14, color: theme.textTheme.bodyMedium?.color),
               ),
               Text(
                 '₦${_rate.toStringAsFixed(2)}/\$1',
@@ -549,9 +550,9 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'You will receive',
-                style: TextStyle(fontSize: 14, color: AppColors.textColor),
+                style: TextStyle(fontSize: 14, color: theme.textTheme.bodyMedium?.color),
               ),
               Text(
                 '₦${_amountNgn.toStringAsFixed(2)}',
@@ -569,6 +570,9 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
   }
 
   Widget _buildImageUploadSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final _themeColor = AppColors.primary;
     return Column(
       children: [
         // Upload buttons
@@ -580,9 +584,9 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
-                    color: _themeColor.withOpacity(0.1),
+                    color: isDark ? theme.cardColor : _themeColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _themeColor.withOpacity(0.3)),
+                    border: Border.all(color: isDark ? theme.dividerColor : _themeColor.withOpacity(0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -608,9 +612,9 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
-                    color: _themeColor.withOpacity(0.1),
+                    color: isDark ? theme.cardColor : _themeColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _themeColor.withOpacity(0.3)),
+                    border: Border.all(color: isDark ? theme.dividerColor : _themeColor.withOpacity(0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -717,10 +721,10 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: isDark ? theme.cardColor : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.grey.shade200,
+                color: isDark ? theme.dividerColor : Colors.grey.shade200,
                 style: BorderStyle.solid,
               ),
             ),
@@ -743,6 +747,9 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
   }
 
   Widget _buildGiftCardGrid() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final _themeColor = AppColors.primary;
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -762,10 +769,10 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: isSelected ? _themeColor.withOpacity(0.1) : Colors.white,
+              color: isSelected ? _themeColor.withOpacity(0.12) : theme.cardColor,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isSelected ? _themeColor : Colors.grey.shade200,
+                color: isSelected ? _themeColor : (isDark ? theme.dividerColor : Colors.grey.shade200),
                 width: isSelected ? 2 : 1,
               ),
               boxShadow: isSelected
@@ -792,8 +799,9 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
                             height: 50,
                             width: 50,
                             decoration: BoxDecoration(
-                              color: _themeColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
+                              color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: isDark ? AppColors.primaryLight : AppColors.primary),
                             ),
                             child: Icon(
                               Icons.card_giftcard,
@@ -825,7 +833,7 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected ? _themeColor : AppColors.textColor,
+                      color: isSelected ? _themeColor : theme.textTheme.bodyMedium?.color,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -840,6 +848,9 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
   }
 
   Widget _buildCountryGrid() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final _themeColor = AppColors.primary;
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -860,10 +871,10 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: isSelected ? _themeColor.withOpacity(0.1) : Colors.white,
+              color: isSelected ? _themeColor.withOpacity(0.12) : theme.cardColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected ? _themeColor : Colors.grey.shade200,
+                color: isSelected ? _themeColor : (isDark ? theme.dividerColor : Colors.grey.shade200),
                 width: isSelected ? 2 : 1,
               ),
               boxShadow: isSelected
@@ -903,7 +914,7 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? _themeColor : AppColors.textColor,
+                    color: isSelected ? _themeColor : theme.textTheme.bodyMedium?.color,
                   ),
                 ),
               ],
@@ -915,6 +926,8 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
   }
 
   Widget _buildCategorySelector() {
+    final theme = Theme.of(context);
+    final _themeColor = AppColors.primary;
     return Row(
       children: [
         Expanded(child: _buildCategoryOption('E-code')),
@@ -925,6 +938,8 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
   }
 
   Widget _buildCategoryOption(String category) {
+    final theme = Theme.of(context);
+    final _themeColor = AppColors.primary;
     final isSelected = _selectedCategory == category;
     return GestureDetector(
       onTap: () {
@@ -940,10 +955,10 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? _themeColor : Colors.white,
+          color: isSelected ? _themeColor : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? _themeColor : Colors.grey.shade200,
+            color: isSelected ? _themeColor : theme.dividerColor,
           ),
           boxShadow: isSelected
               ? [
@@ -961,14 +976,14 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
             Icon(
               category == 'E-code' ? Icons.qr_code : Icons.credit_card,
               size: 18,
-              color: isSelected ? Colors.white : Colors.grey.shade600,
+              color: isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
             ),
             const SizedBox(width: 8),
             Text(
               category,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textColor,
+                color: isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -980,6 +995,8 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
   }
 
   Widget _buildPriceRangeList() {
+    final theme = Theme.of(context);
+    final _themeColor = AppColors.primary;
     final filteredRanges = _priceRanges
         .where((r) => r['category'] == _selectedCategory)
         .toList();

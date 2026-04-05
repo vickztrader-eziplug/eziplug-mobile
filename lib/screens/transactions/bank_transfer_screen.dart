@@ -247,123 +247,137 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Enhanced Header Section
-            Container(
-              padding: const EdgeInsets.fromLTRB(8, 16, 16, 24),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const Spacer(),
-                      const Text(
-                        'Bank Transfer',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const Spacer(),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_rounded,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-            // Content Section
-            Expanded(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(32),
-                    topRight: Radius.circular(32),
-                  ),
-                ),
-                child: Stack(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Enhanced Header Section
+              Container(
+                padding: const EdgeInsets.fromLTRB(8, 16, 16, 24),
+                child: Column(
                   children: [
-                    _isLoading
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primary,
-                            ),
-                          )
-                        : _virtualAccount == null
-                            ? _buildCreateAccountView()
-                            : _buildAccountDetailsView(),
-                    if (_isCreatingAccount)
-                      Container(
-                        color: Colors.black54,
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(32),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Container(
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const CircularProgressIndicator(
-                                  color: AppColors.primary,
-                                  strokeWidth: 3,
-                                ),
-                                const SizedBox(height: 20),
-                                Text(
-                                  'Creating virtual account...',
-                                  style: TextStyle(
-                                    color: Colors.grey[800],
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const Spacer(),
+                        const Text(
+                          'Bank Transfer',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
                           ),
                         ),
+                        const Spacer(),
+                        const SizedBox(width: 48),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        shape: BoxShape.circle,
                       ),
+                      child: const Icon(
+                        Icons.account_balance_rounded,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
-          ],
+
+              // Content Section
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(32),
+                      topRight: Radius.circular(32),
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      _isLoading
+                          ? Center(
+                              child: CircularProgressIndicator(
+                                color: isDark ? AppColors.primaryLight : AppColors.primary,
+                              ),
+                            )
+                          : _virtualAccount == null
+                              ? _buildCreateAccountView()
+                              : _buildAccountDetailsView(),
+                      if (_isCreatingAccount)
+                        Container(
+                          color: Colors.black54,
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.all(32),
+                              decoration: BoxDecoration(
+                                color: theme.cardColor,
+                                borderRadius: BorderRadius.circular(20),
+                                border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(
+                                    color: isDark ? AppColors.primaryLight : AppColors.primary,
+                                    strokeWidth: 3,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Text(
+                                    'Creating virtual account...',
+                                    style: TextStyle(
+                                      color: theme.textTheme.bodyLarge?.color,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildCreateAccountView() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -375,7 +389,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[300],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -384,11 +398,11 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -403,8 +417,8 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppColors.primary.withOpacity(0.1),
-                        AppColors.primary.withOpacity(0.05),
+                        (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.1),
+                        (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.05),
                       ],
                     ),
                     shape: BoxShape.circle,
@@ -412,16 +426,16 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
                   child: Icon(
                     Icons.account_balance_rounded,
                     size: 60,
-                    color: AppColors.primary,
+                    color: isDark ? AppColors.primaryLight : AppColors.primary,
                   ),
                 ),
                 const SizedBox(height: 28),
-                const Text(
+                Text(
                   'No Virtual Account',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: theme.textTheme.titleLarge?.color,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -430,7 +444,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: isDark ? (theme.textTheme.bodyMedium?.color?.withOpacity(0.7)) : Colors.grey[600],
                     height: 1.5,
                   ),
                 ),
@@ -441,10 +455,10 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
                   child: ElevatedButton(
                     onPressed: _isCreatingAccount ? null : _createVirtualAccount,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shadowColor: AppColors.primary.withOpacity(0.5),
+                      shadowColor: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.5),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -475,11 +489,11 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -488,12 +502,12 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Benefits',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -526,9 +540,9 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red[50],
+                color: isDark ? Colors.red.withOpacity(0.1) : Colors.red[50],
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red[200]!),
+                border: Border.all(color: Colors.red.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
@@ -537,7 +551,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
                   Expanded(
                     child: Text(
                       _errorMessage!,
-                      style: TextStyle(color: Colors.red[700], fontSize: 13),
+                      style: TextStyle(color: isDark ? Colors.red[300] : Colors.red[700], fontSize: 13),
                     ),
                   ),
                 ],
@@ -550,6 +564,9 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
   }
 
   Widget _buildBenefitItem(IconData icon, String title, String subtitle, Color color) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Row(
       children: [
         Container(
@@ -561,31 +578,36 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
           child: Icon(icon, color: color, size: 22),
         ),
         const SizedBox(width: 14),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: theme.textTheme.bodyLarge?.color,
+                ),
               ),
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? theme.textTheme.bodySmall?.color?.withOpacity(0.7) : Colors.grey[600],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
   }
 
   Widget _buildAccountDetailsView() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -598,7 +620,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[300],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -639,7 +661,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
                     'Transfer to this account to fund your wallet instantly',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[800],
+                      color: isDark ? theme.textTheme.bodyMedium?.color?.withOpacity(0.7) : Colors.grey[800],
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -789,19 +811,6 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Text(
-                        'EZIPLUG',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.15),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ],
@@ -842,8 +851,8 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Refresh Account Details'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+                foregroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
+                side: BorderSide(color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.5)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -856,8 +865,11 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
   }
 
   Widget _buildQuickCopyButton(String label, IconData icon, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Material(
-      color: Colors.white,
+      color: theme.cardColor,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: () => _copyToClipboard(value, label),
@@ -877,7 +889,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: AppColors.primary),
+              Icon(icon, size: 18, color: isDark ? AppColors.primaryLight : AppColors.primary),
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
@@ -885,7 +897,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: theme.textTheme.bodyLarge?.color,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

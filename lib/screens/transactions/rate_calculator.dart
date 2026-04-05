@@ -354,6 +354,9 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: _primaryColor,
@@ -361,7 +364,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
         statusBarBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: theme.scaffoldBackgroundColor,
         body: Column(
           children: [
             // Modern Gradient Header
@@ -385,6 +388,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
                         Icons.card_giftcard,
                         isGiftcardRate,
                         () => setState(() => isGiftcardRate = true),
+                        theme: theme,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -394,6 +398,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
                         Icons.currency_bitcoin,
                         !isGiftcardRate,
                         () => setState(() => isGiftcardRate = false),
+                        theme: theme,
                       ),
                     ),
                   ],
@@ -406,8 +411,8 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 child: isGiftcardRate
-                    ? _buildGiftcardRateContent()
-                    : _buildCryptoRateContent(),
+                    ? _buildGiftcardRateContent(theme)
+                    : _buildCryptoRateContent(theme),
               ),
             ),
           ],
@@ -420,15 +425,17 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
     String label,
     IconData icon,
     bool isSelected,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    required ThemeData theme,
+  }) {
+    final isDark = theme.brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? _primaryColor : Colors.transparent,
+          color: isSelected ? _primaryColor : (isDark ? theme.scaffoldBackgroundColor : Colors.transparent),
           borderRadius: BorderRadius.circular(12),
           boxShadow: isSelected
               ? [
@@ -446,13 +453,13 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
             Icon(
               icon,
               size: 18,
-              color: isSelected ? Colors.white : AppColors.textColor.withOpacity(0.5),
+              color: isSelected ? Colors.white : theme.textTheme.bodyMedium?.color?.withOpacity(0.5),
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textColor.withOpacity(0.6),
+                color: isSelected ? Colors.white : theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
@@ -464,7 +471,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
   }
 
   // ===== Giftcard Rate Section =====
-  Widget _buildGiftcardRateContent() {
+  Widget _buildGiftcardRateContent(ThemeData theme) {
     if (_isLoadingGiftcards) {
       return Center(
         child: Padding(
@@ -533,6 +540,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
               _buildReadOnlyField(
                 controller: rateController,
                 placeholder: 'Rate per dollar',
+                theme: theme,
               ),
               const SizedBox(height: 20),
 
@@ -553,7 +561,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
                 iconColor: _primaryColor,
               ),
               const SizedBox(height: 10),
-              _buildResultCard(totalController.text),
+               _buildResultCard(totalController.text, theme),
             ],
           ),
         ),
@@ -598,7 +606,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
   }
 
   // ===== Crypto Rate Section =====
-  Widget _buildCryptoRateContent() {
+  Widget _buildCryptoRateContent(ThemeData theme) {
     if (_isLoadingCrypto) {
       return Center(
         child: Padding(
@@ -667,6 +675,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
               _buildReadOnlyField(
                 controller: cryptoRateController,
                 placeholder: 'Rate in USD',
+                theme: theme,
               ),
               const SizedBox(height: 20),
 
@@ -687,7 +696,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
                 iconColor: _primaryColor,
               ),
               const SizedBox(height: 10),
-              _buildResultCard(cryptoAmountController.text),
+              _buildResultCard(cryptoAmountController.text, theme),
             ],
           ),
         ),
@@ -734,13 +743,15 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
   Widget _buildReadOnlyField({
     required TextEditingController controller,
     required String placeholder,
+    required ThemeData theme,
   }) {
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: _primaryColor.withOpacity(0.08),
+        color: isDark ? theme.scaffoldBackgroundColor : _primaryColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _primaryColor.withOpacity(0.2)),
+        border: Border.all(color: isDark ? theme.dividerColor : _primaryColor.withOpacity(0.2)),
       ),
       child: Row(
         children: [
@@ -757,8 +768,8 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: controller.text.isNotEmpty
-                    ? AppColors.textColor
-                    : AppColors.textColor.withOpacity(0.4),
+                    ? theme.textTheme.bodyLarge?.color
+                    : theme.textTheme.bodyLarge?.color?.withOpacity(0.4),
               ),
             ),
           ),
@@ -767,7 +778,8 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
     );
   }
 
-  Widget _buildResultCard(String value) {
+  Widget _buildResultCard(String value, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),

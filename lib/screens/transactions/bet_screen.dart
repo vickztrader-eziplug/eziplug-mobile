@@ -299,8 +299,11 @@ class _BettingScreenState extends State<BettingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           Column(
@@ -344,9 +347,9 @@ class _BettingScreenState extends State<BettingScreen> {
                                   )
                                 : Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: theme.cardColor,
                                       borderRadius: BorderRadius.circular(14),
-                                      border: Border.all(color: Colors.grey.shade200),
+                                      border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
                                     ),
                                     child: DropdownButtonFormField<Map<String, dynamic>>(
                                       value: _selectedProvider,
@@ -363,7 +366,7 @@ class _BettingScreenState extends State<BettingScreen> {
                                       hint: Text(
                                         'Select a betting provider',
                                         style: TextStyle(
-                                          color: Colors.grey.shade400,
+                                          color: isDark ? Colors.white38 : Colors.grey.shade400,
                                           fontSize: 13,
                                         ),
                                       ),
@@ -466,7 +469,7 @@ class _BettingScreenState extends State<BettingScreen> {
           // Loading Overlay
           if (_isLoading)
             Container(
-              color: Colors.black54,
+              color: isDark ? Colors.black87 : Colors.black54,
               child: const Center(
                 child: CircularProgressIndicator(
                   color: _accentColor,

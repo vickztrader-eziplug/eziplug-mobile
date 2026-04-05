@@ -481,8 +481,11 @@ class _DataScreenState extends State<DataScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           Column(
@@ -493,7 +496,7 @@ class _DataScreenState extends State<DataScreen> {
                 title: 'Buy Data',
                 walletBalance: _walletNaira,
                 isLoadingBalance: _isLoadingWallet,
-                primaryColor: AppColors.primary,
+                primaryColor: isDark ? AppColors.primaryDark : AppColors.primary,
               ),
               
               // Content Section
@@ -504,7 +507,7 @@ class _DataScreenState extends State<DataScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Network Selection
-                      ModernFormWidgets.buildSectionLabel('Select Network', icon: Icons.sim_card_outlined, iconColor: AppColors.primary),
+                      ModernFormWidgets.buildSectionLabel('Select Network', icon: Icons.sim_card_outlined, iconColor: isDark ? AppColors.primaryLight : AppColors.primary),
                       const SizedBox(height: 12),
                       ModernFormWidgets.buildNetworkGrid(
                         networks: _networks,
@@ -529,21 +532,21 @@ class _DataScreenState extends State<DataScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                ModernFormWidgets.buildSectionLabel('Phone Number', icon: Icons.phone_android, iconColor: AppColors.primary),
+                                ModernFormWidgets.buildSectionLabel('Phone Number', icon: Icons.phone_android, iconColor: isDark ? AppColors.primaryLight : AppColors.primary),
                                 TextButton.icon(
                                   onPressed: _selectContact,
-                                  icon: Icon(Icons.contacts, size: 16, color: AppColors.primary),
+                                  icon: Icon(Icons.contacts, size: 16, color: isDark ? AppColors.primaryLight : AppColors.primary),
                                   label: Text(
                                     'Contacts',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.primary,
+                                      color: isDark ? AppColors.primaryLight : AppColors.primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                                    backgroundColor: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.1),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -569,14 +572,14 @@ class _DataScreenState extends State<DataScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ModernFormWidgets.buildSectionLabel('Select Data Plan', icon: Icons.wifi_rounded, iconColor: AppColors.primary),
+                            ModernFormWidgets.buildSectionLabel('Select Data Plan', icon: Icons.wifi_rounded, iconColor: isDark ? AppColors.primaryLight : AppColors.primary),
                             const SizedBox(height: 14),
                             _isFetchingPlans
-                                ? const Center(
+                                ? Center(
                                     child: Padding(
-                                      padding: EdgeInsets.all(20.0),
+                                      padding: const EdgeInsets.all(20.0),
                                   child: CircularProgressIndicator(
-                                    color: AppColors.primary,
+                                    color: isDark ? AppColors.primaryLight : AppColors.primary,
                                   ),
                                 ),
                               )
@@ -589,7 +592,7 @@ class _DataScreenState extends State<DataScreen> {
                                         ? 'Select a network to view plans'
                                         : 'No data plans available',
                                     style: TextStyle(
-                                      color: Colors.grey[600],
+                                      color: isDark ? const Color(0xFF8891A5) : Colors.grey[600],
                                       fontSize: 13,
                                     ),
                                   ),
@@ -612,7 +615,7 @@ class _DataScreenState extends State<DataScreen> {
                       ModernFormWidgets.buildInfoCard(
                         message: 'Data will be credited instantly to the phone number provided.',
                         icon: Icons.info_outline,
-                        color: AppColors.primary,
+                        color: isDark ? AppColors.primaryLight : AppColors.primary,
                       ),
 
                       const SizedBox(height: 24),
@@ -622,7 +625,7 @@ class _DataScreenState extends State<DataScreen> {
                         label: 'Buy Data',
                         onPressed: _proceedToPin,
                         isLoading: _isLoading,
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
                         icon: Icons.send_rounded,
                       ),
 
@@ -648,6 +651,9 @@ class _DataScreenState extends State<DataScreen> {
   }
 
   Widget _buildDataPlanChip(Map<String, dynamic> plan) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     final planId = plan['id']?.toString() ?? plan['plan_id']?.toString() ?? '';
     final selectedPlanId =
         _selectedPlan?['id']?.toString() ??
@@ -667,16 +673,16 @@ class _DataScreenState extends State<DataScreen> {
         width: 90,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
+          color: isSelected ? (isDark ? AppColors.primaryLight : AppColors.primary) : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey.shade200,
+            color: isSelected ? (isDark ? AppColors.primaryLight : AppColors.primary) : (isDark ? const Color(0xFF2D3141) : Colors.grey.shade200),
             width: isSelected ? 1.5 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -691,7 +697,7 @@ class _DataScreenState extends State<DataScreen> {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : AppColors.text,
+                color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
                 height: 1.1,
               ),
               textAlign: TextAlign.center,
@@ -715,7 +721,7 @@ class _DataScreenState extends State<DataScreen> {
                 plan['validity'].toString(),
                 style: TextStyle(
                   fontSize: 8,
-                  color: isSelected ? Colors.white70 : Colors.grey.shade500,
+                  color: isSelected ? Colors.white70 : (isDark ? const Color(0xFF8891A5) : Colors.grey.shade500),
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,

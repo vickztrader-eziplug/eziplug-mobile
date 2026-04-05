@@ -154,9 +154,9 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
                   right: 0,
                   bottom: 0,
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.only(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(30),
                         topRight: Radius.circular(30),
                       ),
@@ -184,12 +184,12 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
                                     decoration: BoxDecoration(
                                       color: index < _pin.length
                                           ? AppColors.primary
-                                          : AppColors.lightGrey.withOpacity(
-                                              0.3,
+                                          : Theme.of(context).dividerColor.withOpacity(
+                                              0.1,
                                             ),
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: AppColors.lightGrey,
+                                        color: Theme.of(context).dividerColor.withOpacity(0.2),
                                         width: 1,
                                       ),
                                     ),
@@ -215,7 +215,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
                                     'Forgot transaction PIN',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.textColor.withOpacity(
+                                      color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(
                                         0.6,
                                       ),
                                     ),
@@ -267,7 +267,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(30),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Column(
@@ -300,12 +300,12 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
                         strokeWidth: 3,
                       ),
                       const SizedBox(height: 20),
-                      const Text(
+                      Text(
                         'Processing...',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textColor,
+                          color: Theme.of(context).textTheme.titleMedium?.color,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -313,7 +313,7 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
                         'Please wait',
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.textColor.withOpacity(0.6),
+                          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
                         ),
                       ),
                     ],
@@ -341,8 +341,8 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
         height: 70,
         decoration: BoxDecoration(
           color: _isLoading
-              ? AppColors.lightGrey.withOpacity(0.1)
-              : AppColors.lightGrey.withOpacity(0.3),
+              ? Theme.of(context).dividerColor.withOpacity(0.05)
+              : Theme.of(context).dividerColor.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
@@ -352,8 +352,8 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
               fontSize: 24,
               fontWeight: FontWeight.w600,
               color: _isLoading
-                  ? AppColors.textColor.withOpacity(0.3)
-                  : AppColors.textColor,
+                  ? Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.3)
+                  : Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
         ),
@@ -378,8 +378,8 @@ class _PinEntryScreenState extends State<PinEntryScreen> {
             Icons.backspace_outlined,
             size: 24,
             color: _isLoading
-                ? AppColors.textColor.withOpacity(0.3)
-                : AppColors.textColor,
+                ? Theme.of(context).iconTheme.color?.withOpacity(0.3)
+                : Theme.of(context).iconTheme.color,
           ),
         ),
       ),

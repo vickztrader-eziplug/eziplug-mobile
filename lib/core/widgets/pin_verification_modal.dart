@@ -155,7 +155,7 @@ class _PinVerificationModalState extends State<PinVerificationModal>
         decoration: BoxDecoration(
           color: isFilled 
               ? (_hasError ? Colors.red.shade50 : AppColors.primary.withOpacity(0.1))
-              : Colors.grey.shade100,
+              : Theme.of(context).dividerColor.withOpacity(0.05),
           borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
           border: Border.all(
             color: _hasError 
@@ -164,7 +164,7 @@ class _PinVerificationModalState extends State<PinVerificationModal>
                     ? AppColors.primary
                     : isActive 
                         ? AppColors.primary.withOpacity(0.5)
-                        : Colors.grey.shade300,
+                        : Theme.of(context).dividerColor.withOpacity(0.2),
             width: isActive ? 2 : 1.5,
           ),
           boxShadow: isFilled ? [
@@ -225,10 +225,10 @@ class _PinVerificationModalState extends State<PinVerificationModal>
           width: buttonSize,
           height: buttonSize,
           decoration: BoxDecoration(
-            color: isBackspace ? Colors.transparent : Colors.grey.shade100,
+            color: isBackspace ? Colors.transparent : Theme.of(context).dividerColor.withOpacity(0.05),
             shape: BoxShape.circle,
             border: isBackspace ? null : Border.all(
-              color: Colors.grey.shade200,
+              color: Theme.of(context).dividerColor.withOpacity(0.1),
               width: 1,
             ),
             boxShadow: isBackspace ? null : [
@@ -244,14 +244,14 @@ class _PinVerificationModalState extends State<PinVerificationModal>
                 ? Icon(
                     icon, 
                     size: iconSize, 
-                    color: iconColor ?? Colors.grey.shade600,
+                    color: iconColor ?? Theme.of(context).iconTheme.color?.withOpacity(0.6),
                   )
                 : Text(
                     number,
                     style: TextStyle(
                       fontSize: fontSize,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -272,9 +272,9 @@ class _PinVerificationModalState extends State<PinVerificationModal>
     
     return Container(
       height: sheetHeight + bottomPadding,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(25),
           topRight: Radius.circular(25),
         ),
@@ -287,7 +287,7 @@ class _PinVerificationModalState extends State<PinVerificationModal>
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: Theme.of(context).dividerColor.withOpacity(0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -323,10 +323,10 @@ class _PinVerificationModalState extends State<PinVerificationModal>
                     const SizedBox(width: 12),
                     Text(
                       widget.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Theme.of(context).textTheme.titleLarge?.color,
                       ),
                     ),
                   ],
@@ -361,7 +361,7 @@ class _PinVerificationModalState extends State<PinVerificationModal>
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                         height: 1.4,
                       ),
                     ),
@@ -373,9 +373,9 @@ class _PinVerificationModalState extends State<PinVerificationModal>
                       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade200),
+                        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                       ),
                       child: Column(
                         children: [
@@ -520,7 +520,7 @@ class _PinVerificationModalState extends State<PinVerificationModal>
           label,
           style: TextStyle(
             fontSize: 13,
-            color: Colors.grey.shade600,
+            color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
           ),
         ),
         Text(
@@ -528,7 +528,7 @@ class _PinVerificationModalState extends State<PinVerificationModal>
           style: TextStyle(
             fontSize: isAmount ? 16 : 14,
             fontWeight: isAmount ? FontWeight.bold : FontWeight.w600,
-            color: isAmount ? AppColors.primary : Colors.black87,
+            color: isAmount ? AppColors.primary : Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
       ],

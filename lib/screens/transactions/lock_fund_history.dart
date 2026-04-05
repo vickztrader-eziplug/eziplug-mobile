@@ -124,29 +124,32 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: AppColors.primary,
+      value: SystemUiOverlayStyle(
+        statusBarColor: isDark ? AppColors.primaryDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: theme.scaffoldBackgroundColor,
         body: Column(
           children: [
-            _buildHeader(),
-            if (_summary != null && !_isLoading) _buildSummaryCard(),
-            _buildTabBar(),
+            _buildHeader(theme, isDark),
+            if (_summary != null && !_isLoading) _buildSummaryCard(theme, isDark),
+            _buildTabBar(theme, isDark),
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
-                      ? _buildErrorWidget()
+                      ? _buildErrorWidget(theme, isDark)
                       : TabBarView(
                           controller: _tabController,
                           children: [
-                            _buildLockList(_allLocks),
-                            _buildLockList(_activeLocks),
-                            _buildLockList(_completedLocks),
+                            _buildLockList(theme, isDark, _allLocks),
+                            _buildLockList(theme, isDark, _activeLocks),
+                            _buildLockList(theme, isDark, _completedLocks),
                           ],
                         ),
             ),
@@ -165,10 +168,10 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ThemeData theme, bool isDark) {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(color: AppColors.primary),
+      decoration: BoxDecoration(color: isDark ? AppColors.primaryDark : AppColors.primary),
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -211,15 +214,15 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
     );
   }
 
-  Widget _buildSummaryCard() {
+  Widget _buildSummaryCard(ThemeData theme, bool isDark) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primary,
-            AppColors.primary.withOpacity(0.8),
+            isDark ? AppColors.primary : AppColors.primary,
+            isDark ? AppColors.primary.withOpacity(0.6) : AppColors.primary.withOpacity(0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -311,11 +314,11 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(ThemeData theme, bool isDark) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -332,7 +335,7 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
           borderRadius: BorderRadius.circular(10),
         ),
         labelColor: Colors.white,
-        unselectedLabelColor: AppColors.textColor,
+        unselectedLabelColor: isDark ? Colors.white.withOpacity(0.6) : AppColors.textColor,
         labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
         indicatorSize: TabBarIndicatorSize.tab,
@@ -347,7 +350,7 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
     );
   }
 
-  Widget _buildLockList(List<dynamic> locks) {
+  Widget _buildLockList(ThemeData theme, bool isDark, List<dynamic> locks) {
     if (locks.isEmpty) {
       return Center(
         child: Column(
@@ -356,14 +359,14 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
             Icon(
               Icons.lock_open_rounded,
               size: 64,
-              color: AppColors.textColor.withOpacity(0.3),
+              color: isDark ? Colors.white.withOpacity(0.1) : AppColors.textColor.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
             Text(
               'No locked funds found',
               style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textColor.withOpacity(0.5),
+                color: isDark ? Colors.white.withOpacity(0.5) : AppColors.textColor.withOpacity(0.5),
               ),
             ),
             const SizedBox(height: 8),
@@ -371,6 +374,9 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
               onPressed: () => Navigator.pushNamed(context, '/lockFund'),
               icon: const Icon(Icons.add),
               label: const Text('Lock Funds Now'),
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
+              ),
             ),
           ],
         ),
@@ -384,13 +390,13 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
         itemCount: locks.length,
         itemBuilder: (context, index) {
           final lock = locks[index];
-          return _buildLockCard(lock);
+          return _buildLockCard(theme, isDark, lock);
         },
       ),
     );
   }
 
-  Widget _buildLockCard(Map<String, dynamic> lock) {
+  Widget _buildLockCard(ThemeData theme, bool isDark, Map<String, dynamic> lock) {
     final status = lock['status'] ?? 'active';
     final isActive = status == 'active';
     final isMatured = lock['is_matured'] == true;
@@ -426,11 +432,15 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.transparent,
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -458,10 +468,10 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
                       children: [
                         Text(
                           '₦${_formatBalance(lock['principal_amount'])}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textColor,
+                            color: theme.textTheme.titleLarge?.color,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -469,7 +479,7 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
                           'Principal Amount',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textColor.withOpacity(0.5),
+                            color: theme.textTheme.bodySmall?.color,
                           ),
                         ),
                       ],
@@ -484,11 +494,12 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    statusText,
+                    statusText.toUpperCase(),
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
                       color: statusColor,
+                      letterSpacing: 1,
                     ),
                   ),
                 ),
@@ -498,26 +509,32 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.background,
+                color: isDark ? Colors.white.withOpacity(0.05) : AppColors.background,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildInfoColumn(
-                    'Interest Rate',
+                    theme,
+                    isDark,
+                    'Int. Rate',
                     '${lock['interest_rate']}% p.a.',
                   ),
                   _buildInfoColumn(
+                    theme,
+                    isDark,
                     'Earned',
                     '+₦${_formatBalance(lock['total_interest_earned'])}',
                     valueColor: AppColors.success,
                   ),
                   _buildInfoColumn(
+                    theme,
+                    isDark,
                     isActive ? 'Days Left' : 'Lock Period',
                     isActive
-                        ? '${lock['remaining_days']} days'
-                        : '${lock['lock_days']} days',
+                        ? '${lock['remaining_days']} d'
+                        : '${lock['lock_days']} d',
                   ),
                 ],
               ),
@@ -529,8 +546,8 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
                 Text(
                   'Unlock: ${lock['unlock_date']}',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textColor.withOpacity(0.6),
+                    fontSize: 11,
+                    color: theme.textTheme.bodySmall?.color,
                   ),
                 ),
                 Row(
@@ -539,15 +556,15 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
                       'View Details',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w500,
+                        color: isDark ? AppColors.primaryLight : AppColors.primary,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 12,
-                      color: AppColors.primary,
+                      color: isDark ? AppColors.primaryLight : AppColors.primary,
                     ),
                   ],
                 ),
@@ -559,30 +576,30 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
     );
   }
 
-  Widget _buildInfoColumn(String label, String value, {Color? valueColor}) {
+  Widget _buildInfoColumn(ThemeData theme, bool isDark, String label, String value, {Color? valueColor}) {
     return Column(
       children: [
         Text(
           value,
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: valueColor ?? AppColors.textColor,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: valueColor ?? theme.textTheme.titleMedium?.color,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            color: AppColors.textColor.withOpacity(0.5),
+            fontSize: 10,
+            color: theme.textTheme.bodySmall?.color,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildErrorWidget() {
+  Widget _buildErrorWidget(ThemeData theme, bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -597,7 +614,7 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
             _error ?? 'Something went wrong',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textColor.withOpacity(0.7),
+              color: theme.textTheme.bodyMedium?.color,
             ),
             textAlign: TextAlign.center,
           ),

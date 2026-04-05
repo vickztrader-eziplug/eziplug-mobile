@@ -309,12 +309,15 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     final typeColor = _getColorForCategory(transaction.category);
     final isCredit = transaction.type == 'credit';
     final transactionDetails = _getTransactionDetails();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SizedBox.expand(
         child: Stack(
           children: [
@@ -420,9 +423,9 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -432,84 +435,58 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Basic Info Card
-                      _buildInfoCard([
-                        _buildInfoRow('Transaction Type', transaction.title),
-                        _buildInfoRow('Category', transaction.categoryLabel),
-                        _buildInfoRowWithCopy(context, 'Reference', transaction.reference),
-                        _buildInfoRow('Date & Time', _formatDateTime(transaction.createdAt)),
-                        if (transaction.provider != null && transaction.provider!.isNotEmpty)
-                          _buildInfoRow('Provider', transaction.provider!),
-                      ]),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Balance Info Card
-                      _buildInfoCard([
-                        _buildInfoRow('Balance Before', '₦${transaction.balanceBefore.toStringAsFixed(2)}'),
-                        _buildInfoRow('Amount', '₦${transaction.amount.toStringAsFixed(2)}'),
-                        _buildInfoRow('Balance After', '₦${transaction.balanceAfter.toStringAsFixed(2)}'),
-                      ]),
-                      
-                      // Dynamic Details Card (if any)
-                      if (transactionDetails.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        _buildInfoCard(
-                          transactionDetails.entries.map((entry) {
-                            if (entry.key == 'Token' || entry.key == 'PIN' || entry.key == 'Reference') {
-                              return _buildInfoRowWithCopy(context, entry.key, entry.value);
-                            }
-                            return _buildInfoRow(entry.key, entry.value);
-                          }).toList(),
-                        ),
-                      ],
-                      
-                      // Description Card
-                      if (transaction.description.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        _buildInfoCard([
-                          _buildInfoRow('Description', transaction.description),
-                        ]),
-                      ],
-
-                      const SizedBox(height: 24),
-
-                      // Action Buttons
-                      Row(
+                      // Status and Reference Card
+                      _buildInfoCard(
+                        theme,
+                        isDark,
                         children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _showReportForm(context),
-                              icon: const Icon(Icons.report_problem_outlined),
-                              label: const Text('Report'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primary,
-                                side: const BorderSide(color: AppColors.primary),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () => _shareReceipt(context),
-                              icon: const Icon(Icons.share),
-                              label: const Text('Share'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
+                          _buildDetailRow(theme, isDark, 'Category', transaction.categoryLabel),
+                          const Divider(height: 24),
+                          _buildDetailRow(theme, isDark, 'Reference', transaction.reference, showCopy: true),
+                          const Divider(height: 24),
+                          _buildDetailRow(theme, isDark, 'Status', transaction.status.toUpperCase(), 
+                              valueColor: _getStatusColor(transaction.status)),
+                          const Divider(height: 24),
+                          _buildDetailRow(theme, isDark, 'Date', _formatDateTime(transaction.createdAt)),
                         ],
                       ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Transaction Details Label
+                      if (transactionDetails.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.only(left: 4, bottom: 12),
+                          child: Text(
+                            'Transaction Details',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        
+                        _buildInfoCard(
+                          theme,
+                          isDark,
+                          children: transactionDetails.entries.map((entry) {
+                            final isLast = transactionDetails.keys.last == entry.key;
+                            return Column(
+                              children: [
+                                _buildDetailRow(theme, isDark, entry.key, entry.value),
+                                if (!isLast) const Divider(height: 24),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                        
+                        const SizedBox(height: 32),
+                      ],
+                      
+                      // Action Buttons
+                      _buildActionButtons(context, theme, isDark),
+                      
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
@@ -521,107 +498,120 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
     );
   }
 
-  Widget _buildInfoCard(List<Widget> children) {
+  Widget _buildInfoCard(ThemeData theme, bool isDark, {required List<Widget> children}) {
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: children,
+      child: Column(
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(ThemeData theme, bool isDark, String label, String value, {Color? valueColor, bool showCopy = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: theme.textTheme.bodySmall?.color,
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textColor.withOpacity(0.6),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRowWithCopy(BuildContext context, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textColor.withOpacity(0.6),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: GestureDetector(
-              onTap: () => _copyToClipboard(context, value, label),
-              child: Row(
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Flexible(
                     child: Text(
                       value,
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primary,
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: valueColor ?? theme.textTheme.titleMedium?.color,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.copy,
-                    size: 14,
-                    color: AppColors.primary.withOpacity(0.7),
-                  ),
+                  if (showCopy) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _copyToClipboard(context, value, label),
+                      child: Icon(
+                        Icons.copy_rounded,
+                        size: 16,
+                        color: isDark ? AppColors.primaryLight : AppColors.primary,
+                      ),
+                    ),
+                  ],
                 ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, ThemeData theme, bool isDark) {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _shareReceipt(context),
+            icon: const Icon(Icons.download_rounded),
+            label: const Text('Download Receipt'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 0,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => _showReportForm(context),
+            icon: const Icon(Icons.report_problem_outlined),
+            label: const Text('Report an Issue'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: isDark ? Colors.redAccent : Colors.red[700],
+              side: BorderSide(color: isDark ? Colors.redAccent.withOpacity(0.5) : Colors.red[200]!),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -738,7 +728,9 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
     }
   }
 
-  Widget _buildInputField({
+  Widget _buildInputField(
+    ThemeData theme,
+    bool isDark, {
     required String label,
     required String hint,
     required IconData icon,
@@ -751,51 +743,53 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.textColor,
+            color: isDark ? Colors.white.withOpacity(0.8) : Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
+              if (!isDark)
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: TextFormField(
             controller: controller,
             maxLines: maxLines,
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppColors.textColor,
-            ),
+            style: TextStyle(color: theme.textTheme.bodyMedium?.color),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
-              prefixIcon: Container(
-                margin: EdgeInsets.only(left: 12, right: 8, bottom: maxLines > 1 ? 60 : 0),
-                child: Icon(
-                  icon,
-                  color: AppColors.primary.withOpacity(0.7),
-                  size: 22,
+              hintStyle: TextStyle(
+                color: theme.textTheme.bodySmall?.color?.withOpacity(0.5),
+                fontSize: 14,
+              ),
+              prefixIcon: Icon(
+                icon,
+                color: isDark ? AppColors.primaryLight : AppColors.primary,
+                size: 20,
+              ),
+              filled: true,
+              fillColor: Colors.transparent,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200]!,
                 ),
               ),
-              prefixIconConstraints: const BoxConstraints(minWidth: 50),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: Colors.grey.shade200,
-                  width: 1.5,
+                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200]!,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
@@ -804,14 +798,6 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                   color: AppColors.primary,
                   width: 2,
                 ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.red.shade300, width: 1.5),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.red, width: 2),
               ),
             ),
             validator: validator,
@@ -823,16 +809,19 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
         child: Form(
           key: _formKey,
           child: Column(
@@ -845,20 +834,20 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[300],
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               // Title
-              const Text(
+              Text(
                 'Report an Issue',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textColor,
+                  color: theme.textTheme.titleLarge?.color,
                 ),
               ),
               const SizedBox(height: 8),
@@ -866,13 +855,15 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                 'Reference: ${widget.transactionReference}',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: theme.textTheme.bodySmall?.color,
                 ),
               ),
               const SizedBox(height: 24),
 
               // Issue Title Field
               _buildInputField(
+                theme,
+                isDark,
                 label: 'Issue Title',
                 hint: 'e.g., Transaction not received',
                 icon: Icons.title,
@@ -884,10 +875,12 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
               // Message Field
               _buildInputField(
+                theme,
+                isDark,
                 label: 'Describe the Issue',
                 hint: 'Please provide details about the problem...',
                 icon: Icons.message_outlined,
@@ -903,26 +896,27 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
               // Image Attachment
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(12),
+                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[50],
+                    border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200]!),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: _selectedImageBytes != null
                       ? Stack(
                           children: [
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
                               child: Image.memory(
                                 _selectedImageBytes!,
-                                height: 150,
+                                height: 180,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
                               ),
@@ -936,7 +930,7 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                                   _selectedImageBytes = null;
                                 }),
                                 child: Container(
-                                  padding: const EdgeInsets.all(4),
+                                  padding: const EdgeInsets.all(6),
                                   decoration: const BoxDecoration(
                                     color: Colors.red,
                                     shape: BoxShape.circle,
@@ -944,7 +938,7 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                                   child: const Icon(
                                     Icons.close,
                                     color: Colors.white,
-                                    size: 16,
+                                    size: 18,
                                   ),
                                 ),
                               ),
@@ -956,21 +950,22 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                             Icon(
                               Icons.add_photo_alternate_outlined,
                               size: 40,
-                              color: Colors.grey[400],
+                              color: isDark ? AppColors.primaryLight.withOpacity(0.5) : AppColors.primary.withOpacity(0.3),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 12),
                             Text(
                               'Add Screenshot (Optional)',
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: isDark ? AppColors.primaryLight.withOpacity(0.7) : AppColors.primary,
                                 fontSize: 14,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                         ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
               // Submit Button
               SizedBox(
@@ -980,17 +975,18 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
+                    elevation: 0,
                   ),
                   child: _isSubmitting
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
+                          height: 24,
+                          width: 24,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
+                            strokeWidth: 2.5,
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
@@ -998,12 +994,12 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                           'Submit Report',
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
             ],
           ),
         ),

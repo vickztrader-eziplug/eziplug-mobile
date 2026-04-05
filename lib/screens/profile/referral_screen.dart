@@ -220,23 +220,32 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        title: const Text(
-          'Referral & Bonus',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.light,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+          elevation: 0,
+          title: const Text(
+            'Referral & Bonus',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -264,10 +273,12 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     ),
                   ),
                 ),
+      ),
     );
   }
 
   Widget _buildErrorState() {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -276,7 +287,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
           const SizedBox(height: 16),
           Text(
             _error!,
-            style: TextStyle(color: Colors.grey.shade600),
+            style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -289,6 +300,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
   }
 
   Widget _buildReferralCodeCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -296,8 +310,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.primary,
-            AppColors.primary.withOpacity(0.85),
+            isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+            isDark ? theme.scaffoldBackgroundColor.withOpacity(0.8) : AppColors.primary.withOpacity(0.85),
           ],
         ),
         borderRadius: const BorderRadius.only(
@@ -406,95 +420,101 @@ class _ReferralScreenState extends State<ReferralScreen> {
   }
 
   Widget _buildBonusBalanceCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.transparent,
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
+                    color: Colors.amber.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.card_giftcard,
-                    color: Colors.amber.shade700,
+                  child: const Icon(
+                    Icons.card_giftcard_rounded,
+                    color: Colors.amber,
                     size: 24,
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Bonus Balance',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               _formatCurrency(_bonusBalance),
               style: TextStyle(
-                fontSize: 32,
+                fontSize: 36,
                 fontWeight: FontWeight.bold,
                 color: AppColors.primary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Available to claim',
+              'Available to claim to your main wallet',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey.shade600,
+                color: theme.textTheme.bodySmall?.color,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _bonusBalance > 0 && !_isClaiming ? _claimBonus : null,
+                onPressed: _isClaiming || _bonusBalance <= 0 ? null : _claimBonus,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  disabledBackgroundColor: Colors.grey.shade300,
+                  elevation: 0,
                 ),
                 child: _isClaiming
                     ? const SizedBox(
-                        width: 20,
                         height: 20,
+                        width: 20,
                         child: CircularProgressIndicator(
                           color: Colors.white,
                           strokeWidth: 2,
                         ),
                       )
                     : const Text(
-                        'Claim to Wallet',
+                        'Claim Bonus Now',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
               ),
@@ -506,87 +526,93 @@ class _ReferralScreenState extends State<ReferralScreen> {
   }
 
   Widget _buildStatsSection() {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: _buildStatCard(
-              icon: Icons.people_outline,
-              label: 'Total Referrals',
-              value: _totalReferrals.toString(),
-              color: Colors.blue,
+          Text(
+            'Referral Activity',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.titleLarge?.color,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              icon: Icons.check_circle_outline,
-              label: 'Active',
-              value: _activeReferrals.toString(),
-              color: Colors.green,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              icon: Icons.account_balance_wallet_outlined,
-              label: 'Total Earned',
-              value: _formatCurrency(_totalEarned),
-              color: Colors.orange,
-            ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  theme,
+                  'Total',
+                  _totalReferrals.toString(),
+                  Icons.people_rounded,
+                  Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  theme,
+                  'Active',
+                  _activeReferrals.toString(),
+                  Icons.how_to_reg_rounded,
+                  Colors.green,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  theme,
+                  'Earned',
+                  _formatCurrency(_totalEarned),
+                  Icons.savings_rounded,
+                  Colors.orange,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
+  Widget _buildStatCard(ThemeData theme, String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
+            blurRadius: 5,
             offset: const Offset(0, 2),
           ),
         ],
+        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(height: 10),
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: theme.textTheme.titleMedium?.color,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey.shade600,
+              fontSize: 10,
+              color: theme.textTheme.bodySmall?.color,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -594,142 +620,100 @@ class _ReferralScreenState extends State<ReferralScreen> {
   }
 
   Widget _buildHistorySection() {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Referral History',
+          Text(
+            'Recent Referrals',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: theme.textTheme.titleLarge?.color,
             ),
-          ),
-          const SizedBox(height: 12),
-          _referralHistory.isEmpty
-              ? _buildEmptyHistory()
-              : ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _referralHistory.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    return _buildHistoryItem(_referralHistory[index]);
-                  },
-                ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyHistory() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Column(
-        children: [
-          Icon(
-            Icons.people_outline,
-            size: 64,
-            color: Colors.grey.shade300,
           ),
           const SizedBox(height: 16),
-          Text(
-            'No referrals yet',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade500,
+          if (_referralHistory.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(40),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.group_add_rounded, size: 48, color: theme.disabledColor.withOpacity(0.2)),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No history found',
+                    style: TextStyle(color: theme.disabledColor),
+                  ),
+                ],
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _referralHistory.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) => _buildHistoryItem(_referralHistory[index]),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Share your referral code with friends\nto start earning bonuses!',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade400,
-            ),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildHistoryItem(Map<String, dynamic> referral) {
-    final name = referral['name'] ?? 'Unknown';
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    final name = referral['name'] ?? 'Unknown User';
     final username = referral['username'] ?? '';
-    final status = referral['status'] ?? 'pending';
+    final status = referral['status']?.toString().toLowerCase() ?? 'pending';
     final bonusAmount = double.tryParse(referral['bonus_amount']?.toString() ?? '0') ?? 0;
     final joinedAt = referral['joined_at'] ?? '';
 
-    final isPending = status == 'pending';
-    final statusColor = isPending ? Colors.orange : Colors.green;
-    final statusText = isPending ? 'Pending' : 'Completed';
-    final statusIcon = isPending ? Icons.hourglass_empty : Icons.check_circle;
+    final isCompleted = status == 'completed' || status == 'active';
+    final statusColor = isCompleted ? AppColors.success : Colors.orange;
+    final statusText = isCompleted ? 'Completed' : 'Pending';
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                name.isNotEmpty ? name[0].toUpperCase() : '?',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+          CircleAvatar(
+            backgroundColor: AppColors.primary.withOpacity(0.1),
+            child: Text(
+              name.isNotEmpty ? name[0].toUpperCase() : '?',
+              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
                 if (username.isNotEmpty)
                   Text(
                     '@$username',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade500,
-                    ),
-                  ),
-                if (joinedAt.isNotEmpty)
-                  Text(
-                    'Joined: $joinedAt',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade400,
-                    ),
+                    style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color),
                   ),
               ],
             ),
@@ -737,43 +721,41 @@ class _ReferralScreenState extends State<ReferralScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(statusIcon, size: 12, color: statusColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      statusText,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: statusColor,
-                      ),
-                    ),
-                  ],
+              Text(
+                isCompleted ? '+₦${_formatBalance(bonusAmount)}' : '---',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: isCompleted ? AppColors.success : theme.textTheme.bodySmall?.color,
                 ),
               ),
-              if (!isPending) ...[
-                const SizedBox(height: 4),
-                Text(
-                  '+${_formatCurrency(bonusAmount)}',
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  statusText,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: Colors.green.shade600,
+                    color: statusColor,
                   ),
                 ),
-              ],
+              ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  String _formatBalance(double balance) {
+    return balance.toStringAsFixed(2).replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
     );
   }
 }

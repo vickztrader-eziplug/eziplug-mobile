@@ -108,17 +108,20 @@ class _BettingScreenState extends State<BettingScreen> {
     final authService = Provider.of<AuthService>(context);
     final size = MediaQuery.of(context).size;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Sports Betting'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        foregroundColor: theme.textTheme.titleLarge?.color,
         elevation: 0,
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.history, color: AppColors.primary),
+            icon: Icon(Icons.history, color: isDark ? AppColors.primaryLight : AppColors.primary),
             onPressed: () {
               Navigator.push(
                 context,
@@ -147,8 +150,8 @@ class _BettingScreenState extends State<BettingScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primary,
-                      AppColors.primary.withOpacity(0.8),
+                      isDark ? AppColors.primaryDark : AppColors.primary,
+                      (isDark ? AppColors.primaryDark : AppColors.primary).withOpacity(0.8),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -216,10 +219,10 @@ class _BettingScreenState extends State<BettingScreen> {
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
                 child: Text(
                   'Bet Categories',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
-                    color: AppColors.text,
+                    color: theme.textTheme.titleLarge?.color,
                   ),
                 ),
               ),
@@ -271,10 +274,10 @@ class _BettingScreenState extends State<BettingScreen> {
                   children: [
                     Text(
                       'Upcoming Events',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
-                        color: AppColors.text,
+                        color: theme.textTheme.titleLarge?.color,
                       ),
                     ),
                     if (!_loadingEvents && _events.isNotEmpty)
@@ -365,28 +368,31 @@ class _CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 90,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
+          color: isSelected ? (isDark ? AppColors.primaryLight : AppColors.primary) : theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.lightGrey,
+            color: isSelected ? (isDark ? AppColors.primaryLight : AppColors.primary) : (isDark ? const Color(0xFF2D3141) : AppColors.lightGrey),
             width: isSelected ? 2 : 1.2,
           ),
           boxShadow: [
             if (isSelected)
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
+                color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               )
             else
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -402,7 +408,7 @@ class _CategoryCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.text,
+                color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
@@ -423,6 +429,9 @@ class _EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     final now = DateTime.now();
     final timeUntil = event.eventDate.difference(now);
     final daysUntil = timeUntil.inDays;
@@ -431,12 +440,12 @@ class _EventCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.lightGrey, width: 1.2),
+        border: Border.all(color: isDark ? const Color(0xFF2D3141) : AppColors.lightGrey, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
+            color: Colors.black.withOpacity(isDark ? 0.15 : 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -476,7 +485,7 @@ class _EventCard extends StatelessWidget {
                             event.league!,
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.primary,
+                              color: isDark ? AppColors.primaryLight : AppColors.primary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -538,17 +547,17 @@ class _EventCard extends StatelessWidget {
                           ),
                           child: Icon(
                             Icons.shield_outlined,
-                            color: AppColors.primary,
+                            color: isDark ? AppColors.primaryLight : AppColors.primary,
                             size: 20,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           event.homeTeam ?? 'Home',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: theme.textTheme.bodyLarge?.color,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -566,15 +575,15 @@ class _EventCard extends StatelessWidget {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: isDark ? const Color(0xFF2D3141) : Colors.grey[100],
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
+                      child: Text(
                         'VS',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
-                          color: Colors.black54,
+                          color: theme.textTheme.bodySmall?.color,
                         ),
                       ),
                     ),
@@ -602,10 +611,10 @@ class _EventCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           event.awayTeam ?? 'Away',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: theme.textTheme.bodyLarge?.color,
                           ),
                           textAlign: TextAlign.right,
                           maxLines: 2,
@@ -649,7 +658,7 @@ class _EventCard extends StatelessWidget {
                           '${event.odds!.length} odds',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[700],
+                            color: theme.textTheme.bodyMedium?.color,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -672,7 +681,7 @@ class _EventCard extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
+                      color: isDark ? AppColors.primaryLight : AppColors.primary,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(

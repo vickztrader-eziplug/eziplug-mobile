@@ -425,8 +425,11 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           Column(
@@ -437,7 +440,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                 title: 'Buy Airtime',
                 walletBalance: _walletNaira,
                 isLoadingBalance: _isLoadingWallet,
-                primaryColor: AppColors.primary,
+                primaryColor: isDark ? AppColors.primaryDark : AppColors.primary,
               ),
               
               // Content Section
@@ -448,7 +451,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Network Selection
-                      ModernFormWidgets.buildSectionLabel('Select Network', icon: Icons.sim_card_outlined, iconColor: AppColors.primary),
+                      ModernFormWidgets.buildSectionLabel('Select Network', icon: Icons.sim_card_outlined, iconColor: isDark ? AppColors.primaryLight : AppColors.primary),
                       const SizedBox(height: 12),
                       ModernFormWidgets.buildNetworkGrid(
                         networks: _networks,
@@ -472,21 +475,21 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                ModernFormWidgets.buildSectionLabel('Phone Number', icon: Icons.phone_android, iconColor: AppColors.primary),
+                                ModernFormWidgets.buildSectionLabel('Phone Number', icon: Icons.phone_android, iconColor: isDark ? AppColors.primaryLight : AppColors.primary),
                                 TextButton.icon(
                                   onPressed: _selectContact,
-                                  icon: Icon(Icons.contacts, size: 16, color: AppColors.primary),
+                                  icon: Icon(Icons.contacts, size: 16, color: isDark ? AppColors.primaryLight : AppColors.primary),
                                   label: Text(
                                     'Contacts',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.primary,
+                                      color: isDark ? AppColors.primaryLight : AppColors.primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                                    backgroundColor: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.1),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -515,14 +518,14 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                ModernFormWidgets.buildSectionLabel('Select Amount', icon: Icons.payments_outlined, iconColor: AppColors.primary),
+                                ModernFormWidgets.buildSectionLabel('Select Amount', icon: Icons.payments_outlined, iconColor: isDark ? AppColors.primaryLight : AppColors.primary),
                                 Row(
                                   children: [
                                     Text(
                                       'Custom',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey.shade600,
+                                        color: isDark ? const Color(0xFF8891A5) : Colors.grey.shade600,
                                       ),
                                     ),
                                     const SizedBox(width: 4),
@@ -540,7 +543,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                                             }
                                           });
                                         },
-                                        activeColor: AppColors.primary,
+                                        activeColor: isDark ? AppColors.primaryLight : AppColors.primary,
                                       ),
                                     ),
                                   ],
@@ -575,7 +578,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                       ModernFormWidgets.buildInfoCard(
                         message: 'Airtime will be credited instantly to the phone number provided.',
                         icon: Icons.info_outline,
-                        color: AppColors.primary,
+                        color: isDark ? AppColors.primaryLight : AppColors.primary,
                       ),
 
                       const SizedBox(height: 24),
@@ -585,7 +588,7 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
                         label: 'Buy Airtime',
                         onPressed: _proceedToPin,
                         isLoading: _isLoading,
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
                         icon: Icons.send_rounded,
                       ),
 

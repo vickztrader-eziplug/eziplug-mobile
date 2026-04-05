@@ -394,8 +394,11 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           Column(
@@ -431,8 +434,9 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                           children: [
                             ModernFormWidgets.buildSectionLabel(
                               'Select Network',
-                              icon: Icons.cell_tower_rounded,
+                              icon: Icons.network_check,
                               iconColor: _accentColor,
+                              textColor: theme.textTheme.titleMedium?.color,
                             ),
                             const SizedBox(height: 14),
                             ModernFormWidgets.buildNetworkGrid(
@@ -570,7 +574,7 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: theme.cardColor,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(color: _accentColor.withOpacity(0.2)),
                               ),
@@ -633,7 +637,7 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.grey.shade800,
+                                    color: theme.textTheme.titleMedium?.color,
                                   ),
                                 ),
                               ],
@@ -692,7 +696,7 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                                   decoration: BoxDecoration(
                                     color: _hasConfirmedAirtimeSent 
                                         ? Colors.green 
-                                        : Colors.white,
+                                        : Colors.transparent,
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
                                       color: _hasConfirmedAirtimeSent 
@@ -721,7 +725,7 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                                           fontWeight: FontWeight.w700,
                                           color: _hasConfirmedAirtimeSent 
                                               ? Colors.green.shade700 
-                                              : Colors.grey.shade800,
+                                              : theme.textTheme.bodyMedium?.color,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
@@ -774,7 +778,7 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -826,6 +830,9 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
     bool isLast = false,
     bool canCopy = false,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -867,9 +874,9 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                 Text(
                   instruction,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade800,
+                    color: theme.textTheme.bodyMedium?.color,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -879,14 +886,15 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: theme.cardColor,
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
                         ),
                         child: Text(
                           subText,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade700,
+                            color: theme.textTheme.bodySmall?.color,
                             fontFamily: 'monospace',
                           ),
                         ),

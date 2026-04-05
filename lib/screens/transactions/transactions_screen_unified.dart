@@ -248,8 +248,11 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SizedBox.expand(
         child: Stack(
           children: [
@@ -257,9 +260,12 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
             Container(
               width: double.infinity,
               height: 220,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
+                  colors: [
+                    isDark ? AppColors.primaryDark : AppColors.primary,
+                    isDark ? AppColors.primaryDark.withOpacity(0.8) : AppColors.primary,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -300,14 +306,14 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(25),
                         ),
                         child: DropdownButton<String>(
                           value: _selectedFilter,
                           isExpanded: true,
                           underline: const SizedBox(),
-                          dropdownColor: AppColors.primary,
+                          dropdownColor: isDark ? const Color(0xFF1E2130) : AppColors.primary,
                           icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
                           style: const TextStyle(
                             color: Colors.white,
@@ -336,14 +342,14 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
                 ),
-                child: _buildContent(),
+                child: _buildContent(theme, isDark),
               ),
             ),
           ],
@@ -352,10 +358,10 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(ThemeData theme, bool isDark) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
+      return Center(
+        child: CircularProgressIndicator(color: isDark ? AppColors.primaryLight : AppColors.primary),
       );
     }
 
@@ -367,14 +373,14 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: AppColors.textColor.withOpacity(0.3),
+              color: theme.textTheme.bodySmall?.color?.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
             Text(
               _errorMessage ?? 'Failed to load transactions',
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textColor.withOpacity(0.6),
+                color: theme.textTheme.bodySmall?.color,
               ),
               textAlign: TextAlign.center,
             ),
@@ -401,14 +407,14 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
             Icon(
               Icons.receipt_long,
               size: 64,
-              color: AppColors.textColor.withOpacity(0.3),
+              color: theme.textTheme.bodySmall?.color?.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
             Text(
               'No transactions found',
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textColor.withOpacity(0.6),
+                color: theme.textTheme.bodySmall?.color,
               ),
             ),
           ],
@@ -444,14 +450,14 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
                 ),
               );
             }
-            return _buildTransactionCard(_transactions[index]);
+            return _buildTransactionCard(theme, isDark, _transactions[index]);
           },
         ),
       ),
     );
   }
 
-  Widget _buildTransactionCard(UnifiedTransaction transaction) {
+  Widget _buildTransactionCard(ThemeData theme, bool isDark, UnifiedTransaction transaction) {
     final isCredit = transaction.type == 'credit';
     final color = _getColorForCategory(transaction.category);
     final statusColor = _getStatusColor(transaction.status);
@@ -460,13 +466,17 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
       onTap: () => _navigateToDetail(transaction),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.transparent,
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -497,10 +507,10 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
                         Expanded(
                           child: Text(
                             transaction.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textColor,
+                              color: theme.textTheme.titleMedium?.color,
                             ),
                           ),
                         ),
@@ -511,11 +521,12 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            transaction.status,
+                            transaction.status.toUpperCase(),
                             style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
                               color: statusColor,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
@@ -526,31 +537,47 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
                       transaction.details,
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textColor.withOpacity(0.7),
+                        color: theme.textTheme.bodySmall?.color,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Ref: ${transaction.reference}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textColor.withOpacity(0.6),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _formatDateTime(transaction.createdAt),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textColor.withOpacity(0.5),
-                      ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          _formatDateTime(transaction.createdAt),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '•',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: theme.textTheme.bodySmall?.color?.withOpacity(0.4),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Ref: ${transaction.reference}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -558,15 +585,15 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
                     '${isCredit ? '+' : '-'} ₦${transaction.amount.toStringAsFixed(2)}',
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: isCredit ? Colors.green : AppColors.textColor,
+                      fontWeight: FontWeight.bold,
+                      color: isCredit ? Colors.green : theme.textTheme.titleMedium?.color,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Icon(
-                    Icons.chevron_right,
-                    size: 20,
-                    color: AppColors.textColor.withOpacity(0.3),
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.3),
                   ),
                 ],
               ),

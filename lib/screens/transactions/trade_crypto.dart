@@ -168,10 +168,12 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
             ),
@@ -186,7 +188,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -217,10 +219,10 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
 
                 Text(
                   'Trade $symbol',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textColor,
+                    color: theme.textTheme.titleLarge?.color,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -228,7 +230,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
                   name,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey.shade500,
+                    color: isDark ? Colors.white60 : Colors.grey.shade500,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -291,8 +293,11 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           // Modern Gradient Header
@@ -370,6 +375,8 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
   }
 
   Widget _buildCoinCard(Map<String, dynamic> coin) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final symbol = coin['symbol'] as String;
     final name = coin['name'] as String;
     final gradientColors = _coinGradients[symbol] ?? [AppColors.primary, AppColors.primaryLight];
@@ -380,11 +387,11 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.04),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -441,10 +448,10 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
               children: [
                 Text(
                   symbol,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textColor,
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -452,7 +459,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
                   name,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey.shade500,
+                    color: isDark ? Colors.white60 : Colors.grey.shade500,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -466,6 +473,8 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
   }
 
   Widget _buildLoadingGrid() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: GridView.builder(
@@ -480,11 +489,11 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
         itemBuilder: (context, index) {
           return Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.04),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -507,6 +516,8 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
   }
 
   Widget _buildEmptyState() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -527,12 +538,12 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'No coins available',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textColor,
+                color: theme.textTheme.titleMedium?.color,
               ),
             ),
             const SizedBox(height: 8),
@@ -540,7 +551,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
               'Check back later for available cryptocurrencies',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey.shade500,
+                color: isDark ? Colors.white60 : Colors.grey.shade500,
               ),
               textAlign: TextAlign.center,
             ),

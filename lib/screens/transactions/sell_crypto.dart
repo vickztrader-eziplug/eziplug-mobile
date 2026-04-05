@@ -410,8 +410,11 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           Column(
@@ -497,7 +500,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                       // Rate Display
                       if (_currentRate > 0)
                         ModernFormWidgets.buildFormCard(
-                          backgroundColor: AppColors.primary.withOpacity(0.04),
+                          backgroundColor: isDark ? theme.cardColor : AppColors.primary.withOpacity(0.04),
                           child: Row(
                             children: [
                               Container(
@@ -521,16 +524,16 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                                       'Sell Rate',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey.shade600,
+                                        color: isDark ? theme.textTheme.bodySmall?.color : Colors.grey.shade600,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       '₦${_formatBalance(_currentRate)} = 1 ${_selectedCoin ?? 'Crypto'}',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.textColor,
+                                        color: theme.textTheme.titleLarge?.color,
                                       ),
                                     ),
                                   ],
@@ -553,7 +556,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
 
                       // Wallet Address Display Section
                       if (_walletAddress != null) ...[
-                        _buildDepositAddressCard(),
+                        _buildDepositAddressCard(theme),
                         const SizedBox(height: 16),
                       ],
 
@@ -589,7 +592,8 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
     );
   }
 
-  Widget _buildDepositAddressCard() {
+  Widget _buildDepositAddressCard(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     final timerColor = _getTimerColor();
 
     return ModernFormWidgets.buildFormCard(
@@ -645,12 +649,12 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? theme.scaffoldBackgroundColor : Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: isDark ? theme.dividerColor : Colors.grey.shade200),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.05),
+                  color: isDark ? Colors.black.withOpacity(0.2) : AppColors.primary.withOpacity(0.05),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -663,7 +667,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
+                    color: isDark ? theme.textTheme.bodySmall?.color : Colors.grey.shade600,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -720,10 +724,10 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                 Expanded(
                   child: Text(
                     _walletAddress!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.primary,
+                      color: isDark ? AppColors.primaryLight : AppColors.primary,
                       fontFamily: 'monospace',
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -738,10 +742,10 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                       color: AppColors.primary.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.copy_rounded,
                       size: 16,
-                      color: AppColors.primary,
+                      color: isDark ? AppColors.primaryLight : AppColors.primary,
                     ),
                   ),
                 ),
@@ -755,7 +759,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
             'Send payment within 15 minutes',
             style: TextStyle(
               fontSize: 11,
-              color: Colors.grey.shade500,
+              color: isDark ? theme.textTheme.bodySmall?.color : Colors.grey.shade500,
               fontWeight: FontWeight.w500,
             ),
           ),

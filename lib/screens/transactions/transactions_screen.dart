@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
@@ -627,190 +628,202 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 220,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const MoreServicesScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          const Expanded(
-                            child: Text(
-                              'Transaction History',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: DropdownButton<String>(
-                          value: _selectedFilter,
-                          isExpanded: true,
-                          underline: const SizedBox(),
-                          dropdownColor: AppColors.primary,
-                          icon: const Icon(
-                            Icons.arrow_drop_down,
-                            color: Colors.white,
-                          ),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          items: _filterOptions.map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedFilter = newValue!;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+    final isDark = theme.brightness == Brightness.dark;
 
-            // Content Section
-            Positioned(
-              top: 190,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: SizedBox.expand(
+          child: Stack(
+            children: [
+              // Header Section
+              Container(
+                width: double.infinity,
+                height: 220,
                 decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+                  gradient: LinearGradient(
+                    colors: isDark 
+                      ? [theme.scaffoldBackgroundColor, theme.scaffoldBackgroundColor] 
+                      : [AppColors.primary, AppColors.primary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                        ),
-                      )
-                    : _hasError
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                child: SafeArea(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
                           children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.3) ?? AppColors.textColor.withOpacity(0.3),
+                            IconButton(
+                              icon: Icon(
+                                Icons.arrow_back,
+                                color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const MoreServicesScreen(),
+                                  ),
+                                );
+                              },
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Failed to load transactions',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? AppColors.textColor.withOpacity(0.6),
+                            Expanded(
+                              child: Text(
+                                'Transaction History',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: _fetchAllTransactions,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Retry'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
+                            const SizedBox(width: 48),
                           ],
-                        ),
-                      )
-                    : _filteredTransactions.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.receipt_long,
-                              size: 64,
-                              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.3) ?? AppColors.textColor.withOpacity(0.3),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No transactions found',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? AppColors.textColor.withOpacity(0.6),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _fetchAllTransactions,
-                        color: AppColors.primary,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
-                          itemCount: _filteredTransactions.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final transaction = _filteredTransactions[index];
-                            return _buildTransactionCard(transaction);
-                          },
                         ),
                       ),
+                      const SizedBox(height: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: isDark ? theme.cardColor : Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(25),
+                            border: isDark ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
+                          ),
+                          child: DropdownButton<String>(
+                            value: _selectedFilter,
+                            isExpanded: true,
+                            underline: const SizedBox(),
+                            dropdownColor: isDark ? theme.cardColor : AppColors.primary,
+                            icon: Icon(
+                              Icons.arrow_drop_down,
+                              color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
+                            ),
+                            style: TextStyle(
+                              color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            items: _filterOptions.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedFilter = newValue!;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ],
+
+              // Content Section
+              Positioned(
+                top: 190,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? Center(
+                          child: CircularProgressIndicator(
+                            color: isDark ? AppColors.primaryLight : AppColors.primary,
+                          ),
+                        )
+                      : _hasError
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.3) ?? AppColors.textColor.withOpacity(0.3),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Failed to load transactions',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? AppColors.textColor.withOpacity(0.6),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: _fetchAllTransactions,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Retry'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _filteredTransactions.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.receipt_long,
+                                size: 64,
+                                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.3) ?? AppColors.textColor.withOpacity(0.3),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No transactions found',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? AppColors.textColor.withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _fetchAllTransactions,
+                          color: isDark ? AppColors.primaryLight : AppColors.primary,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                            itemCount: _filteredTransactions.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final transaction = _filteredTransactions[index];
+                              return _buildTransactionCard(transaction);
+                            },
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -818,6 +831,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   Widget _buildTransactionCard(TransactionModel transaction) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isPositive = transaction.type == 'Payment';
     final isGiftReceived =
         transaction.type == 'User Gift' &&
@@ -834,11 +848,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.03),
+              color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
+          border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -884,7 +899,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            transaction.status,
+                            transaction.status.toUpperCase(),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,

@@ -139,14 +139,16 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final sw = size.width;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: AppColors.primary,
+      value: SystemUiOverlayStyle(
+        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.primary,
+        backgroundColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
         body: Column(
           children: [
             // Header Section
@@ -163,7 +165,7 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
                         // Back Button
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withOpacity(isDark ? 0.05 : 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: IconButton(
@@ -187,7 +189,7 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
                         // Delete Button
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withOpacity(isDark ? 0.05 : 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: IconButton(
@@ -271,9 +273,9 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -295,10 +297,10 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
                             // Title
                             Text(
                               _notification.title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.textColor,
+                                color: theme.textTheme.titleLarge?.color,
                                 letterSpacing: 0.3,
                               ),
                             ),
@@ -308,11 +310,11 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: theme.cardColor,
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
+                                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -328,7 +330,7 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
                                   Container(
                                     width: 1,
                                     height: 40,
-                                    color: AppColors.lightGrey,
+                                    color: theme.dividerColor,
                                   ),
                                   _buildInfoItem(
                                     icon: Icons.access_time_rounded,
@@ -347,11 +349,11 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
                               width: double.infinity,
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: theme.cardColor,
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
+                                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -361,7 +363,7 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
                                 _notification.message,
                                 style: TextStyle(
                                   fontSize: 15,
-                                  color: AppColors.textColor.withOpacity(0.8),
+                                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
                                   height: 1.7,
                                 ),
                               ),
@@ -376,11 +378,11 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: theme.cardColor,
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
+                                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     ),
@@ -397,7 +399,7 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
                                             _formatKey(entry.key),
                                             style: TextStyle(
                                               fontSize: 13,
-                                              color: AppColors.textColor.withOpacity(0.5),
+                                              color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -406,10 +408,10 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
                                             child: Text(
                                               entry.value.toString(),
                                               textAlign: TextAlign.right,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w600,
-                                                color: AppColors.textColor,
+                                                color: theme.textTheme.bodyLarge?.color,
                                               ),
                                             ),
                                           ),
@@ -436,6 +438,7 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
   }
 
   Widget _buildSectionHeader(String title) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Container(
@@ -452,7 +455,7 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: AppColors.textColor.withOpacity(0.8),
+            color: theme.textTheme.titleMedium?.color?.withOpacity(0.8),
           ),
         ),
       ],
@@ -464,6 +467,7 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
     required String label,
     required String value,
   }) {
+    final theme = Theme.of(context);
     return Expanded(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -489,17 +493,17 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen>
                   label,
                   style: TextStyle(
                     fontSize: 10,
-                    color: AppColors.textColor.withOpacity(0.5),
+                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textColor,
+                    color: theme.textTheme.bodyMedium?.color,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

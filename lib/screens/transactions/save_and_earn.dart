@@ -243,251 +243,232 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: _primaryColor,
         statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.background,
-        body: Stack(
-        children: [
-          Column(
-            children: [
-              // Modern Gradient Header
-              ModernFormWidgets.buildGradientHeader(
-                context: context,
-                title: 'Save & Earn',
-                walletBalance: _walletNaira,
-                isLoadingBalance: _isLoadingWallet,
-                primaryColor: _primaryColor,
-              ),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: Column(
+          children: [
+            // Modern Gradient Header
+            ModernFormWidgets.buildGradientHeader(
+              context: context,
+              title: 'Save & Earn',
+              walletBalance: _walletNaira,
+              isLoadingBalance: _isLoadingWallet,
+              primaryColor: _primaryColor,
+            ),
 
-              // Content
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Lock Funds Action Card
-                      ModernFormWidgets.buildFormCard(
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LockFundScreen(),
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Lock Funds Action Card
+                    ModernFormWidgets.buildFormCard(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LockFundScreen(),
+                            ),
+                          ).then((_) {
+                            _fetchWalletAndLockedBalance();
+                            _fetchLockHistory();
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: _primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            ).then((_) {
-                              _fetchWalletAndLockedBalance();
-                              _fetchLockHistory();
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Row(
+                              child: const Icon(
+                                Icons.lock_outline,
+                                color: _primaryColor,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Lock Funds',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.textTheme.titleMedium?.color,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Lock your funds and earn interest',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              color: _primaryColor.withOpacity(0.6),
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Stats Cards Row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildModernStatCard(
+                            'Amount Saved',
+                            '₦${_formatBalance(_lockedBalance)}',
+                            Icons.savings_outlined,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildModernStatCard(
+                            'Total Interest',
+                            '₦${_formatBalance(_totalInterestBal)}',
+                            Icons.trending_up,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Info Card
+                    ModernFormWidgets.buildInfoCard(
+                      message: 'Lock your funds for a period of time to earn interest. The longer you lock, the more you earn!',
+                      icon: Icons.lightbulb_outline,
+                      color: _primaryColor,
+                    ),
+                    const SizedBox(height: 24),
+
+                    // History Section
+                    ModernFormWidgets.buildFormCard(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: _primaryColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
+                              ModernFormWidgets.buildSectionLabel(
+                                'Lock History',
+                                icon: Icons.history,
+                                iconColor: _primaryColor,
+                              ),
+                              if (_lockHistory.isNotEmpty)
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/lockFundHistory');
+                                  },
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'View all',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: _primaryColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.chevron_right,
+                                        size: 16,
+                                        color: _primaryColor,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                child: const Icon(
-                                  Icons.lock_outline,
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // History Items
+                          if (_isLoadingHistory)
+                            const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(24),
+                                child: CircularProgressIndicator(
                                   color: _primaryColor,
-                                  size: 28,
+                                  strokeWidth: 2,
                                 ),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
+                            )
+                          else if (_lockHistory.isEmpty)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
-                                      'Lock Funds',
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: _primaryColor.withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.history,
+                                        size: 36,
+                                        color: _primaryColor.withOpacity(0.5),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No lock history yet',
                                       style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textColor,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
                                       ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Lock your funds and earn interest',
+                                      'Start locking funds to see your history',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: AppColors.textColor.withOpacity(0.6),
+                                        color: theme.textTheme.bodySmall?.color?.withOpacity(0.4),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              Icon(
-                                Icons.arrow_forward_ios,
-                                color: _primaryColor.withOpacity(0.6),
-                                size: 18,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Stats Cards Row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildModernStatCard(
-                              'Amount Saved',
-                              '₦${_formatBalance(_lockedBalance)}',
-                              Icons.savings_outlined,
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildModernStatCard(
-                              'Total Interest',
-                              '₦${_formatBalance(_totalInterestBal)}',
-                              Icons.trending_up,
-                            ),
-                          ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-
-                      // Info Card
-                      ModernFormWidgets.buildInfoCard(
-                        message: 'Lock your funds for a period of time to earn interest. The longer you lock, the more you earn!',
-                        icon: Icons.lightbulb_outline,
-                        color: _primaryColor,
-                      ),
-                      const SizedBox(height: 24),
-
-                      // History Section
-                      ModernFormWidgets.buildFormCard(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                ModernFormWidgets.buildSectionLabel(
-                                  'Lock History',
-                                  icon: Icons.history,
-                                  iconColor: _primaryColor,
-                                ),
-                                if (_lockHistory.isNotEmpty)
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pushNamed(context, '/lockFundHistory');
-                                    },
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'View all',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: _primaryColor,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        Icon(
-                                          Icons.chevron_right,
-                                          size: 16,
-                                          color: _primaryColor,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            // History Items
-                            if (_isLoadingHistory)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(24),
-                                  child: CircularProgressIndicator(
-                                    color: _primaryColor,
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              )
-                            else if (_lockHistory.isEmpty)
-                              Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Column(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: _primaryColor.withOpacity(0.1),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.history,
-                                          size: 36,
-                                          color: _primaryColor.withOpacity(0.5),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No lock history yet',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                          color: AppColors.textColor.withOpacity(0.6),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Start locking funds to see your history',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: AppColors.textColor.withOpacity(0.4),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            else
-                              ...List.generate(
-                                _lockHistory.length > 5 ? 5 : _lockHistory.length,
-                                (index) {
-                                  final item = _lockHistory[index];
-                                  return Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: index < _lockHistory.length - 1 ? 12 : 0,
-                                    ),
-                                    child: _buildModernActivityItem(
-                                      'Locked Funds',
-                                      _formatDate(item['date']),
-                                      '₦${_formatBalance(item['amount'])}',
-                                      item['status'],
-                                    ),
-                                  );
-                                },
-                              ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -515,16 +496,16 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
             label,
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.textColor.withOpacity(0.6),
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.textColor,
+              color: Theme.of(context).textTheme.titleLarge?.color,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -554,9 +535,9 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
       ),
       child: Row(
         children: [
@@ -581,10 +562,10 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textColor,
+                        color: Theme.of(context).textTheme.titleMedium?.color,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -620,7 +601,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                   date,
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textColor.withOpacity(0.5),
+                    color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5),
                   ),
                 ),
               ],

@@ -301,8 +301,7 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
               details: [
                 ReceiptDetail(
                   label: 'Transaction ID',
-                  value: responseData['transaction_id']?.toString() ??
-                      responseData['reference']?.toString() ?? 'N/A',
+                  value: responseData['transaction_id']?.toString() ?? 'N/A',
                 ),
                 ReceiptDetail(label: 'Crypto', value: _selectedCoin ?? widget.cryptoName),
                 ReceiptDetail(
@@ -363,8 +362,11 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           Column(
@@ -469,7 +471,6 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
 
                       // Rate & Summary Card
                       ModernFormWidgets.buildFormCard(
-                        backgroundColor: AppColors.primary.withOpacity(0.04),
                         child: Column(
                           children: [
                             _buildSummaryRow(
@@ -478,8 +479,9 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
                                   ? '₦${_formatBalance(_currentRate)} / 1 ${_selectedCoin ?? 'Crypto'}'
                                   : 'Select a coin',
                               icon: Icons.trending_up_rounded,
+                              theme: theme,
                             ),
-                            Divider(color: Colors.grey.shade200, height: 20),
+                            Divider(color: isDark ? theme.dividerColor : Colors.grey.shade200, height: 20),
                             _buildSummaryRow(
                               'You Receive',
                               _youReceive > 0
@@ -487,6 +489,7 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
                                   : '0.000000 ${_selectedCoin ?? 'Crypto'}',
                               icon: Icons.arrow_downward_rounded,
                               isHighlighted: true,
+                              theme: theme,
                             ),
                           ],
                         ),
@@ -534,7 +537,9 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
   Widget _buildSummaryRow(String label, String value, {
     IconData? icon,
     bool isHighlighted = false,
+    required ThemeData theme,
   }) {
+    final isDark = theme.brightness == Brightness.dark;
     return Row(
       children: [
         if (icon != null) ...[
@@ -557,7 +562,7 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
             label,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade600,
+              color: isDark ? theme.textTheme.bodySmall?.color : Colors.grey.shade600,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -567,7 +572,9 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
           style: TextStyle(
             fontSize: isHighlighted ? 15 : 13,
             fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w600,
-            color: isHighlighted ? AppColors.success : AppColors.textColor,
+            color: isHighlighted 
+                ? (isDark ? AppColors.success : AppColors.success) 
+                : theme.textTheme.bodyLarge?.color,
           ),
         ),
       ],

@@ -378,296 +378,302 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     final transactionDetails = _getTransactionDetails();
 
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    // Set status bar color to match header
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: typeColor,
-      statusBarIconBrightness: Brightness.light,
-    ));
-
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 260,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [typeColor, typeColor.withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 10),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.of(context).pop(),
-                          ),
-                          const Expanded(
-                            child: Text(
-                              'Transaction Details',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                          // Share Button
-                          IconButton(
-                            icon: const Icon(Icons.share, color: Colors.white),
-                            onPressed: () => _shareReceipt(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    // Transaction Icon
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _getIconForType(transaction.type),
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Amount
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        '${isPositive ? '+' : '-'} ₦${transaction.amount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Status Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        transaction.status.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content Section
-            Positioned(
-              top: 230,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: isDark ? theme.scaffoldBackgroundColor : typeColor,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: SizedBox.expand(
+          child: Stack(
+            children: [
+              // Header Section
+              Container(
+                width: double.infinity,
+                height: 260,
                 decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+                  gradient: LinearGradient(
+                    colors: isDark 
+                      ? [theme.scaffoldBackgroundColor, theme.scaffoldBackgroundColor.withOpacity(0.8)]
+                      : [typeColor, typeColor.withOpacity(0.8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                child: SafeArea(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      // Basic Information Card
-                      _buildSectionCard(
-                        title: 'Basic Information',
-                        children: [
-                          _buildDetailRow(
-                            'Transaction Type',
-                            transaction.type,
-                            canCopy: false,
-                            context: context,
-                          ),
-                          _buildDivider(),
-                          _buildDetailRow(
-                            'Reference',
-                            transaction.reference,
-                            canCopy: true,
-                            context: context,
-                          ),
-                          _buildDivider(),
-                          _buildDetailRow(
-                            'Transaction ID',
-                            transaction.id,
-                            canCopy: true,
-                            context: context,
-                          ),
-                          _buildDivider(),
-                          _buildDetailRow(
-                            'Date & Time',
-                            _formatDateTime(transaction.date),
-                            canCopy: false,
-                            context: context,
-                          ),
-                          _buildDivider(),
-                          _buildDetailRow(
-                            'Status',
-                            transaction.status,
-                            canCopy: false,
-                            context: context,
-                            valueColor: statusColor,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Transaction Specific Details
-                      if (transactionDetails.isNotEmpty)
-                        _buildSectionCard(
-                          title: 'Transaction Details',
-                          children: transactionDetails.entries.map((entry) {
-                            bool isLast =
-                                entry.key ==
-                                transactionDetails.entries.last.key;
-                            return Column(
-                              children: [
-                                _buildDetailRow(
-                                  entry.key,
-                                  entry.value,
-                                  canCopy:
-                                      entry.key.contains('Number') ||
-                                      entry.key.contains('Address') ||
-                                      entry.key.contains('Pin') ||
-                                      entry.key.contains('Token') ||
-                                      entry.key.contains('Reference'),
-                                  context: context,
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.arrow_back,
+                                color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
+                              ),
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Transaction Details',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
                                 ),
-                                if (!isLast) _buildDivider(),
-                              ],
-                            );
-                          }).toList(),
+                              ),
+                            ),
+                            const SizedBox(width: 48),
+                            // Share Button
+                            IconButton(
+                              icon: Icon(Icons.share, color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white),
+                              onPressed: () => _shareReceipt(context),
+                            ),
+                          ],
                         ),
-                      const SizedBox(height: 20),
-
-                      // Amount Breakdown Card
-                      _buildSectionCard(
-                        title: 'Amount Details',
-                        children: [
-                          _buildDetailRow(
-                            'Amount',
-                            '₦${transaction.amount.toStringAsFixed(2)}',
-                            canCopy: false,
-                            context: context,
-                            valueStyle: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isPositive
-                                  ? Colors.green
-                                  : AppColors.primary,
-                            ),
-                          ),
-                        ],
                       ),
-                      const SizedBox(height: 30),
-
-                      // Action Buttons
-                      Row(
-                        children: [
-                          // Share Button
-                          Expanded(
-                            child: SizedBox(
-                              height: 50,
-                              child: OutlinedButton.icon(
-                                onPressed: () => _shareReceipt(context),
-                                icon: const Icon(Icons.share, size: 20),
-                                label: const Text(
-                                  'Share',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.primary,
-                                  side: const BorderSide(
-                                    color: AppColors.primary,
-                                    width: 2,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
+                      const SizedBox(height: 20),
+                      // Transaction Icon
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: isDark ? theme.cardColor : Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                          border: isDark ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
+                        ),
+                        child: Icon(
+                          _getIconForType(transaction.type),
+                          color: isDark ? typeColor : Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Amount
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          '${isPositive ? '+' : '-'} ₦${transaction.amount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
                           ),
-
-                          // Report Button (always visible)
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: SizedBox(
-                              height: 50,
-                              child: ElevatedButton.icon(
-                                onPressed: () => _contactSupport(context),
-                                icon: const Icon(Icons.report_problem, size: 20),
-                                label: const Text(
-                                  'Report',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Status Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark ? theme.cardColor : Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: isDark ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
+                        ),
+                        child: Text(
+                          transaction.status.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? statusColor : Colors.white,
+                            letterSpacing: 1.2,
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
+
+              // Content Section
+              Positioned(
+                top: 230,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Basic Information Card
+                        _buildSectionCard(
+                          title: 'Basic Information',
+                          children: [
+                            _buildDetailRow(
+                              'Transaction Type',
+                              transaction.type,
+                              canCopy: false,
+                              context: context,
+                            ),
+                            _buildDivider(),
+                            _buildDetailRow(
+                              'Reference',
+                              transaction.reference,
+                              canCopy: true,
+                              context: context,
+                            ),
+                            _buildDivider(),
+                            _buildDetailRow(
+                              'Transaction ID',
+                              transaction.id,
+                              canCopy: true,
+                              context: context,
+                            ),
+                            _buildDivider(),
+                            _buildDetailRow(
+                              'Date & Time',
+                              _formatDateTime(transaction.date),
+                              canCopy: false,
+                              context: context,
+                            ),
+                            _buildDivider(),
+                            _buildDetailRow(
+                              'Status',
+                              transaction.status,
+                              canCopy: false,
+                              context: context,
+                              valueColor: statusColor,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Transaction Specific Details
+                        if (transactionDetails.isNotEmpty)
+                          _buildSectionCard(
+                            title: 'Transaction Details',
+                            children: transactionDetails.entries.map((entry) {
+                              bool isLast =
+                                  entry.key ==
+                                  transactionDetails.entries.last.key;
+                              return Column(
+                                children: [
+                                  _buildDetailRow(
+                                    entry.key,
+                                    entry.value,
+                                    canCopy:
+                                        entry.key.contains('Number') ||
+                                        entry.key.contains('Address') ||
+                                        entry.key.contains('Pin') ||
+                                        entry.key.contains('Token') ||
+                                        entry.key.contains('Reference'),
+                                    context: context,
+                                  ),
+                                  if (!isLast) _buildDivider(),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        const SizedBox(height: 20),
+
+                        // Amount Breakdown Card
+                        _buildSectionCard(
+                          title: 'Amount Details',
+                          children: [
+                            _buildDetailRow(
+                              'Amount',
+                              '₦${transaction.amount.toStringAsFixed(2)}',
+                              canCopy: false,
+                              context: context,
+                              valueStyle: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isPositive
+                                    ? Colors.green
+                                    : (isDark ? AppColors.primaryLight : AppColors.primary),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+
+                        // Action Buttons
+                        Row(
+                          children: [
+                            // Share Button
+                            Expanded(
+                              child: SizedBox(
+                                height: 50,
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _shareReceipt(context),
+                                  icon: const Icon(Icons.share, size: 20),
+                                  label: const Text(
+                                    'Share',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
+                                    side: BorderSide(
+                                      color: isDark ? AppColors.primaryLight : AppColors.primary,
+                                      width: 2,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Report Button (always visible)
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: SizedBox(
+                                height: 50,
+                                child: ElevatedButton.icon(
+                                  onPressed: () => _contactSupport(context),
+                                  icon: const Icon(Icons.report_problem, size: 20),
+                                  label: const Text(
+                                    'Report',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -678,17 +684,19 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     required List<Widget> children,
   }) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.03),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
+        border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -856,9 +864,10 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
   }
 
   void _showImageSourcePicker() {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -868,11 +877,12 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'Choose Image Source',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: theme.textTheme.titleLarge?.color,
                 ),
               ),
               const SizedBox(height: 20),
@@ -909,24 +919,28 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
     required String label,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.primaryLight : AppColors.primary;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
+          color: primaryColor.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           children: [
-            Icon(icon, size: 40, color: AppColors.primary),
+            Icon(icon, size: 40, color: primaryColor),
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+                color: primaryColor,
               ),
             ),
           ],
@@ -996,11 +1010,14 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
@@ -1010,7 +1027,7 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: isDark ? Colors.white10 : Colors.grey[300],
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1022,24 +1039,25 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
               children: [
                 const Icon(Icons.report_problem, color: Colors.orange, size: 28),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Report Issue',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: theme.textTheme.titleLarge?.color,
                     ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close, color: theme.textTheme.titleLarge?.color),
                 ),
               ],
             ),
           ),
           
-          const Divider(height: 1),
+          Divider(height: 1, color: theme.dividerColor),
           
           // Form
           Expanded(
@@ -1051,12 +1069,12 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Reference (read-only)
-                    const Text(
+                    Text(
                       'Transaction Reference',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey,
+                        color: isDark ? Colors.white38 : Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1064,15 +1082,16 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[300]!),
                       ),
                       child: Text(
                         widget.reference,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
+                          color: theme.textTheme.bodyLarge?.color,
                         ),
                       ),
                     ),
@@ -1080,32 +1099,34 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                     const SizedBox(height: 20),
                     
                     // Title
-                    const Text(
+                    Text(
                       'Subject',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey,
+                        color: isDark ? Colors.white38 : Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _titleController,
+                      style: TextStyle(color: theme.textTheme.bodyLarge?.color),
                       decoration: InputDecoration(
                         hintText: 'Brief description of the issue',
+                        hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.grey),
                         filled: true,
-                        fillColor: Colors.grey[50],
+                        fillColor: theme.cardColor,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                          borderSide: BorderSide(color: isDark ? AppColors.primaryLight : AppColors.primary, width: 2),
                         ),
                       ),
                       validator: (value) {
@@ -1119,33 +1140,35 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                     const SizedBox(height: 20),
                     
                     // Message
-                    const Text(
+                    Text(
                       'Message',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey,
+                        color: isDark ? Colors.white38 : Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _messageController,
+                      style: TextStyle(color: theme.textTheme.bodyLarge?.color),
                       maxLines: 5,
                       decoration: InputDecoration(
                         hintText: 'Describe your issue in detail...',
+                        hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.grey),
                         filled: true,
-                        fillColor: Colors.grey[50],
+                        fillColor: theme.cardColor,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey[300]!),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                          borderSide: BorderSide(color: isDark ? AppColors.primaryLight : AppColors.primary, width: 2),
                         ),
                       ),
                       validator: (value) {
@@ -1162,12 +1185,12 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                     const SizedBox(height: 20),
                     
                     // Attachment
-                    const Text(
+                    Text(
                       'Attachment (Optional)',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey,
+                        color: isDark ? Colors.white38 : Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1180,7 +1203,7 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                             width: double.infinity,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(color: isDark ? Colors.white10 : Colors.grey[300]!),
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
@@ -1224,10 +1247,10 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                           height: 120,
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: Colors.grey[50],
+                            color: theme.cardColor,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.grey[300]!,
+                              color: isDark ? Colors.white10 : Colors.grey[300]!,
                               style: BorderStyle.solid,
                             ),
                           ),
@@ -1237,13 +1260,13 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                               Icon(
                                 Icons.add_photo_alternate_outlined,
                                 size: 40,
-                                color: Colors.grey[400],
+                                color: isDark ? Colors.white12 : Colors.grey[400],
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 'Tap to add screenshot or photo',
                                 style: TextStyle(
-                                  color: Colors.grey[500],
+                                  color: isDark ? Colors.white24 : Colors.grey[500],
                                   fontSize: 14,
                                 ),
                               ),
@@ -1262,12 +1285,12 @@ class _ReportFormSheetState extends State<ReportFormSheet> {
                       child: ElevatedButton(
                         onPressed: _isSubmitting ? null : _submitReport,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          disabledBackgroundColor: Colors.grey[300],
+                          disabledBackgroundColor: isDark ? Colors.white10 : Colors.grey[300],
                         ),
                         child: _isSubmitting
                             ? const SizedBox(

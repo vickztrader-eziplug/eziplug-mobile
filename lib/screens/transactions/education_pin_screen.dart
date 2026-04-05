@@ -392,8 +392,11 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           Column(
@@ -517,7 +520,7 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
                                 '₦${_selectedPrice.toStringAsFixed(0)} × $_selectedQuantity PIN(s)',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.grey.shade600,
+                                  color: isDark ? Colors.white60 : Colors.grey.shade600,
                                 ),
                               ),
                             ],
@@ -580,7 +583,7 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
           // Loading overlay
           if (_isLoading)
             Container(
-              color: Colors.black54,
+              color: isDark ? Colors.black87 : Colors.black54,
               child: Center(
                 child: CircularProgressIndicator(
                   color: _accentColor,
@@ -598,6 +601,8 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
       spacing: 10,
       runSpacing: 10,
       children: _providers.map((provider) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
         final name = provider['name'] as String;
         final isSelected = _selectedProvider == name;
         
@@ -622,10 +627,10 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             decoration: BoxDecoration(
-              color: isSelected ? _accentColor.withOpacity(0.12) : Colors.white,
+              color: isSelected ? _accentColor.withOpacity(0.12) : theme.cardColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected ? _accentColor : Colors.grey.shade200,
+                color: isSelected ? _accentColor : (isDark ? Colors.white10 : Colors.grey.shade200),
                 width: isSelected ? 1.5 : 1,
               ),
               boxShadow: isSelected
@@ -644,7 +649,7 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
                 Icon(
                   getExamIcon(name),
                   size: 24,
-                  color: isSelected ? _accentColor : Colors.grey.shade600,
+                  color: isSelected ? _accentColor : (isDark ? Colors.white70 : Colors.grey.shade600),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -652,7 +657,7 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? _accentColor : AppColors.textColor,
+                    color: isSelected ? _accentColor : theme.textTheme.bodyMedium?.color,
                   ),
                 ),
               ],
@@ -668,6 +673,8 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
       spacing: 10,
       runSpacing: 10,
       children: _quantityOptions.map((qty) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
         final isSelected = _selectedQuantity == qty;
         return GestureDetector(
           onTap: () => _onQuantitySelected(qty),
@@ -675,10 +682,10 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? _accentColor : Colors.white,
+              color: isSelected ? _accentColor : theme.cardColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected ? _accentColor : Colors.grey.shade200,
+                color: isSelected ? _accentColor : (isDark ? Colors.white10 : Colors.grey.shade200),
                 width: 1,
               ),
               boxShadow: isSelected
@@ -696,7 +703,7 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.textColor,
+                color: isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
               ),
             ),
           ),

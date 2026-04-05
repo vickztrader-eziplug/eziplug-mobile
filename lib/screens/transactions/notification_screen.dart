@@ -89,14 +89,16 @@ class _NotificationScreenState extends State<NotificationScreen>
   @override
   Widget build(BuildContext context) {
     final sw = MediaQuery.of(context).size.width;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: AppColors.primary,
+      value: SystemUiOverlayStyle(
+        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.primary,
+        backgroundColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
         body: Column(
           children: [
             // Header
@@ -111,7 +113,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withOpacity(isDark ? 0.05 : 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: IconButton(
@@ -137,7 +139,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                         ),
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withOpacity(isDark ? 0.05 : 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: IconButton(
@@ -163,12 +165,14 @@ class _NotificationScreenState extends State<NotificationScreen>
                           icon: Icons.notifications_active_rounded,
                           label: '${_notificationService.unreadCount} Unread',
                           color: AppColors.accentPink,
+                          isDark: isDark,
                         ),
                         const SizedBox(width: 16),
                         _buildStatChip(
                           icon: Icons.inbox_rounded,
                           label: '${_notificationService.notifications.length} Total',
                           color: Colors.white.withOpacity(0.9),
+                          isDark: isDark,
                         ),
                       ],
                     ),
@@ -181,9 +185,9 @@ class _NotificationScreenState extends State<NotificationScreen>
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(28),
                     topRight: Radius.circular(28),
                   ),
@@ -196,7 +200,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                   child: RefreshIndicator(
                     onRefresh: _refreshNotifications,
                     color: AppColors.primary,
-                    backgroundColor: Colors.white,
+                    backgroundColor: theme.cardColor,
                     child: _buildContent(sw),
                   ),
                 ),
@@ -212,11 +216,12 @@ class _NotificationScreenState extends State<NotificationScreen>
     required IconData icon,
     required String label,
     required Color color,
+    required bool isDark,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withOpacity(isDark ? 0.05 : 0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -257,7 +262,9 @@ class _NotificationScreenState extends State<NotificationScreen>
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
       itemCount: 5,
-      itemBuilder: (context, index) => _buildShimmerCard(sw),
+      itemBuilder: (context, index) {
+        return _buildShimmerCard(sw);
+      },
     );
   }
 
@@ -265,11 +272,12 @@ class _NotificationScreenState extends State<NotificationScreen>
     return AnimatedBuilder(
       animation: _shimmerController,
       builder: (context, child) {
+        final theme = Theme.of(context);
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -286,7 +294,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: theme.dividerColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -299,7 +307,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                       width: sw * 0.4,
                       height: 16,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: theme.dividerColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -308,7 +316,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                       width: sw * 0.6,
                       height: 12,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: theme.dividerColor.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -317,7 +325,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                       width: sw * 0.3,
                       height: 10,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: theme.dividerColor.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -332,71 +340,62 @@ class _NotificationScreenState extends State<NotificationScreen>
   }
 
   Widget _buildErrorState(double sw) {
-    return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.error_outline_rounded,
-                      size: 60,
-                      color: AppColors.error.withOpacity(0.7),
-                    ),
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withOpacity(0.1),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Oops! Something went wrong',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textColor.withOpacity(0.8),
-                    ),
+                  child: const Icon(
+                    Icons.error_outline_rounded,
+                    color: AppColors.error,
+                    size: 40,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _notificationService.errorMessage ?? 'Unable to load notifications',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textColor.withOpacity(0.5),
-                    ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Oops! Something went wrong',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: theme.textTheme.titleLarge?.color,
                   ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: _loadNotifications,
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Try Again'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _notificationService.errorMessage ?? 'Failed to load notifications',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+                    height: 1.5,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: _refreshNotifications,
+                  child: const Text('Try Again'),
+                ),
+              ],
             ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
   Widget _buildEmptyState(double sw) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
@@ -411,7 +410,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                   Container(
                     padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -433,7 +432,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textColor.withOpacity(0.85),
+                      color: theme.textTheme.titleLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -442,7 +441,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
-                      color: AppColors.textColor.withOpacity(0.5),
+                      color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5),
                       height: 1.6,
                     ),
                   ),
@@ -513,7 +512,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textColor.withOpacity(0.7),
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                       letterSpacing: 0.3,
                     ),
                   ),
@@ -532,16 +531,17 @@ class _NotificationScreenState extends State<NotificationScreen>
 
   Widget _buildNotificationCard(NotificationItem notification, double sw) {
     final bool isUnread = !notification.isRead;
+    final theme = Theme.of(context);
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isUnread ? AppColors.primary.withOpacity(0.04) : Colors.white,
+        color: isUnread ? AppColors.primary.withOpacity(0.04) : theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isUnread
               ? AppColors.primary.withOpacity(0.15)
-              : AppColors.lightGrey.withOpacity(0.5),
+              : theme.dividerColor.withOpacity(0.1),
           width: 1,
         ),
         boxShadow: [
@@ -605,7 +605,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
-                                color: AppColors.textColor,
+                                color: theme.textTheme.titleMedium?.color,
                               ),
                             ),
                           ),
@@ -639,7 +639,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.textColor.withOpacity(0.65),
+                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.65),
                           height: 1.4,
                         ),
                       ),
@@ -649,14 +649,14 @@ class _NotificationScreenState extends State<NotificationScreen>
                           Icon(
                             Icons.access_time_rounded,
                             size: 14,
-                            color: AppColors.textColor.withOpacity(0.4),
+                            color: theme.textTheme.bodySmall?.color?.withOpacity(0.5),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             notification.timeAgo,
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textColor.withOpacity(0.4),
+                              color: theme.textTheme.bodySmall?.color?.withOpacity(0.5),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -668,7 +668,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                 // Arrow indicator
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: AppColors.textColor.withOpacity(0.3),
+                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.3),
                   size: 22,
                 ),
               ],

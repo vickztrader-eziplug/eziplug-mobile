@@ -233,6 +233,7 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Theme.of(context).cardColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -254,12 +255,12 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Gift Sent!',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textColor,
+                  color: Theme.of(context).textTheme.titleLarge?.color,
                 ),
               ),
               const SizedBox(height: 12),
@@ -268,7 +269,7 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textColor.withOpacity(0.7),
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 8),
@@ -285,7 +286,7 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
                 'to @$username',
                 style: TextStyle(
                   fontSize: 13,
-                  color: AppColors.textColor.withOpacity(0.6),
+                  color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
                 ),
               ),
               const SizedBox(height: 24),
@@ -328,8 +329,11 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           Column(
@@ -483,7 +487,7 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -494,11 +498,12 @@ class _GiftUserScreenState extends State<GiftUserScreen> {
                         strokeWidth: 3,
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Processing gift...',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
+                          color: theme.textTheme.bodyMedium?.color,
                         ),
                       ),
                     ],
