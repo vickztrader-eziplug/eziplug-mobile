@@ -97,9 +97,11 @@ class _GiftCardConfirmationScreenState
             Container(
               width: double.infinity,
               height: 220,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
+                  colors: isDark 
+                      ? [AppColors.headerDark, AppColors.headerDark]
+                      : [AppColors.primary, AppColors.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -586,9 +588,11 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
             Container(
               width: double.infinity,
               height: 220,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
+                  colors: isDark 
+                      ? [AppColors.headerDark, AppColors.headerDark]
+                      : [AppColors.primary, AppColors.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),

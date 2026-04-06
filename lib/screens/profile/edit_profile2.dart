@@ -1,4 +1,4 @@
-import 'package:cashpoint/core/theme/app_colors.dart';
+import '../../core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -33,6 +33,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: SizedBox.expand(
         child: Stack(
@@ -41,9 +44,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             Container(
               width: double.infinity,
               height: 220,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
+                  colors: [
+                    isDark ? AppColors.headerDark : AppColors.primary,
+                    isDark ? AppColors.headerDark : AppColors.primary,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -137,9 +143,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -229,10 +235,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget _buildLabel(String label) {
     return Text(
       label,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w400,
-        color: AppColors.textColor,
+        color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textColor,
       ),
     );
   }
@@ -244,19 +250,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(5),
         border: Border.all(color: AppColors.lightGrey, width: 2),
       ),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        style: const TextStyle(fontSize: 14, color: AppColors.textColor),
+        style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textColor),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(
             fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5) ??  AppColors.textColor.withOpacity(0.5),
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(

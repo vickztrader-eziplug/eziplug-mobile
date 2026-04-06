@@ -175,8 +175,8 @@ class AppTheme {
         type: BottomNavigationBarType.fixed,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.headerDark,
+        foregroundColor: AppColors.textDark,
         elevation: 0,
       ),
       switchTheme: SwitchThemeData(

@@ -10,8 +10,9 @@ import '../../core/utils/error_handler.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
 import '../../core/widgets/pin_verification_modal.dart';
+import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/receipt_screen.dart';
+import 'transaction_details_unified_screen.dart';
 
 class AirtimeScreen extends StatefulWidget {
   const AirtimeScreen({super.key});
@@ -350,35 +351,22 @@ class _AirtimeScreenState extends State<AirtimeScreen> {
           });
         }
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReceiptScreen(
-              title: 'Purchase Successful',
-              subtitle: 'Your airtime purchase was successful',
-              details: [
-                ReceiptDetail(
-                  label: 'Transaction ID',
-                  value: responseData['reference']?.toString() ?? 'N/A',
-                ),
+        final reference = responseData['reference']?.toString() ?? 
+                         responseData['data']?['reference']?.toString();
 
-                ReceiptDetail(
-                  label: 'Phone Number',
-                  value: _phoneController.text,
-                ),
-                ReceiptDetail(label: 'Amount', value: '₦${amount.toString()}'),
-                ReceiptDetail(
-                  label: 'New Balance',
-                  value: '₦${_formatBalance(_walletNaira)}',
-                ),
-                ReceiptDetail(
-                  label: 'Date',
-                  value: DateTime.now().toString().split('.')[0],
-                ),
-              ],
+        if (reference != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TransactionDetailUnifiedScreen(
+                transactionReference: reference,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          _showSnackBar('Purchase successful', Colors.green);
+          Navigator.pop(context);
+        }
       } else if (response.statusCode == 400) {
         // Check for specific error messages
         if (responseData['message']?.toLowerCase().contains('insufficient') ==

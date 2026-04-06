@@ -233,7 +233,7 @@ class _ChangePinOtpScreenState extends State<ChangePinOtpScreen>
       width: 48,
       height: 56,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _focusNodes[index].hasFocus
@@ -276,8 +276,11 @@ class _ChangePinOtpScreenState extends State<ChangePinOtpScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: _isSendingOtp
             ? _buildSendingOtpView()
@@ -312,12 +315,12 @@ class _ChangePinOtpScreenState extends State<ChangePinOtpScreen>
             },
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'Sending OTP...',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.titleLarge?.color,
             ),
           ),
           const SizedBox(height: 12),
@@ -326,7 +329,7 @@ class _ChangePinOtpScreenState extends State<ChangePinOtpScreen>
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[600],
+              color: Theme.of(context).textTheme.bodyMedium?.color,
               height: 1.5,
             ),
           ),
@@ -411,13 +414,13 @@ class _ChangePinOtpScreenState extends State<ChangePinOtpScreen>
           const SizedBox(height: 32),
           
           // Title
-          const Center(
+          Center(
             child: Text(
               'Verify Your Identity',
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.titleLarge?.color,
               ),
             ),
           ),
@@ -431,7 +434,7 @@ class _ChangePinOtpScreenState extends State<ChangePinOtpScreen>
               text: TextSpan(
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                   height: 1.5,
                 ),
                 children: [
@@ -495,7 +498,7 @@ class _ChangePinOtpScreenState extends State<ChangePinOtpScreen>
                   'Didn\'t receive code? ',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
                 if (_isTimeUp)

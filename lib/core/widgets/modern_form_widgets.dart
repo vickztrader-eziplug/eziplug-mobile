@@ -16,10 +16,17 @@ class ModernFormWidgets {
     Color primaryColor = AppColors.primary,
     VoidCallback? onBack,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.headerDark : primaryColor;
+    final textColor = isDark ? AppColors.textDark : Colors.white;
+    final subtextColor = isDark ? AppColors.textSecondaryDark : Colors.white.withOpacity(0.85);
+    final backBtnColor = isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.2);
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: primaryColor,
+        color: bgColor,
       ),
       child: SafeArea(
         bottom: false,
@@ -31,10 +38,10 @@ class ModernFormWidgets {
                 icon: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: backBtnColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                  child: Icon(Icons.arrow_back, color: textColor, size: 20),
                 ),
                 onPressed: onBack ?? () => Navigator.pop(context),
               ),
@@ -45,20 +52,20 @@ class ModernFormWidgets {
                     Text(
                       title,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: textColor,
                       ),
                     ),
                     if (walletBalance != null || isLoadingBalance) ...[
                       const SizedBox(height: 4),
                       isLoadingBalance
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 14,
                               width: 14,
                               child: CircularProgressIndicator(
-                                color: Colors.white70,
+                                color: subtextColor,
                                 strokeWidth: 2,
                               ),
                             )
@@ -66,7 +73,7 @@ class ModernFormWidgets {
                               'Balance: ₦${_formatBalance(walletBalance!)}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.white.withOpacity(0.85),
+                                color: subtextColor,
                               ),
                             ),
                     ],
@@ -76,7 +83,7 @@ class ModernFormWidgets {
                         subtitle,
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withOpacity(0.7),
+                          color: isDark ? AppColors.textMutedDark : Colors.white.withOpacity(0.7),
                         ),
                       ),
                     ],

@@ -332,9 +332,9 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: AppColors.primary,
+        statusBarColor: isDark ? AppColors.headerDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -443,7 +443,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     return Container(
       width: sw,
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: isDark ? AppColors.headerDark : AppColors.primary,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(sw * 0.08),
           bottomRight: Radius.circular(sw * 0.08),
@@ -562,7 +562,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                             decoration: BoxDecoration(
                               color: AppColors.accentPink,
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.primary, width: 2),
+                              border: Border.all(color: isDark ? AppColors.headerDark : AppColors.primary, width: 2),
                             ),
                             child: Center(
                               child: Text(

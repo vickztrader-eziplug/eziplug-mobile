@@ -119,7 +119,7 @@ class _LockFundDetailsScreenState extends State<LockFundDetailsScreen> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: isDark ? AppColors.primaryDark : AppColors.primary,
+        statusBarColor: isDark ? AppColors.headerDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
@@ -153,7 +153,7 @@ class _LockFundDetailsScreenState extends State<LockFundDetailsScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: isDark ? AppColors.primaryDark : AppColors.primary,
+        color: isDark ? AppColors.headerDark : AppColors.primary,
       ),
       child: SafeArea(
         bottom: false,
@@ -424,6 +424,7 @@ class _LockFundDetailsScreenState extends State<LockFundDetailsScreen> {
   }
 
   Widget _buildProgressCard(Map<String, dynamic> lock) {
+    final theme = Theme.of(context);
     final totalDays = lock['lock_days'] ?? 1;
     final remainingDays = lock['remaining_days'] ?? 0;
     final elapsedDays = totalDays - remainingDays;
@@ -432,7 +433,7 @@ class _LockFundDetailsScreenState extends State<LockFundDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -502,10 +503,11 @@ class _LockFundDetailsScreenState extends State<LockFundDetailsScreen> {
   }
 
   Widget _buildEarnHistorySection() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -672,6 +674,7 @@ class _LockFundDetailsScreenState extends State<LockFundDetailsScreen> {
   }
 
   void _showFullHistoryModal() {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -681,8 +684,8 @@ class _LockFundDetailsScreenState extends State<LockFundDetailsScreen> {
         maxChildSize: 0.9,
         minChildSize: 0.5,
         builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: theme.cardColor,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(

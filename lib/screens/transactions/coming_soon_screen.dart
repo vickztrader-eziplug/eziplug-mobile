@@ -13,6 +13,9 @@ class ComingSoonScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: SizedBox.expand(
         child: Stack(
@@ -21,9 +24,11 @@ class ComingSoonScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               height: 260,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
+                  colors: isDark 
+                      ? [AppColors.headerDark, AppColors.headerDark]
+                      : [AppColors.primary, AppColors.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -70,9 +75,9 @@ class ComingSoonScreen extends StatelessWidget {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -86,15 +91,15 @@ class ComingSoonScreen extends StatelessWidget {
                         Icon(
                           Icons.access_time_rounded,
                           size: 100,
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.3),
                         ),
                         const SizedBox(height: 24),
-                        const Text(
+                        Text(
                           'Coming Soon',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: theme.textTheme.titleLarge?.color ?? Colors.black87,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -103,14 +108,14 @@ class ComingSoonScreen extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.grey[600],
+                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? Colors.grey[600],
                           ),
                         ),
                         const SizedBox(height: 40),
                         ElevatedButton(
                           onPressed: () => Navigator.pop(context),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 32,
                               vertical: 16,

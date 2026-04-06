@@ -8,7 +8,7 @@ import '../../core/utils/constants.dart';
 import '../../core/utils/api_response.dart';
 import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/receipt_screen.dart';
+import 'transaction_details_unified_screen.dart';
 
 class RequestWithdrawalScreen extends StatefulWidget {
   final List<Map<String, dynamic>> payoutAccounts;
@@ -167,47 +167,22 @@ class _RequestWithdrawalScreenState extends State<RequestWithdrawalScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = getResponseData(responseJson);
+        final reference = responseJson['reference']?.toString() ?? 
+                         responseJson['data']?['reference']?.toString();
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReceiptScreen(
-              title: 'Withdrawal Request Submitted',
-              subtitle: 'Your request is pending approval. You will be notified once processed.',
-              details: [
-                ReceiptDetail(
-                  label: 'Reference',
-                  value: responseData?['reference']?.toString() ?? 'N/A',
-                ),
-                ReceiptDetail(
-                  label: 'Status',
-                  value: 'PENDING APPROVAL',
-                ),
-                ReceiptDetail(
-                  label: 'Bank Name',
-                  value: responseData?['bank_name'] ?? _selectedAccount!['bank_name'] ?? '',
-                ),
-                ReceiptDetail(
-                  label: 'Account Number',
-                  value: responseData?['account_number'] ?? _selectedAccount!['account_number'] ?? '',
-                ),
-                ReceiptDetail(
-                  label: 'Account Name',
-                  value: responseData?['account_name'] ?? _selectedAccount!['account_name'] ?? '',
-                ),
-                ReceiptDetail(
-                  label: 'Amount',
-                  value: '${_formatAmount(amount)}',
-                ),
-                ReceiptDetail(
-                  label: 'Date',
-                  value: DateTime.now().toString().split('.')[0],
-                ),
-              ],
+        if (reference != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TransactionDetailUnifiedScreen(
+                transactionReference: reference,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          _showSnackBar('Withdrawal request submitted', Colors.green);
+          Navigator.pop(context);
+        }
       } else if (response.statusCode == 401) {
         _showSnackBar('Session expired. Please login again', Colors.red);
         await authService.logout();
@@ -257,7 +232,7 @@ class _RequestWithdrawalScreenState extends State<RequestWithdrawalScreen> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        statusBarColor: isDark ? AppColors.headerDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),

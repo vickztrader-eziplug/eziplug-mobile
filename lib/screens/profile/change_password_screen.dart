@@ -169,16 +169,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.titleSmall?.color,
             ),
           ),
           const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: hasError
@@ -204,9 +204,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
               controller: controller,
               focusNode: focusNode,
               obscureText: obscureText,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
               onChanged: (_) => setState(() {
                 _errorMessage = null;
@@ -286,8 +286,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -301,23 +304,23 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
                     icon: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back,
-                        color: AppColors.primary,
+                        color: isDark ? AppColors.primaryLight : AppColors.primary,
                         size: 22,
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Change Password',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: theme.textTheme.titleLarge?.color,
                     ),
                   ),
                 ],
@@ -382,7 +385,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey.shade600,
+                            color: theme.textTheme.bodyMedium?.color,
                             height: 1.5,
                           ),
                         ),

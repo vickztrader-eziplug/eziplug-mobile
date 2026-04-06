@@ -359,9 +359,9 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: _primaryColor,
+        statusBarColor: isDark ? AppColors.headerDark : _primaryColor,
         statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,

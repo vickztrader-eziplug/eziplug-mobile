@@ -8,9 +8,9 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/error_handler.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
+import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/pin_entry_screen.dart';
-import '../reusable/receipt_screen.dart';
+import 'transaction_details_unified_screen.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 
 class DataScreen extends StatefulWidget {
@@ -329,23 +329,21 @@ class _DataScreenState extends State<DataScreen> {
       return;
     }
 
-    // Navigate to PIN screen
-    if (!mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PinEntryScreen(
-          title: 'Confirm Purchase',
-          subtitle: 'Enter your 4 digit PIN to buy data',
-          onPinComplete: (pin) => _purchaseData(pin),
-          onForgotPin: () {
-            Navigator.pop(context);
-            _showSnackBar('Contact support to reset PIN', Colors.orange);
-          },
-        ),
-      ),
+    final pin = await PinVerificationModal.show(
+      context: context,
+      title: 'Confirm Purchase',
+      subtitle: 'Enter your 4-digit PIN to confirm this data purchase',
+      transactionType: 'Data Purchase',
+      recipient: _phoneController.text,
+      amount: '₦${_formatBalance(planAmount)}',
+      onForgotPin: () {
+        _showSnackBar('Go to Profile > PIN Management to reset your PIN', Colors.orange);
+      },
     );
+
+    if (pin != null && pin.length == 4) {
+      _purchaseData(pin);
+    }
   }
 
   Future<void> _purchaseData(String pin) async {
@@ -388,58 +386,26 @@ class _DataScreenState extends State<DataScreen> {
       final isSuccess = isSuccessResponse(responseData);
 
       if (isSuccess) {
-        // Success: Close PIN screen and show receipt
-        Navigator.pop(context);
-
         // Refresh wallet balance
         await _fetchWalletBalance();
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReceiptScreen(
-              title: 'Purchase Successful',
-              subtitle: 'Your data purchase was successful',
-              details: [
-                ReceiptDetail(
-                  label: 'Transaction ID',
-                  value:
-                      responseData['transaction_id']?.toString() ??
-                      responseData['reference']?.toString() ??
-                      responseData['data']?['transaction_id']?.toString() ??
-                      responseData['data']?['reference']?.toString() ??
-                      'N/A',
-                ),
+        final reference = responseData['reference']?.toString() ?? 
+                         responseData['data']?['reference']?.toString() ?? 
+                         responseData['transaction_id']?.toString();
 
-                ReceiptDetail(
-                  label: 'Phone Number',
-                  value: _phoneController.text,
-                ),
-                ReceiptDetail(
-                  label: 'Data Plan',
-                  value:
-                      _selectedPlan!['data']?.toString() ??
-                      _selectedPlan!['plan_name']?.toString() ??
-                      _selectedPlan!['name']?.toString() ??
-                      '',
-                ),
-                ReceiptDetail(
-                  label: 'Amount',
-                  value:
-                      '₦${_selectedPlan!['amount']?.toString() ?? _selectedPlan!['price']?.toString()}',
-                ),
-                ReceiptDetail(
-                  label: 'Validity',
-                  value: _selectedPlan!['validity']?.toString() ?? 'N/A',
-                ),
-                ReceiptDetail(
-                  label: 'Date',
-                  value: DateTime.now().toString().split('.')[0],
-                ),
-              ],
+        if (reference != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TransactionDetailUnifiedScreen(
+                transactionReference: reference,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          _showSnackBar('Purchase successful', Colors.green);
+          Navigator.pop(context);
+        }
       } else {
         // Failure: Check if it's a PIN error (don't close PIN screen)
         final errorMessage =

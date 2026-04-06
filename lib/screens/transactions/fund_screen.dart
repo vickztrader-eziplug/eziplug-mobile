@@ -176,12 +176,12 @@ class _FundScreenState extends State<FundScreen> with SingleTickerProviderStateM
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        statusBarColor: isDark ? AppColors.headerDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        backgroundColor: isDark ? AppColors.headerDark : AppColors.primary,
         body: SafeArea(
           child: Column(
             children: [
@@ -193,7 +193,7 @@ class _FundScreenState extends State<FundScreen> with SingleTickerProviderStateM
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+                      isDark ? AppColors.headerDark : AppColors.primary,
                       isDark ? theme.scaffoldBackgroundColor.withOpacity(0.9) : AppColors.primary.withOpacity(0.9),
                     ],
                   ),
@@ -211,7 +211,13 @@ class _FundScreenState extends State<FundScreen> with SingleTickerProviderStateM
                             ),
                             child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
                           ),
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () {
+                            if (Navigator.canPop(context)) {
+                              Navigator.pop(context);
+                            } else {
+                              Navigator.pushReplacementNamed(context, '/main');
+                            }
+                          },
                         ),
                         const Spacer(),
                         const Text(

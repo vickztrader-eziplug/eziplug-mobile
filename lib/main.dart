@@ -7,7 +7,6 @@ import 'services/debug_logger.dart';
 import 'services/api_client.dart';
 import 'theme.dart';
 import 'routes.dart';
-import 'screens/splash/splash_screen.dart';
 import 'providers/theme_provider.dart';
 
 void main() async {
@@ -81,7 +80,7 @@ class MyApp extends StatelessWidget {
           themeMode: themeProvider.themeMode,
           debugShowCheckedModeBanner: false,
           onGenerateRoute: AppRoutes.generateRoute,
-          home: const SplashScreen(),
+          initialRoute: AppRoutes.splash,
         );
       },
     );

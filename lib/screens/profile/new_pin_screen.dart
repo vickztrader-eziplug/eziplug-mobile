@@ -210,7 +210,7 @@ class _NewPinScreenState extends State<NewPinScreen> with TickerProviderStateMix
         width: 64,
         height: 64,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: focusNodes[index].hasFocus
@@ -258,8 +258,11 @@ class _NewPinScreenState extends State<NewPinScreen> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -361,10 +364,10 @@ class _NewPinScreenState extends State<NewPinScreen> with TickerProviderStateMix
               Center(
                 child: Text(
                   _isConfirmStep ? 'Confirm New PIN' : 'Enter New PIN',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
               ),
@@ -380,7 +383,7 @@ class _NewPinScreenState extends State<NewPinScreen> with TickerProviderStateMix
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                     height: 1.5,
                   ),
                 ),

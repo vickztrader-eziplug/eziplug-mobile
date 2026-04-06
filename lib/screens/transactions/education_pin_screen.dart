@@ -7,9 +7,9 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
+import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/pin_entry_screen.dart';
-import '../reusable/receipt_screen.dart';
+import 'transaction_details_unified_screen.dart';
 
 class EducationPinScreen extends StatefulWidget {
   const EducationPinScreen({super.key});
@@ -239,23 +239,21 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
       return;
     }
 
-    // Navigate to PIN screen
-    if (!mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PinEntryScreen(
-          title: 'Confirm Purchase',
-          subtitle: 'Enter your 4 digit PIN to purchase education PIN',
-          onPinComplete: (pin) => _purchaseEducationPin(pin),
-          onForgotPin: () {
-            Navigator.pop(context);
-            _showSnackBar('Contact support to reset PIN', Colors.orange);
-          },
-        ),
-      ),
+    final pin = await PinVerificationModal.show(
+      context: context,
+      title: 'Confirm Purchase',
+      subtitle: 'Enter your 4-digit PIN to confirm this purchase',
+      transactionType: 'Education PIN',
+      recipient: _phoneController.text,
+      amount: '₦${_formatBalance(_calculatedAmount)}',
+      onForgotPin: () {
+        _showSnackBar('Go to Profile > PIN Management to reset your PIN', Colors.orange);
+      },
     );
+
+    if (pin != null && pin.length == 4) {
+      _purchaseEducationPin(pin);
+    }
   }
 
   Future<void> _purchaseEducationPin(String pin) async {
@@ -302,56 +300,25 @@ class _EducationPinScreenState extends State<EducationPinScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        Navigator.pop(context); // Close PIN screen
-
         // Refresh wallet balance
         _fetchWalletBalance();
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReceiptScreen(
-              title: 'Purchase Successful',
-              subtitle: 'Your education PIN purchase was successful',
-              details: [
-                ReceiptDetail(
-                  label: 'Transaction ID',
-                  value:
-                      responseData['reference']?.toString() ??
-                      responseData['data']?['reference']?.toString() ??
-                      'N/A',
-                ),
-                ReceiptDetail(
-                  label: 'Provider',
-                  value: _selectedProvider ?? '',
-                ),
-                ReceiptDetail(label: 'Type', value: _selectedType ?? ''),
-                ReceiptDetail(
-                  label: 'Phone Number',
-                  value: _phoneController.text,
-                ),
-                ReceiptDetail(label: 'Quantity', value: quantity.toString()),
-                ReceiptDetail(
-                  label: 'Price per PIN',
-                  value: '₦${_selectedPrice.toStringAsFixed(2)}',
-                ),
-                ReceiptDetail(
-                  label: 'Total Amount',
-                  value: '₦${_calculatedAmount.toStringAsFixed(2)}',
-                ),
-                if (responseData['pins'] != null)
-                  ReceiptDetail(
-                    label: 'PIN(s)',
-                    value: responseData['pins'].toString(),
-                  ),
-                ReceiptDetail(
-                  label: 'Date',
-                  value: DateTime.now().toString().split('.')[0],
-                ),
-              ],
+        final reference = responseData['reference']?.toString() ?? 
+                         responseData['data']?['reference']?.toString();
+
+        if (reference != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TransactionDetailUnifiedScreen(
+                transactionReference: reference,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          _showSnackBar('Purchase successful', Colors.green);
+          Navigator.pop(context);
+        }
       } else if (response.statusCode == 401) {
         Navigator.pop(context); // Close PIN screen
         _showSnackBar('Session expired. Please login again', Colors.red);

@@ -94,11 +94,11 @@ class _NotificationScreenState extends State<NotificationScreen>
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        statusBarColor: isDark ? AppColors.headerDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        backgroundColor: isDark ? AppColors.headerDark : AppColors.primary,
         body: Column(
           children: [
             // Header

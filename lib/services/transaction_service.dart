@@ -18,6 +18,7 @@ class UnifiedTransaction {
   final String? provider;
   final DateTime createdAt;
   final Map<String, dynamic>? transactionable; // The polymorphic related data
+  final Map<String, dynamic>? metadata; // Transaction metadata
   final Map<String, dynamic> rawData;
 
   UnifiedTransaction({
@@ -35,6 +36,7 @@ class UnifiedTransaction {
     this.provider,
     required this.createdAt,
     this.transactionable,
+    this.metadata,
     required this.rawData,
   });
 
@@ -54,9 +56,25 @@ class UnifiedTransaction {
       recipient: json['recipient']?.toString(),
       provider: json['provider']?.toString(),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
-      transactionable: json['transactionable'] as Map<String, dynamic>?,
+      transactionable: _parseJsonMap(json['transactionable']),
+      metadata: _parseJsonMap(json['metadata']),
       rawData: json,
     );
+  }
+
+  static Map<String, dynamic>? _parseJsonMap(dynamic value) {
+    if (value == null) return null;
+    if (value is Map<String, dynamic>) return value;
+    if (value is String && value.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(value);
+        if (decoded is Map<String, dynamic>) return decoded;
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   }
 
   /// Get display-friendly category label

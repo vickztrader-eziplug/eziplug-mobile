@@ -263,8 +263,8 @@ class _TransactionsScreenUnifiedState extends State<TransactionsScreenUnified> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    isDark ? AppColors.primaryDark : AppColors.primary,
-                    isDark ? AppColors.primaryDark.withOpacity(0.8) : AppColors.primary,
+                    isDark ? AppColors.headerDark : AppColors.primary,
+                    isDark ? AppColors.headerDark.withOpacity(0.8) : AppColors.primary,
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,

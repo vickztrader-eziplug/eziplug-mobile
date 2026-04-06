@@ -16,6 +16,9 @@ class ConfirmPaymentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: SizedBox.expand(
         child: Stack(
@@ -24,9 +27,11 @@ class ConfirmPaymentScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               height: 280,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
+                  colors: isDark 
+                      ? [AppColors.headerDark, AppColors.headerDark]
+                      : [AppColors.primary, AppColors.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -80,9 +85,9 @@ class ConfirmPaymentScreen extends StatelessWidget {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -96,6 +101,7 @@ class ConfirmPaymentScreen extends StatelessWidget {
                       ...details.map((detail) => Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: _buildDetailRow(
+                          context,
                           detail.label,
                           detail.value,
                           detail.icon,
@@ -111,7 +117,7 @@ class ConfirmPaymentScreen extends StatelessWidget {
                         child: ElevatedButton(
                           onPressed: onConfirm,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.textColor,
+                            backgroundColor: isDark ? AppColors.primaryLight : AppColors.textColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -138,14 +144,17 @@ class ConfirmPaymentScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, IconData? icon, Color? iconColor) {
+  Widget _buildDetailRow(BuildContext context, String label, String value, IconData? icon, Color? iconColor) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.lightGrey,
+          color: isDark ? theme.dividerColor.withOpacity(0.1) : AppColors.lightGrey,
           width: 1,
         ),
       ),
@@ -156,7 +165,7 @@ class ConfirmPaymentScreen extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textColor.withOpacity(0.7),
+              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
             ),
           ),
           Row(
@@ -174,10 +183,10 @@ class ConfirmPaymentScreen extends StatelessWidget {
               ],
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textColor,
+                  color: theme.textTheme.bodyLarge?.color,
                 ),
               ),
             ],

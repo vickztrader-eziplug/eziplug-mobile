@@ -248,9 +248,9 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: _primaryColor,
+        statusBarColor: isDark ? AppColors.headerDark : _primaryColor,
         statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,

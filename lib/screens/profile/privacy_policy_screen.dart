@@ -92,8 +92,11 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -150,6 +153,9 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
   }
 
   Widget _buildAppBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
       child: Row(
@@ -159,23 +165,23 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back,
-                color: AppColors.primary,
+                color: isDark ? AppColors.primaryLight : AppColors.primary,
                 size: 22,
               ),
             ),
           ),
           const SizedBox(width: 8),
-          const Text(
+          Text(
             'Privacy Policy',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textColor,
+              color: theme.textTheme.titleLarge?.color,
             ),
           ),
         ],
@@ -277,13 +283,16 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
     required String title,
     required String content,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -328,10 +337,10 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textColor,
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
               ),
@@ -343,7 +352,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
               style: TextStyle(
                 fontSize: 14,
                 height: 1.7,
-                color: Colors.grey.shade700,
+                color: theme.textTheme.bodyMedium?.color,
               ),
             ),
           ],

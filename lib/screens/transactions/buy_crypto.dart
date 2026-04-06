@@ -9,7 +9,7 @@ import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
 import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/receipt_screen.dart';
+import 'transaction_details_unified_screen.dart';
 
 class BuyCryptoScreen extends StatefulWidget {
   final String cryptoName;
@@ -292,42 +292,23 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
           setState(() => _walletNaira -= amountNaira);
         }
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReceiptScreen(
-              title: 'Purchase Successful',
-              subtitle: 'Your $_selectedCoin purchase has been submitted',
-              details: [
-                ReceiptDetail(
-                  label: 'Transaction ID',
-                  value: responseData['transaction_id']?.toString() ?? 'N/A',
-                ),
-                ReceiptDetail(label: 'Crypto', value: _selectedCoin ?? widget.cryptoName),
-                ReceiptDetail(
-                  label: 'Amount Paid',
-                  value: '₦${_formatBalance(amountNaira)}',
-                ),
-                ReceiptDetail(
-                  label: 'You Receive',
-                  value: '${_youReceive.toStringAsFixed(6)} $_selectedCoin',
-                ),
-                ReceiptDetail(
-                  label: 'Rate',
-                  value: '₦${_formatBalance(_currentRate)}/$_selectedCoin',
-                ),
-                ReceiptDetail(
-                  label: 'Wallet Address',
-                  value: _walletAddressController.text,
-                ),
-                ReceiptDetail(
-                  label: 'Date',
-                  value: DateTime.now().toString().split('.')[0],
-                ),
-              ],
+        final reference = responseData['reference']?.toString() ?? 
+                         responseData['data']?['reference']?.toString() ??
+                         responseData['transaction_id']?.toString();
+
+        if (reference != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TransactionDetailUnifiedScreen(
+                transactionReference: reference,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          _showSnackBar('Purchase successful', Colors.green);
+          Navigator.pop(context);
+        }
       } else if (response.statusCode == 401) {
         _showSnackBar('Session expired. Please login again', Colors.red);
         await authService.logout();

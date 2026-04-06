@@ -1132,8 +1132,9 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -1203,19 +1204,21 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
 
   Widget _buildTierStep(int tier, String label, bool isCompleted) {
     final isPending = _hasPending && tier == (_pendingSubmission?['tier'] ?? 0);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     
     Color bgColor;
     Color borderColor;
     
     if (isPending) {
-      bgColor = Colors.orange.withOpacity(0.15);
-      borderColor = Colors.orange;
+      bgColor = isDark ? Colors.orange.withOpacity(0.2) : Colors.orange.withOpacity(0.15);
+      borderColor = isDark ? Colors.orangeAccent : Colors.orange;
     } else if (isCompleted) {
-      bgColor = AppColors.primary.withOpacity(0.15);
-      borderColor = AppColors.primary;
+      bgColor = isDark ? AppColors.primaryLight.withOpacity(0.2) : AppColors.primary.withOpacity(0.15);
+      borderColor = isDark ? AppColors.primaryLight : AppColors.primary;
     } else {
-      bgColor = Colors.grey.shade100;
-      borderColor = Colors.grey.shade300;
+      bgColor = isDark ? AppColors.cardDark : Colors.grey.shade100;
+      borderColor = isDark ? Colors.grey.shade800 : Colors.grey.shade300;
     }
 
     return Expanded(
@@ -1358,12 +1361,15 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   }
 
   Widget _buildPendingCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        color: isDark ? Colors.orange.withOpacity(0.1) : Colors.orange.shade50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.shade200, width: 1.5),
+        border: Border.all(color: isDark ? Colors.orange.withOpacity(0.3) : Colors.orange.shade200, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1386,7 +1392,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                     Text(
                       'Verification Pending',
                       style: TextStyle(
-                        color: Colors.orange.shade700,
+                        color: isDark ? Colors.orange.shade300 : Colors.orange.shade700,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1395,7 +1401,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                     Text(
                       'Tier ${_pendingSubmission?['tier'] ?? ''} verification is under review',
                       style: TextStyle(
-                        color: Colors.orange.shade600,
+                        color: isDark ? Colors.orange.shade400 : Colors.orange.shade600,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1409,7 +1415,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
           ModernFormWidgets.buildInfoCard(
             message: 'Your verification is being reviewed by our team. This usually takes 24-48 hours. You will be notified once the review is complete.',
             icon: Icons.schedule_rounded,
-            color: Colors.orange,
+            color: isDark ? Colors.orange.shade300 : Colors.orange,
           ),
         ],
       ),

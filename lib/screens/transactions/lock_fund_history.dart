@@ -129,7 +129,7 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: isDark ? AppColors.primaryDark : AppColors.primary,
+        statusBarColor: isDark ? AppColors.headerDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
@@ -171,7 +171,7 @@ class _LockFundHistoryScreenState extends State<LockFundHistoryScreen>
   Widget _buildHeader(ThemeData theme, bool isDark) {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(color: isDark ? AppColors.primaryDark : AppColors.primary),
+      decoration: BoxDecoration(color: isDark ? AppColors.headerDark : AppColors.primary),
       child: SafeArea(
         bottom: false,
         child: Padding(

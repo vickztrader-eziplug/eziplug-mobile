@@ -313,11 +313,19 @@ class _AppLockScreenState extends State<AppLockScreen>
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const Spacer(flex: 1),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      children: [
+                        const Spacer(flex: 1),
               
               // Logo
               Container(
@@ -547,9 +555,14 @@ class _AppLockScreenState extends State<AppLockScreen>
               ],
               
               const SizedBox(height: 24),
-            ],
-          ),
-        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
       ),
     );
   }

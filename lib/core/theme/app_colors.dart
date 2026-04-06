@@ -56,6 +56,7 @@ class AppColors {
   static const cardDark = Color(0xFF1A1D2E);
   static const surfaceDark = Color(0xFF252840);
   static const dividerDark = Color(0xFF2D3141);
+  static const headerDark = Color(0xFF161929); // Dark header (replaces blue in dark mode)
   static const textDark = Color(0xFFF0F4FF);
   static const textSecondaryDark = Color(0xFFCDD1DC);
   static const textMutedDark = Color(0xFF8891A5);

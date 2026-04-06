@@ -25,6 +25,9 @@ class _KYCIDSelectionScreenState extends State<KYCIDSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: SizedBox.expand(
         child: Stack(
@@ -33,9 +36,12 @@ class _KYCIDSelectionScreenState extends State<KYCIDSelectionScreen> {
             Container(
               width: double.infinity,
               height: 220,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
+                  colors: [
+                    isDark ? AppColors.headerDark : AppColors.primary,
+                    isDark ? AppColors.headerDark : AppColors.primary,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -82,9 +88,9 @@ class _KYCIDSelectionScreenState extends State<KYCIDSelectionScreen> {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -97,12 +103,12 @@ class _KYCIDSelectionScreenState extends State<KYCIDSelectionScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Select ID type',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textColor,
+                                color: theme.textTheme.titleLarge?.color ?? AppColors.textColor,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -110,7 +116,7 @@ class _KYCIDSelectionScreenState extends State<KYCIDSelectionScreen> {
                               'Choose the type of identification document you want to upload',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: AppColors.textColor.withOpacity(0.7),
+                                color: theme.textTheme.bodyMedium?.color ?? AppColors.textColor.withOpacity(0.7),
                                 height: 1.4,
                               ),
                             ),
@@ -136,10 +142,10 @@ class _KYCIDSelectionScreenState extends State<KYCIDSelectionScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.scaffoldBackgroundColor,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, -5),
                           ),
@@ -186,6 +192,8 @@ class _KYCIDSelectionScreenState extends State<KYCIDSelectionScreen> {
 
   Widget _buildIDTypeOption(String name, IconData icon, String value) {
     final isSelected = _selectedIDType == value;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
@@ -196,10 +204,10 @@ class _KYCIDSelectionScreenState extends State<KYCIDSelectionScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.lightGrey,
+            color: isSelected ? AppColors.primary : (isDark ? Colors.grey.shade800 : AppColors.lightGrey),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -210,12 +218,12 @@ class _KYCIDSelectionScreenState extends State<KYCIDSelectionScreen> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primary.withOpacity(0.1)
-                    : AppColors.textColor.withOpacity(0.1),
+                    : (isDark ? Colors.grey.shade800 : AppColors.textColor.withOpacity(0.1)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
-                color: isSelected ? AppColors.primary : AppColors.textColor,
+                color: isSelected ? AppColors.primary : theme.textTheme.titleMedium?.color ?? AppColors.textColor,
                 size: 24,
               ),
             ),
@@ -226,7 +234,7 @@ class _KYCIDSelectionScreenState extends State<KYCIDSelectionScreen> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isSelected ? AppColors.primary : AppColors.textColor,
+                  color: isSelected ? AppColors.primary : theme.textTheme.titleMedium?.color ?? AppColors.textColor,
                 ),
               ),
             ),

@@ -147,113 +147,102 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
   Map<String, String> _getTransactionDetails() {
     Map<String, String> details = {};
-    final data = transaction.rawData;
+    final metadata = transaction.metadata ?? {};
+    final data = transaction.transactionable ?? transaction.rawData;
 
     switch (transaction.type) {
       case 'Giftcard':
-        details['Card Type'] = data['type']?.toString() ?? 'N/A';
-        details['Card Name'] = data['card_type']?.toString() ?? 'N/A';
-        details['Quantity'] = data['quantity']?.toString() ?? '1';
-        details['Card Value'] = '₦${data['amount']?.toString() ?? '0'}';
+        // Only keep fields that are NOT in metadata or need special formatting
+        details['Quantity'] = metadata['quantity']?.toString() ?? data['quantity']?.toString() ?? '1';
+        if (metadata['unit_rate'] != null || metadata['rate'] != null) {
+          details['Rate'] = '₦${metadata['unit_rate']?.toString() ?? metadata['rate']?.toString()}';
+        }
+        details['Card Value'] = '₦${metadata['amount']?.toString() ?? data['amount']?.toString() ?? transaction.amount.toStringAsFixed(0)}';
         break;
 
       case 'Crypto':
-        details['Coin'] = data['crypto']?['name']?.toString() ?? 'N/A';
-        details['Network'] = data['crypto']?['symbol']?.toString() ?? 'N/A';
-        details['Wallet Address'] = data['wallet_address']?.toString() ?? 'N/A';
-        details['Crypto Amount'] =
-            data['naira_equivalent']?.toString() ?? 'N/A';
-        details['Rate'] = data['crypto']?['usd_rate']?.toString() ?? 'N/A';
+        // Let dynamic loop handle coin_name, crypto_symbol, wallet_address, tx_hash
+        // Only add specific formatted fields
+        if (metadata['amount_crypto'] != null) {
+          details['Amount Crypto'] = '${metadata['amount_crypto']} ${metadata['crypto_symbol'] ?? ''}';
+        }
+        if (metadata['rate'] != null || metadata['unit_rate'] != null) {
+          details['Rate'] = '₦${metadata['rate']?.toString() ?? metadata['unit_rate']?.toString()}';
+        }
         break;
 
       case 'Airtime':
-        details['Network'] = data['network']?['name']?.toString() ?? 'N/A';
-        details['Phone Number'] = data['phone']?.toString() ?? 'N/A';
+        details['Network'] = metadata['network_name']?.toString() ?? data['network']?['name']?.toString() ?? 'N/A';
+        details['Phone Number'] = transaction.recipient ?? metadata['phone']?.toString() ?? data['phone']?.toString() ?? 'N/A';
         break;
 
       case 'Airtime Swap':
-        details['Network'] = data['network']?['name']?.toString() ?? 'N/A';
-        details['Phone Number'] = data['phone_number']?.toString() ?? 'N/A';
-        details['Airtime Amount'] =
-            '₦${data['airtime_amount']?.toString() ?? '0'}';
-        details['Cash Amount'] = '₦${data['cash_amount']?.toString() ?? '0'}';
-        details['Conversion Rate'] =
-            '${data['conversion_rate']?.toString() ?? '0'}%';
-        if (data['account_number'] != null &&
-            data['account_number'].toString().isNotEmpty) {
-          details['Account Number'] = data['account_number']?.toString() ?? '';
-          details['Account Name'] = data['account_name']?.toString() ?? 'N/A';
-          details['Bank Name'] = data['bank_name']?.toString() ?? 'N/A';
-        }
-        if (data['admin_note'] != null &&
-            data['admin_note'].toString().isNotEmpty) {
-          details['Admin Note'] = data['admin_note']?.toString() ?? '';
+        details['Network'] = metadata['network_name']?.toString() ?? data['network']?['name']?.toString() ?? 'N/A';
+        details['Phone Number'] = metadata['phone_number']?.toString() ?? metadata['phone']?.toString() ?? data['phone_number']?.toString() ?? 'N/A';
+        details['Airtime Amount'] = '₦${metadata['airtime_amount']?.toString() ?? data['airtime_amount']?.toString() ?? '0'}';
+        details['Cash Amount'] = '₦${metadata['cash_amount']?.toString() ?? data['cash_amount']?.toString() ?? '0'}';
+        details['Conversion Rate'] = '${metadata['conversion_rate']?.toString() ?? data['conversion_rate']?.toString() ?? '0'}%';
+        if ((metadata['account_number'] ?? data['account_number']) != null) {
+          details['Account Number'] = metadata['account_number']?.toString() ?? data['account_number']?.toString() ?? '';
+          details['Account Name'] = metadata['account_name']?.toString() ?? data['account_name']?.toString() ?? 'N/A';
+          details['Bank Name'] = metadata['bank_name']?.toString() ?? data['bank_name']?.toString() ?? 'N/A';
         }
         break;
 
       case 'Bill':
-        details['Provider'] = data['bill']?['name']?.toString() ?? 'N/A';
-        details['Meter Number'] = data['account_number']?.toString() ?? 'N/A';
-        final tokenVal = data['token'] ?? data['purchased_code'] ?? data['pin'] ?? data['results']?['token'] ?? data['results']?['purchased_code'] ?? data['data']?['purchased_code'] ?? data['data']?['token'] ?? data['data']?['pin'];
-        if (tokenVal != null && tokenVal.toString().isNotEmpty) {
+        details['Provider'] = metadata['bill_name']?.toString() ?? data['bill']?['name']?.toString() ?? 'N/A';
+        details['Meter Number'] = transaction.recipient ?? metadata['meter_number']?.toString() ?? data['account_number']?.toString() ?? 'N/A';
+        final tokenVal = metadata['token'] ?? data['token'] ?? data['purchased_code'] ?? data['pin'] ?? data['results']?['token'] ?? data['results']?['purchased_code'] ?? data['data']?['purchased_code'] ?? data['data']?['token'] ?? data['data']?['pin'];
+        if (tokenVal != null && tokenVal.toString().isNotEmpty && tokenVal != 'N/A') {
           details['Token'] = tokenVal.toString();
         }
         break;
 
       case 'Cable':
-        details['Provider'] = data['cable']?['name']?.toString() ?? 'N/A';
-        details['Plan'] = data['cable_plan']?['name']?.toString() ?? 'N/A';
-        details['Smartcard Number'] = data['iuc_number']?.toString() ?? 'N/A';
+        details['Provider'] = metadata['cable_name']?.toString() ?? data['cable']?['name']?.toString() ?? 'N/A';
+        details['Plan'] = metadata['plan_name']?.toString() ?? data['cable_plan']?['name']?.toString() ?? 'N/A';
+        details['IUC Number'] = transaction.recipient ?? metadata['iuc_number']?.toString() ?? data['iuc_number']?.toString() ?? 'N/A';
         break;
 
       case 'Data':
-        details['Network'] = data['network']?['name']?.toString() ?? 'N/A';
-        details['Phone Number'] = data['phone']?.toString() ?? 'N/A';
-        details['Plan'] = data['data_price']?['plan_name']?.toString() ?? 'N/A';
-        details['Validity'] =
-            data['data_price']?['validity']?.toString() ?? 'N/A';
+        details['Network'] = metadata['network_name']?.toString() ?? data['network']?['name']?.toString() ?? 'N/A';
+        details['Phone Number'] = transaction.recipient ?? metadata['phone']?.toString() ?? data['phone']?.toString() ?? 'N/A';
+        details['Plan'] = metadata['plan_name']?.toString() ?? data['data_price']?['plan_name']?.toString() ?? 'N/A';
+        final validity = metadata['validity']?.toString() ?? data['data_price']?['validity']?.toString();
+        if (validity != null) details['Validity'] = validity;
         break;
 
       case 'Payment':
-        details['Payment Method'] =
-            data['type']?.toString().toUpperCase() ?? 'N/A';
-        details['Gateway'] = data['gateway']?.toString().toUpperCase() ?? 'N/A';
-        details['Currency'] = data['currency']?.toString() ?? 'NGN';
-
-        if (data['gateway_reference'] != null) {
-          details['Gateway Reference'] =
-              data['gateway_reference']?.toString() ?? '';
-        }
-
-        if (data['card_type'] != null &&
-            data['card_type'].toString().isNotEmpty) {
-          details['Card Type'] = data['card_type']?.toString() ?? '';
-          details['Last 4 Digits'] = data['last4']?.toString() ?? 'N/A';
-        }
-
-        if (data['account_number'] != null &&
-            data['account_number'].toString().isNotEmpty) {
-          details['Account Number'] = data['account_number']?.toString() ?? '';
-          details['Bank Name'] = data['bank_name']?.toString() ?? 'N/A';
-        }
-
-        details['Description'] =
-            data['description']?.toString() ?? 'Wallet Funding';
-
-        if (data['paid_at'] != null) {
-          details['Paid At'] = data['paid_at']?.toString() ?? '';
-        }
+        // Metadata handles payment_method, gateway, etc.
         break;
 
       case 'User Gift':
-        details['Description'] =
-            data['description']?.toString() ?? 'Gift Transfer';
-        details['Channel'] =
-            data['channel']?.toString().toUpperCase() ?? 'WALLET';
-        details['Currency'] = data['currency']?.toString() ?? 'NGN';
-        details['Bank'] = data['bank']?.toString() ?? 'Wallet';
+        if (transaction.title.toLowerCase().contains('credit') || transaction.details.toLowerCase().contains('from')) {
+          details['Sender'] = metadata['sender_username']?.toString() ?? metadata['sender_name']?.toString() ?? 'N/A';
+        } else {
+          details['Recipient'] = metadata['recipient_username']?.toString() ?? metadata['recipient_name']?.toString() ?? 'N/A';
+        }
         break;
     }
+
+    // Add any unhandled metadata dynamically
+    final blacklist = {
+      'id', 'user_id', 'transaction_id', 'gift_card_transaction_id', 
+      'api_response', 'trade_id', 'crypto_id', 'gift_card_country_id',
+      'price_range_id', 'status', 'amount_crypto'
+    };
+
+    metadata.forEach((key, value) {
+      // Convert snake_case to Title Case for better display
+      final displayKey = key.split('_').map((word) => word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : '').join(' ');
+      
+      if (!details.containsKey(displayKey) && !blacklist.contains(key.toLowerCase()) && value != null) {
+        final valStr = value.toString();
+        if (valStr.isNotEmpty && valStr != 'null' && valStr != 'N/A') {
+          details[displayKey] = valStr;
+        }
+      }
+    });
 
     return details;
   }
@@ -382,7 +371,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: isDark ? theme.scaffoldBackgroundColor : typeColor,
+        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
@@ -399,7 +388,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   gradient: LinearGradient(
                     colors: isDark 
                       ? [theme.scaffoldBackgroundColor, theme.scaffoldBackgroundColor.withOpacity(0.8)]
-                      : [typeColor, typeColor.withOpacity(0.8)],
+                      : [AppColors.primary, AppColors.primary.withOpacity(0.8)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

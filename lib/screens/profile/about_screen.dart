@@ -41,8 +41,11 @@ class _AboutScreenState extends State<AboutScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -96,6 +99,9 @@ class _AboutScreenState extends State<AboutScreen>
   }
 
   Widget _buildAppBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
       child: Row(
@@ -105,23 +111,23 @@ class _AboutScreenState extends State<AboutScreen>
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back,
-                color: AppColors.primary,
+                color: isDark ? AppColors.primaryLight : AppColors.primary,
                 size: 22,
               ),
             ),
           ),
           const SizedBox(width: 8),
-          const Text(
+          Text(
             'About Eziplug',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textColor,
+              color: theme.textTheme.titleLarge?.color,
             ),
           ),
         ],
@@ -168,7 +174,6 @@ class _AboutScreenState extends State<AboutScreen>
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: AppColors.textColor,
             letterSpacing: 1,
           ),
         ),
@@ -193,14 +198,17 @@ class _AboutScreenState extends State<AboutScreen>
   }
 
   Widget _buildAboutCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -224,12 +232,12 @@ class _AboutScreenState extends State<AboutScreen>
                 ),
               ),
               const SizedBox(width: 14),
-              const Text(
+              Text(
                 'Who We Are',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textColor,
+                  color: theme.textTheme.titleLarge?.color,
                 ),
               ),
             ],
@@ -240,7 +248,7 @@ class _AboutScreenState extends State<AboutScreen>
             style: TextStyle(
               fontSize: 14,
               height: 1.7,
-              color: Colors.grey.shade700,
+              color: theme.textTheme.bodyMedium?.color,
             ),
           ),
           const SizedBox(height: 12),
@@ -249,7 +257,7 @@ class _AboutScreenState extends State<AboutScreen>
             style: TextStyle(
               fontSize: 14,
               height: 1.7,
-              color: Colors.grey.shade700,
+              color: theme.textTheme.bodyMedium?.color,
             ),
           ),
         ],
@@ -258,14 +266,17 @@ class _AboutScreenState extends State<AboutScreen>
   }
 
   Widget _buildFeaturesSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -289,12 +300,12 @@ class _AboutScreenState extends State<AboutScreen>
                 ),
               ),
               const SizedBox(width: 14),
-              const Text(
+              Text(
                 'What We Offer',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textColor,
+                  color: theme.textTheme.titleLarge?.color,
                 ),
               ),
             ],
@@ -343,6 +354,8 @@ class _AboutScreenState extends State<AboutScreen>
     Color color, {
     bool isLast = false,
   }) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
       child: Row(
@@ -363,10 +376,10 @@ class _AboutScreenState extends State<AboutScreen>
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textColor,
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -374,7 +387,7 @@ class _AboutScreenState extends State<AboutScreen>
                   subtitle,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey.shade600,
+                    color: theme.textTheme.bodySmall?.color,
                   ),
                 ),
               ],
@@ -465,6 +478,8 @@ class _AboutScreenState extends State<AboutScreen>
   }
 
   Widget _buildVersionInfo() {
+    final theme = Theme.of(context);
+
     return Column(
       children: [
         Text(
@@ -472,7 +487,7 @@ class _AboutScreenState extends State<AboutScreen>
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Colors.grey.shade600,
+            color: theme.textTheme.bodySmall?.color,
           ),
         ),
         const SizedBox(height: 6),
@@ -480,7 +495,7 @@ class _AboutScreenState extends State<AboutScreen>
           '© 2025 Eziplug. All rights reserved.',
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade500,
+            color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
           ),
         ),
       ],

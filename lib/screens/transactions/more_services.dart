@@ -22,7 +22,7 @@ class MoreServicesScreen extends StatelessWidget {
             floating: false,
             pinned: true,
             elevation: 0,
-            backgroundColor: isDark ? theme.appBarTheme.backgroundColor : AppColors.primary,
+            backgroundColor: isDark ? AppColors.headerDark : AppColors.primary,
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(8),
@@ -41,7 +41,7 @@ class MoreServicesScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(
-                  color: isDark ? theme.cardColor : AppColors.primary,
+                  color: isDark ? AppColors.headerDark : AppColors.primary,
                 ),
                 child: SafeArea(
                   child: Padding(

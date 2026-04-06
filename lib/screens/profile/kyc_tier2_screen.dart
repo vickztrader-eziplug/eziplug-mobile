@@ -321,8 +321,8 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
             
             return Container(
               height: (screenHeight * 0.65) + bottomPadding,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(25),
                   topRight: Radius.circular(25),
@@ -369,12 +369,12 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            const Text(
+                            Text(
                               'Enter OTP',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black87,
                               ),
                             ),
                           ],
@@ -465,14 +465,14 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                               ),
                               counterText: '',
                               filled: true,
-                              fillColor: Colors.grey.shade50,
+                              fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade900 : Colors.grey.shade50,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
+                                borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade800 : Colors.grey.shade200),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
+                                borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade800 : Colors.grey.shade200),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -755,6 +755,9 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: SizedBox.expand(
         child: Stack(
@@ -763,9 +766,12 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
             Container(
               width: double.infinity,
               height: 220,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
+                  colors: [
+                    isDark ? AppColors.headerDark : AppColors.primary,
+                    isDark ? AppColors.headerDark : AppColors.primary,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -812,9 +818,9 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -824,12 +830,12 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         'Identity Verification',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textColor,
+                          color: theme.textTheme.titleLarge?.color ?? AppColors.textColor,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -838,7 +844,7 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.textColor.withOpacity(0.7),
+                          color: theme.textTheme.bodyMedium?.color ?? AppColors.textColor.withOpacity(0.7),
                           height: 1.4,
                         ),
                       ),
@@ -852,18 +858,18 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                           vertical: 14,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.lightGrey.withOpacity(0.3),
+                          color: isDark ? theme.cardColor : AppColors.lightGrey.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Tier 1',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.textColor,
+                                color: theme.textTheme.bodyMedium?.color ?? AppColors.textColor,
                               ),
                             ),
                             Icon(
@@ -881,7 +887,7 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardColor,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _selectedIdType != null 
@@ -925,7 +931,7 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardColor,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _identityVerified && _nameMatch
@@ -1100,10 +1106,10 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                               const SizedBox(height: 4),
                               Text(
                                 _verifiedName!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.textColor,
+                                  color: theme.textTheme.titleMedium?.color ?? AppColors.textColor,
                                 ),
                               ),
                               // Show match details if available, regardless of overall match success
@@ -1138,18 +1144,18 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: isDark ? AppColors.primary.withOpacity(0.2) : AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'After Verification',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textColor,
+                                color: theme.textTheme.titleMedium?.color ?? AppColors.textColor,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -1231,6 +1237,8 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
   }
 
   Widget _buildLimitRow(String label, String value) {
+    final theme = Theme.of(context);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1238,15 +1246,15 @@ class _KYCTier2ScreenState extends State<KYCTier2Screen> {
           label,
           style: TextStyle(
             fontSize: 13,
-            color: AppColors.textColor.withOpacity(0.7),
+            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? AppColors.textColor.withOpacity(0.7),
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.textColor,
+            color: theme.textTheme.titleMedium?.color ?? AppColors.textColor,
           ),
         ),
       ],

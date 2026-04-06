@@ -225,14 +225,14 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        statusBarColor: isDark ? AppColors.headerDark : AppColors.primary,
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.light,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+          backgroundColor: isDark ? AppColors.headerDark : AppColors.primary,
           elevation: 0,
           title: const Text(
             'Referral & Bonus',
@@ -310,7 +310,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+            isDark ? AppColors.headerDark : AppColors.primary,
             isDark ? theme.scaffoldBackgroundColor.withOpacity(0.8) : AppColors.primary.withOpacity(0.85),
           ],
         ),

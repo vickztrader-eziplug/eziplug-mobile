@@ -348,12 +348,12 @@ class _CardDepositScreenState extends State<CardDepositScreen> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        statusBarColor: isDark ? AppColors.headerDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        backgroundColor: isDark ? AppColors.headerDark : AppColors.primary,
         body: SafeArea(
           child: Column(
             children: [

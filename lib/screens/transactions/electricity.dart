@@ -9,9 +9,9 @@ import '../../core/utils/error_handler.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
 import '../../core/utils/api_response.dart';
+import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/pin_entry_screen.dart';
-import '../reusable/receipt_screen.dart';
+import 'transaction_details_unified_screen.dart';
 
 class ElectricityScreen extends StatefulWidget {
   const ElectricityScreen({super.key});
@@ -411,23 +411,24 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
       return;
     }
 
-    // Navigate to PIN screen
+    // Show PIN verification modal
     if (!mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PinEntryScreen(
-          title: 'Confirm Purchase',
-          subtitle: 'Enter your 4 digit PIN to purchase electricity',
-          onPinComplete: (pin) => _purchaseElectricity(pin),
-          onForgotPin: () {
-            Navigator.pop(context);
-            _showSnackBar('Contact support to reset PIN', Colors.orange);
-          },
-        ),
-      ),
+    
+    final pin = await PinVerificationModal.show(
+      context: context,
+      title: 'Confirm Purchase',
+      subtitle: 'Enter your 4-digit PIN to confirm electricity purchase',
+      transactionType: 'Electricity Bill',
+      recipient: _meterController.text,
+      amount: '₦${_formatBalance(amount.toDouble())}',
+      onForgotPin: () {
+        _showSnackBar('Go to Profile > PIN Management to reset your PIN', Colors.orange);
+      },
     );
+
+    if (pin != null && pin.length == 4) {
+      _purchaseElectricity(pin);
+    }
   }
 
   Future<void> _purchaseElectricity(String pin) async {
@@ -469,56 +470,32 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        Navigator.pop(context); // Close PIN screen
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReceiptScreen(
-              title: 'Purchase Successful',
-              subtitle: 'Your electricity bill payment was successful',
-              details: [
-                ReceiptDetail(
-                  label: 'Transaction ID',
-                  value: responseData['reference']?.toString() ?? 'N/A',
-                ),
+        final reference = responseData['reference']?.toString() ?? 
+                         responseData['data']?['reference']?.toString() ?? 
+                         responseData['results']?['reference']?.toString();
 
-                ReceiptDetail(
-                  label: 'Customer Name',
-                  value: _customerName ?? '',
-                ),
-                ReceiptDetail(
-                  label: 'Meter Number',
-                  value: _meterController.text,
-                ),
-                ReceiptDetail(label: 'Meter Type', value: _selectedType ?? ''),
-                ReceiptDetail(
-                  label: 'Phone Number',
-                  value: _phoneController.text,
-                ),
-                ReceiptDetail(label: 'Amount', value: '₦${amount.toString()}'),
-                if (responseData['results']?['token'] != null || responseData['results']?['purchased_code'] != null || responseData['data']?['purchased_code'] != null || responseData['data']?['token'] != null || responseData['data']?['pin'] != null)
-                  ReceiptDetail(
-                    label: 'Token',
-                    value: (responseData['results']?['token'] ?? responseData['results']?['purchased_code'] ?? responseData['data']?['purchased_code'] ?? responseData['data']?['token'] ?? responseData['data']?['pin']).toString(),
-                  ),
-                ReceiptDetail(
-                  label: 'Date',
-                  value: DateTime.now().toString().split('.')[0],
-                ),
-              ],
+        if (reference != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TransactionDetailUnifiedScreen(
+                transactionReference: reference,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          // Fallback if reference is missing
+          _showSnackBar('Purchase successful', Colors.green);
+          Navigator.pop(context);
+        }
       } else if (response.statusCode == 401) {
-        Navigator.pop(context);
         _showSnackBar('Session expired. Please login again', Colors.red);
         await authService.logout();
       } else if (response.statusCode == 400 &&
           responseData['message']?.toString().contains('PIN') == true) {
         throw Exception(responseData['message'] ?? 'Invalid PIN');
       } else {
-        Navigator.pop(context);
         _showSnackBar(
           responseData['message'] ?? 'Failed to purchase electricity',
           Colors.red,

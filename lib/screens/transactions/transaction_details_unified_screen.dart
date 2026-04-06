@@ -17,16 +17,79 @@ import 'transactions_screen.dart'; // For PdfService compatibility
 
 /// Unified Transaction Detail Screen using UnifiedTransaction model
 class TransactionDetailUnifiedScreen extends StatefulWidget {
-  final UnifiedTransaction transaction;
+  final UnifiedTransaction? transaction;
+  final String? transactionReference;
 
-  const TransactionDetailUnifiedScreen({super.key, required this.transaction});
+  const TransactionDetailUnifiedScreen({
+    super.key, 
+    this.transaction,
+    this.transactionReference,
+  }) : assert(transaction != null || transactionReference != null);
 
   @override
   State<TransactionDetailUnifiedScreen> createState() => _TransactionDetailUnifiedScreenState();
 }
 
 class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifiedScreen> {
-  UnifiedTransaction get transaction => widget.transaction;
+  UnifiedTransaction? _loadedTransaction;
+  bool _isLoading = false;
+  String? _error;
+
+  UnifiedTransaction get transaction => _loadedTransaction ?? widget.transaction!;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.transaction == null && widget.transactionReference != null) {
+      _fetchTransactionDetails();
+    }
+  }
+
+  Future<void> _fetchTransactionDetails() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final token = await authService.getToken();
+
+      if (token == null) {
+        setState(() {
+          _error = 'Not authenticated';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final transaction = await TransactionService.fetchTransactionDetails(
+        token: token,
+        reference: widget.transactionReference!,
+      );
+
+      if (mounted) {
+        if (transaction != null) {
+          setState(() {
+            _loadedTransaction = transaction;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _error = 'Transaction not found';
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load transaction: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   Color _getStatusColor(String status) {
     final statusLower = status.toLowerCase();
@@ -147,90 +210,90 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
   Map<String, String> _getTransactionDetails() {
     Map<String, String> details = {};
     final data = transaction.transactionable ?? {};
+    final metadata = transaction.metadata ?? {};
 
     switch (transaction.category) {
       case 'giftcard':
-        details['Card Type'] = data['type']?.toString() ?? 'N/A';
-        details['Card Name'] = data['card_type']?.toString() ?? 'N/A';
-        details['Quantity'] = data['quantity']?.toString() ?? '1';
-        details['Card Value'] = '₦${data['amount']?.toString() ?? transaction.amount.toStringAsFixed(0)}';
+        // Only keep fields that are NOT in metadata or need special formatting
+        details['Quantity'] = metadata['quantity']?.toString() ?? data['quantity']?.toString() ?? '1';
+        if (metadata['unit_rate'] != null || metadata['rate'] != null) {
+          details['Rate'] = '₦${metadata['unit_rate']?.toString() ?? metadata['rate']?.toString()}';
+        }
+        details['Card Value'] = '₦${metadata['amount']?.toString() ?? data['amount']?.toString() ?? transaction.amount.toStringAsFixed(0)}';
         break;
 
       case 'crypto':
-        details['Coin'] = data['crypto']?['name']?.toString() ?? 'N/A';
-        details['Symbol'] = data['crypto']?['symbol']?.toString() ?? 'N/A';
-        details['Wallet Address'] = data['wallet_address']?.toString() ?? 'N/A';
-        details['Rate'] = data['crypto']?['usd_rate']?.toString() ?? 'N/A';
+        // Let dynamic loop handle coin_name, crypto_symbol, wallet_address, tx_hash
+        // Only add specific formatted fields
+        if (metadata['amount_crypto'] != null) {
+          details['Amount Crypto'] = '${metadata['amount_crypto']} ${metadata['crypto_symbol'] ?? ''}';
+        }
+        if (metadata['rate'] != null || metadata['unit_rate'] != null) {
+          details['Rate'] = '₦${metadata['rate']?.toString() ?? metadata['unit_rate']?.toString()}';
+        }
         break;
 
       case 'airtime':
-        details['Network'] = data['network']?['name']?.toString() ?? 'N/A';
-        details['Phone Number'] = data['phone']?.toString() ?? 'N/A';
+        details['Network'] = metadata['network_name']?.toString() ?? data['network']?['name']?.toString() ?? 'N/A';
+        details['Phone Number'] = transaction.recipient ?? metadata['phone']?.toString() ?? data['phone']?.toString() ?? 'N/A';
         break;
 
       case 'airtime_swap':
-        details['Network'] = data['network']?['name']?.toString() ?? 'N/A';
-        details['Phone Number'] = data['phone_number']?.toString() ?? 'N/A';
-        details['Airtime Amount'] = '₦${data['airtime_amount']?.toString() ?? '0'}';
-        details['Cash Amount'] = '₦${data['cash_amount']?.toString() ?? '0'}';
-        details['Conversion Rate'] = '${data['conversion_rate']?.toString() ?? '0'}%';
-        if (data['account_number'] != null && data['account_number'].toString().isNotEmpty) {
-          details['Account Number'] = data['account_number']?.toString() ?? '';
-          details['Account Name'] = data['account_name']?.toString() ?? 'N/A';
-          details['Bank Name'] = data['bank_name']?.toString() ?? 'N/A';
-        }
-        if (data['admin_note'] != null && data['admin_note'].toString().isNotEmpty) {
-          details['Admin Note'] = data['admin_note']?.toString() ?? '';
+        details['Network'] = metadata['network_name']?.toString() ?? data['network']?['name']?.toString() ?? 'N/A';
+        details['Phone Number'] = metadata['phone_number']?.toString() ?? data['phone_number']?.toString() ?? 'N/A';
+        details['Airtime Amount'] = '₦${metadata['airtime_amount']?.toString() ?? data['airtime_amount']?.toString() ?? '0'}';
+        details['Cash Amount'] = '₦${metadata['cash_amount']?.toString() ?? data['cash_amount']?.toString() ?? '0'}';
+        details['Conversion Rate'] = '${metadata['conversion_rate']?.toString() ?? data['conversion_rate']?.toString() ?? '0'}%';
+        if ((metadata['account_number'] ?? data['account_number']) != null) {
+          details['Account Number'] = metadata['account_number']?.toString() ?? data['account_number']?.toString() ?? '';
+          details['Account Name'] = metadata['account_name']?.toString() ?? data['account_name']?.toString() ?? 'N/A';
+          details['Bank Name'] = metadata['bank_name']?.toString() ?? data['bank_name']?.toString() ?? 'N/A';
         }
         break;
 
       case 'bill':
-        details['Provider'] = data['bill']?['name']?.toString() ?? 'N/A';
-        details['Meter Number'] = data['account_number']?.toString() ?? 'N/A';
-        if (data['token'] != null && data['token'].toString().isNotEmpty) {
-          details['Token'] = data['token']?.toString() ?? 'N/A';
+        details['Provider'] = metadata['bill_name']?.toString() ?? data['bill']?['name']?.toString() ?? 'N/A';
+        details['Meter Number'] = transaction.recipient ?? metadata['meter_number']?.toString() ?? data['account_number']?.toString() ?? 'N/A';
+        final tokenVal = metadata['token'] ?? data['token'];
+        if (tokenVal != null && tokenVal.toString().isNotEmpty && tokenVal != 'N/A') {
+          details['Token'] = tokenVal.toString();
         }
         break;
 
       case 'cable':
-        details['Provider'] = data['cable']?['name']?.toString() ?? 'N/A';
-        details['Plan'] = data['cable_plan']?['name']?.toString() ?? 'N/A';
-        details['Smartcard Number'] = data['iuc_number']?.toString() ?? 'N/A';
+        details['Provider'] = metadata['cable_name']?.toString() ?? data['cable']?['name']?.toString() ?? 'N/A';
+        details['Plan'] = metadata['plan_name']?.toString() ?? data['cable_plan']?['name']?.toString() ?? 'N/A';
+        details['Smartcard Number'] = transaction.recipient ?? metadata['iuc_number']?.toString() ?? data['iuc_number']?.toString() ?? 'N/A';
         break;
 
       case 'data':
-        details['Network'] = data['network']?['name']?.toString() ?? 'N/A';
-        details['Phone Number'] = data['phone']?.toString() ?? 'N/A';
-        details['Plan'] = data['data_price']?['plan_name']?.toString() ?? 'N/A';
-        details['Validity'] = data['data_price']?['validity']?.toString() ?? 'N/A';
+        details['Network'] = metadata['network_name']?.toString() ?? data['network']?['name']?.toString() ?? 'N/A';
+        details['Phone Number'] = transaction.recipient ?? metadata['phone']?.toString() ?? data['phone']?.toString() ?? 'N/A';
+        details['Plan'] = metadata['plan_name']?.toString() ?? data['data_price']?['plan_name']?.toString() ?? 'N/A';
+        final validity = metadata['validity']?.toString() ?? data['data_price']?['validity']?.toString();
+        if (validity != null) details['Validity'] = validity;
         break;
 
       case 'wallet_funding':
-        details['Payment Method'] = data['type']?.toString().toUpperCase() ?? 'N/A';
-        details['Gateway'] = data['gateway']?.toString().toUpperCase() ?? 'N/A';
+        // Metadata handles payment_method, gateway, fee, bank, etc.
         details['Currency'] = data['currency']?.toString() ?? 'NGN';
-        if (data['gateway_reference'] != null) {
-          details['Gateway Reference'] = data['gateway_reference']?.toString() ?? '';
-        }
-        if (data['card_type'] != null && data['card_type'].toString().isNotEmpty) {
-          details['Card Type'] = data['card_type']?.toString() ?? '';
-          details['Last 4 Digits'] = data['last4']?.toString() ?? 'N/A';
-        }
-        details['Description'] = data['description']?.toString() ?? 'Wallet Funding';
         break;
 
       case 'wallet_transfer':
-        details['Description'] = data['description']?.toString() ?? 'Gift Transfer';
-        details['Channel'] = data['channel']?.toString().toUpperCase() ?? 'WALLET';
-        details['Currency'] = data['currency']?.toString() ?? 'NGN';
+        details['Recipient'] = transaction.recipient ?? metadata['recipient_username']?.toString() ?? metadata['recipient_name']?.toString() ?? 'N/A';
+        break;
+
+      case 'gift_user':
+        if (transaction.type == 'debit') {
+          details['Recipient'] = metadata['recipient_username']?.toString() ?? metadata['recipient_name']?.toString() ?? 'N/A';
+        } else {
+          details['Sender'] = metadata['sender_username']?.toString() ?? metadata['sender_name']?.toString() ?? 'N/A';
+        }
         break;
 
       case 'betting':
-        details['Category'] = data['category']?.toString() ?? 'N/A';
-        details['Event'] = data['event']?.toString() ?? 'N/A';
-        if (data['odds'] != null) {
-          details['Odds'] = data['odds']?.toString() ?? '';
-        }
+        details['Provider'] = metadata['provider_name']?.toString() ?? data['provider']?['name']?.toString() ?? 'N/A';
+        details['Customer ID'] = transaction.recipient ?? metadata['customer_id']?.toString() ?? data['customer_id']?.toString() ?? 'N/A';
         break;
 
       case 'edupin':
@@ -240,6 +303,25 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
         }
         break;
     }
+
+    // Add any unhandled metadata dynamically
+    final blacklist = {
+      'id', 'user_id', 'transaction_id', 'gift_card_transaction_id', 
+      'api_response', 'trade_id', 'crypto_id', 'gift_card_country_id',
+      'price_range_id', 'status', 'amount_crypto'
+    };
+
+    metadata.forEach((key, value) {
+      // Convert snake_case to Title Case for better display
+      final displayKey = key.split('_').map((word) => word[0].toUpperCase() + word.substring(1)).join(' ');
+      
+      if (!details.containsKey(displayKey) && !blacklist.contains(key.toLowerCase()) && value != null) {
+        final valStr = value.toString();
+        if (valStr.isNotEmpty && valStr != 'null' && valStr != 'N/A') {
+          details[displayKey] = valStr;
+        }
+      }
+    });
 
     return details;
   }
@@ -311,188 +393,264 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Transaction Details'),
+          backgroundColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
+              const SizedBox(height: 16),
+              Text(
+                'Loading transaction details...',
+                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Error'),
+          backgroundColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: theme.textTheme.bodyMedium?.color, fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _fetchTransactionDetails,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final typeColor = _getColorForCategory(transaction.category);
     final isCredit = transaction.type == 'credit';
     final transactionDetails = _getTransactionDetails();
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SizedBox.expand(
-        child: Stack(
-          children: [
-            // Header Section
-            Container(
-              width: double.infinity,
-              height: 260,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [typeColor, typeColor.withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 10),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.white),
-                            onPressed: () => Navigator.of(context).pop(),
-                          ),
-                          const Expanded(
-                            child: Text(
-                              'Transaction Details',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.share, color: Colors.white),
-                            onPressed: () => _shareReceipt(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    // Transaction Icon
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _getIconForCategory(transaction.category),
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Amount
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        '${isCredit ? '+' : '-'} ₦${transaction.amount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Status Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        transaction.status.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content Section
-            Positioned(
-              top: 230,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: SizedBox.expand(
+          child: Stack(
+            children: [
+              // Header Section
+              Container(
+                width: double.infinity,
+                height: 260,
                 decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [theme.scaffoldBackgroundColor, theme.scaffoldBackgroundColor.withOpacity(0.8)]
+                        : [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                child: SafeArea(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      // Status and Reference Card
-                      _buildInfoCard(
-                        theme,
-                        isDark,
-                        children: [
-                          _buildDetailRow(theme, isDark, 'Category', transaction.categoryLabel),
-                          const Divider(height: 24),
-                          _buildDetailRow(theme, isDark, 'Reference', transaction.reference, showCopy: true),
-                          const Divider(height: 24),
-                          _buildDetailRow(theme, isDark, 'Status', transaction.status.toUpperCase(), 
-                              valueColor: _getStatusColor(transaction.status)),
-                          const Divider(height: 24),
-                          _buildDetailRow(theme, isDark, 'Date', _formatDateTime(transaction.createdAt)),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Transaction Details Label
-                      if (transactionDetails.isNotEmpty) ...[
-                        const Padding(
-                          padding: EdgeInsets.only(left: 4, bottom: 12),
-                          child: Text(
-                            'Transaction Details',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.arrow_back, color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white),
+                              onPressed: () => Navigator.of(context).pop(),
                             ),
+                            Expanded(
+                              child: Text(
+                                'Transaction Details',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.share, color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white),
+                              onPressed: () => _shareReceipt(context),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Transaction Icon
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: isDark ? theme.cardColor : Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                          border: isDark ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
+                        ),
+                        child: Icon(
+                          _getIconForCategory(transaction.category),
+                          color: isDark ? typeColor : Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Amount
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          '${isCredit ? '+' : '-'} ₦${transaction.amount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Status Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? theme.cardColor : Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: isDark ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
+                        ),
+                        child: Text(
+                          transaction.status.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? _getStatusColor(transaction.status) : Colors.white,
+                            letterSpacing: 1.2,
                           ),
                         ),
-                        
-                        _buildInfoCard(
-                          theme,
-                          isDark,
-                          children: transactionDetails.entries.map((entry) {
-                            final isLast = transactionDetails.keys.last == entry.key;
-                            return Column(
-                              children: [
-                                _buildDetailRow(theme, isDark, entry.key, entry.value),
-                                if (!isLast) const Divider(height: 24),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                        
-                        const SizedBox(height: 32),
-                      ],
-                      
-                      // Action Buttons
-                      _buildActionButtons(context, theme, isDark),
-                      
-                      const SizedBox(height: 20),
+                      ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
+
+              // Content Section
+              Positioned(
+                top: 230,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Status and Reference Card
+                        _buildInfoCard(
+                          theme,
+                          isDark,
+                          children: [
+                            _buildDetailRow(theme, isDark, 'Category', transaction.categoryLabel),
+                            const Divider(height: 24),
+                            _buildDetailRow(theme, isDark, 'Reference', transaction.reference, showCopy: true),
+                            const Divider(height: 24),
+                            _buildDetailRow(theme, isDark, 'Status', transaction.status.toUpperCase(), 
+                                valueColor: _getStatusColor(transaction.status)),
+                            const Divider(height: 24),
+                            _buildDetailRow(theme, isDark, 'Date', _formatDateTime(transaction.createdAt)),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Transaction Details Label
+                        if (transactionDetails.isNotEmpty) ...[
+                          const Padding(
+                            padding: EdgeInsets.only(left: 4, bottom: 12),
+                            child: Text(
+                              'Transaction Details',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          
+                          _buildInfoCard(
+                            theme,
+                            isDark,
+                            children: transactionDetails.entries.map((entry) {
+                              final isLast = transactionDetails.keys.last == entry.key;
+                              return Column(
+                                children: [
+                                    _buildDetailRow(
+                                      theme,
+                                      isDark,
+                                      entry.key,
+                                      entry.value,
+                                      showCopy: entry.key.contains('Token') || 
+                                                entry.key.contains('Number') || 
+                                                entry.key.contains('ID') ||
+                                                entry.key.contains('PIN') || 
+                                                entry.key.contains('Address'),
+                                    ),
+                                  if (!isLast) const Divider(height: 24),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                          
+                          const SizedBox(height: 32),
+                        ],
+                        
+                        // Action Buttons
+                        _buildActionButtons(context, theme, isDark),
+                        
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

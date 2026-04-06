@@ -52,7 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SliverToBoxAdapter(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
+                      color: isDark ? AppColors.headerDark : AppColors.primary,
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(sw * 0.08),
                         bottomRight: Radius.circular(sw * 0.08),

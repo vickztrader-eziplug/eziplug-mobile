@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../core/widgets/modern_form_widgets.dart';
+import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/pin_entry_screen.dart';
-import '../reusable/receipt_screen.dart';
+import 'transaction_details_unified_screen.dart';
 
 class BettingScreen extends StatefulWidget {
   const BettingScreen({super.key});
@@ -180,23 +180,24 @@ class _BettingScreenState extends State<BettingScreen> {
       return;
     }
 
-    // Navigate to PIN screen
+    // Show PIN verification modal
     if (!mounted) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PinEntryScreen(
-          title: 'Confirm Purchase',
-          subtitle: 'Enter your 4 digit PIN to purchase bet',
-          onPinComplete: (pin) => _purchaseBet(pin),
-          onForgotPin: () {
-            Navigator.pop(context);
-            _showSnackBar('Contact support to reset PIN', Colors.orange);
-          },
-        ),
-      ),
+    final pin = await PinVerificationModal.show(
+      context: context,
+      title: 'Confirm Purchase',
+      subtitle: 'Enter your 4-digit PIN to fund betting account',
+      transactionType: 'Betting',
+      recipient: _bettingIdController.text,
+      amount: '₦${_selectedAmount.toString()}',
+      onForgotPin: () {
+        _showSnackBar('Contact support to reset PIN', Colors.orange);
+      },
     );
+
+    if (pin != null && pin.length == 4) {
+      _purchaseBet(pin);
+    }
   }
 
   Future<void> _purchaseBet(String pin) async {
@@ -227,51 +228,30 @@ class _BettingScreenState extends State<BettingScreen> {
       print('Response Data: $responseData');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        Navigator.pop(context); // Close PIN screen
+        final reference = responseData['reference']?.toString() ??
+                         responseData['data']?['reference']?.toString() ??
+                         responseData['transaction_id']?.toString();
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReceiptScreen(
-              title: 'Purchase Successful',
-              subtitle: 'Your bet purchase was successful',
-              details: [
-                ReceiptDetail(
-                  label: 'Transaction ID',
-                  value:
-                      responseData['transaction_id'] ??
-                      responseData['reference'] ??
-                      'N/A',
-                ),
-                ReceiptDetail(
-                  label: 'Provider',
-                  value: _selectedProvider!['name'] ?? '',
-                ),
-                ReceiptDetail(
-                  label: 'Betting ID',
-                  value: _bettingIdController.text,
-                ),
-                ReceiptDetail(
-                  label: 'Amount',
-                  value: '₦${_selectedAmount.toString()}',
-                ),
-                ReceiptDetail(
-                  label: 'Date',
-                  value: DateTime.now().toString().split('.')[0],
-                ),
-              ],
+        if (reference != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TransactionDetailUnifiedScreen(
+                transactionReference: reference,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          _showSnackBar('Purchase successful', Colors.green);
+          Navigator.pop(context);
+        }
       } else if (response.statusCode == 401) {
-        Navigator.pop(context); // Close PIN screen
         _showSnackBar('Session expired. Please login again', Colors.red);
         await authService.logout();
       } else if (response.statusCode == 400 &&
           responseData['message']?.contains('PIN') == true) {
         throw Exception(responseData['message'] ?? 'Invalid PIN');
       } else {
-        Navigator.pop(context);
         _showSnackBar(
           responseData['message'] ?? 'Failed to purchase bet',
           Colors.red,

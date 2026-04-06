@@ -309,8 +309,11 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.primary,
+      backgroundColor: isDark ? AppColors.headerDark : AppColors.primary,
       body: SafeArea(
         child: Column(
           children: [
@@ -340,12 +343,12 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
 
             const SizedBox(height: 20),
 
-            // White Content Card
+            // Content Card
             Expanded(
               child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -364,12 +367,12 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
                       const SizedBox(height: 24),
 
                       // Address Section
-                      const Text(
+                      Text(
                         'Home Address',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: theme.textTheme.titleMedium?.color ?? Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -417,16 +420,17 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
                       const SizedBox(height: 24),
 
                       // Proof of Address
-                      const Text(
+                      Text(
                         'Proof of Address',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black87,
+                          color: theme.textTheme.titleSmall?.color ?? Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 8),
                       _buildDocumentUpload(
+                        context: context,
                         title: 'Utility bill or bank statement',
                         subtitle: 'Not more than 3 months old',
                         file: _proofOfAddressFile,
@@ -436,16 +440,17 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
                       const SizedBox(height: 20),
 
                       // Proof of Income
-                      const Text(
+                      Text(
                         'Proof of Income',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black87,
+                          color: theme.textTheme.titleSmall?.color ?? Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 8),
                       _buildDocumentUpload(
+                        context: context,
                         title: 'Bank statement or payslip',
                         subtitle: 'Showing your income source',
                         file: _proofOfIncomeFile,
@@ -461,11 +466,11 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
                         child: ElevatedButton(
                           onPressed: _isSubmitting ? null : _submitTier3,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black87,
+                            backgroundColor: isDark ? AppColors.primary : Colors.black87,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            disabledBackgroundColor: Colors.black54,
+                            disabledBackgroundColor: isDark ? Colors.grey.shade800 : Colors.black54,
                           ),
                           child: _isSubmitting
                               ? const SizedBox(
@@ -503,9 +508,12 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
     required String hint,
     required IconData icon,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.lightGrey.withOpacity(0.3),
+        color: isDark ? theme.cardColor : AppColors.lightGrey.withOpacity(0.3),
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextField(
@@ -522,12 +530,15 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
   }
 
   Widget _buildDocumentUpload({
+    required BuildContext context,
     required String title,
     required String subtitle,
     required File? file,
     required VoidCallback onTap,
     required VoidCallback onClear,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -535,7 +546,7 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
         decoration: BoxDecoration(
           color: file != null 
               ? Colors.green.withOpacity(0.1) 
-              : AppColors.lightGrey.withOpacity(0.3),
+              : isDark ? theme.cardColor : AppColors.lightGrey.withOpacity(0.3),
           borderRadius: BorderRadius.circular(12),
           border: file != null 
               ? Border.all(color: Colors.green, width: 2) 
@@ -559,7 +570,7 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
                       Text(
                         title,
                         style: TextStyle(
-                          color: file != null ? Colors.black87 : Colors.black.withOpacity(0.6),
+                          color: file != null ? (isDark ? Colors.green : Colors.black87) : (theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? Colors.black.withOpacity(0.6)),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -567,7 +578,7 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
                       Text(
                         subtitle,
                         style: TextStyle(
-                          color: Colors.black.withOpacity(0.4),
+                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.4) ?? Colors.black.withOpacity(0.4),
                           fontSize: 12,
                         ),
                       ),
@@ -604,10 +615,13 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
   }
 
   Widget _buildTierStatus(String title, bool isComplete) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.lightGrey.withOpacity(0.5),
+        color: isDark ? theme.cardColor : AppColors.lightGrey.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -615,10 +629,10 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.black87,
+                color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
               ),
             ),
           ),

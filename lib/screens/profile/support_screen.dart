@@ -90,8 +90,11 @@ class _SupportScreenState extends State<SupportScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -145,6 +148,9 @@ class _SupportScreenState extends State<SupportScreen>
   }
 
   Widget _buildAppBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
       child: Row(
@@ -154,23 +160,23 @@ class _SupportScreenState extends State<SupportScreen>
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back,
-                color: AppColors.primary,
+                color: isDark ? AppColors.primaryLight : AppColors.primary,
                 size: 22,
               ),
             ),
           ),
           const SizedBox(width: 8),
-          const Text(
+          Text(
             'Help & Support',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textColor,
+              color: theme.textTheme.titleLarge?.color,
             ),
           ),
         ],
@@ -239,14 +245,17 @@ class _SupportScreenState extends State<SupportScreen>
   }
 
   Widget _buildQuickContactSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -270,12 +279,12 @@ class _SupportScreenState extends State<SupportScreen>
                 ),
               ),
               const SizedBox(width: 14),
-              const Text(
+              Text(
                 'Quick Contact',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textColor,
+                  color: theme.textTheme.titleLarge?.color,
                 ),
               ),
             ],
@@ -350,10 +359,10 @@ class _SupportScreenState extends State<SupportScreen>
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textColor,
+                        color: Theme.of(context).textTheme.titleMedium?.color,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -361,7 +370,7 @@ class _SupportScreenState extends State<SupportScreen>
                       subtitle,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
                       ),
                     ),
                   ],
@@ -380,14 +389,17 @@ class _SupportScreenState extends State<SupportScreen>
   }
 
   Widget _buildSocialMediaSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -411,12 +423,12 @@ class _SupportScreenState extends State<SupportScreen>
                 ),
               ),
               const SizedBox(width: 14),
-              const Text(
+              Text(
                 'Connect With Us',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textColor,
+                  color: theme.textTheme.titleLarge?.color,
                 ),
               ),
             ],
@@ -474,10 +486,10 @@ class _SupportScreenState extends State<SupportScreen>
               const SizedBox(height: 10),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textColor,
+                  color: Theme.of(context).textTheme.titleMedium?.color,
                 ),
               ),
               const SizedBox(height: 2),
@@ -485,7 +497,7 @@ class _SupportScreenState extends State<SupportScreen>
                 subtitle,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.grey.shade500,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),

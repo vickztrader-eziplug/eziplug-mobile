@@ -10,7 +10,7 @@ import '../../core/utils/api_response.dart';
 import '../../core/widgets/modern_form_widgets.dart';
 import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/receipt_screen.dart';
+import 'transaction_details_unified_screen.dart';
 
 class AirtimeSwapScreen extends StatefulWidget {
   const AirtimeSwapScreen({super.key});
@@ -308,47 +308,23 @@ class _AirtimeSwapScreenState extends State<AirtimeSwapScreen> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = responseData['data'] ?? {};
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReceiptScreen(
-              title: 'Swap Request Submitted',
-              subtitle: 'Your airtime swap request is pending verification. Once approved, funds will be credited to your wallet.',
-              details: [
-                ReceiptDetail(
-                  label: 'Transaction ID',
-                  value: data['transaction_id']?.toString() ?? 'N/A',
-                ),
-                ReceiptDetail(
-                  label: 'Phone Number',
-                  value: _phoneController.text,
-                ),
-                ReceiptDetail(label: 'Network', value: _selectedNetworkName ?? ''),
-                ReceiptDetail(
-                  label: 'Airtime Amount',
-                  value: '₦${airtimeAmount.toStringAsFixed(2)}',
-                ),
-                ReceiptDetail(
-                  label: 'Conversion Rate',
-                  value: '$_conversionRate%',
-                ),
-                ReceiptDetail(
-                  label: 'Expected Cash',
-                  value: '₦${_cashAmount.toStringAsFixed(2)}',
-                ),
-                ReceiptDetail(
-                  label: 'Credit To',
-                  value: 'Wallet (Can withdraw after credit)',
-                ),
-                ReceiptDetail(label: 'Status', value: 'Pending Verification'),
-                ReceiptDetail(
-                  label: 'Date',
-                  value: DateTime.now().toString().split('.')[0],
-                ),
-              ],
+        final reference = data['reference']?.toString() ??
+                         responseData['reference']?.toString() ??
+                         data['transaction_id']?.toString();
+
+        if (reference != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TransactionDetailUnifiedScreen(
+                transactionReference: reference,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          _showSnackBar('Swap request submitted successfully', Colors.green);
+          Navigator.pop(context);
+        }
       } else if (response.statusCode == 401) {
         _showSnackBar('Session expired. Please login again', Colors.red);
         await authService.logout();

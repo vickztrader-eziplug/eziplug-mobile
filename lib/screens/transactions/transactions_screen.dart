@@ -35,6 +35,28 @@ class TransactionModel {
     required this.provider,
     required this.rawData,
   });
+
+  String? get recipient => rawData['recipient']?.toString();
+
+  Map<String, dynamic>? get metadata => _parseJsonMap(rawData['metadata']);
+
+  Map<String, dynamic>? get transactionable => _parseJsonMap(rawData['transactionable']);
+
+  static Map<String, dynamic>? _parseJsonMap(dynamic value) {
+    if (value == null) return null;
+    if (value is Map<String, dynamic>) return value;
+    if (value is String && value.isNotEmpty) {
+      if (value == '[]' || value == '{}') return {};
+      try {
+        final decoded = jsonDecode(value);
+        if (decoded is Map<String, dynamic>) return decoded;
+        return null; // Return null if it's not a map (e.g. it's a list [])
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
 }
 
 class TransactionsScreen extends StatefulWidget {
@@ -632,7 +654,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
+        statusBarColor: isDark ? AppColors.headerDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),

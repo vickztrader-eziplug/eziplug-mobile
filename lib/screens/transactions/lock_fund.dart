@@ -455,20 +455,20 @@ class _LockFundScreenState extends State<LockFundScreen> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: isDark ? AppColors.primaryDark : AppColors.primary,
+        statusBarColor: isDark ? AppColors.headerDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
       ),
       child: Stack(
         children: [
           Scaffold(
-            backgroundColor: AppColors.background,
+            backgroundColor: theme.scaffoldBackgroundColor,
             body: Column(
               children: [
                 // Header Section
                 Container(
                   width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.headerDark : AppColors.primary,
                   ),
                   child: SafeArea(
                     bottom: false,
@@ -481,7 +481,7 @@ class _LockFundScreenState extends State<LockFundScreen> {
                             children: [
                               Container(
                                 decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: IconButton(
@@ -493,14 +493,14 @@ class _LockFundScreenState extends State<LockFundScreen> {
                               onPressed: () => Navigator.pop(context),
                             ),
                           ),
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Lock Funds',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: isDark ? AppColors.textDark : Colors.white,
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -570,8 +570,8 @@ class _LockFundScreenState extends State<LockFundScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),

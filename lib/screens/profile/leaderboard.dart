@@ -158,8 +158,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           // Gradient Header
@@ -186,6 +188,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Widget _buildHeader() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -193,9 +198,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primary,
-            AppColors.primary.withOpacity(0.85),
-            AppColors.primaryLight,
+            isDark ? AppColors.headerDark : AppColors.primary,
+            isDark ? AppColors.headerDark : AppColors.primary.withOpacity(0.85),
+            isDark ? AppColors.headerDark : AppColors.primaryLight,
           ],
         ),
       ),
@@ -390,13 +395,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Widget _buildTabBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
-      color: Colors.white,
+      color: theme.cardColor,
       child: TabBar(
         controller: _tabController,
-        labelColor: AppColors.primary,
+        labelColor: isDark ? AppColors.primaryLight : AppColors.primary,
         unselectedLabelColor: AppColors.textSecondary,
-        indicatorColor: AppColors.primary,
+        indicatorColor: isDark ? AppColors.primaryLight : AppColors.primary,
         indicatorWeight: 3,
         labelStyle: const TextStyle(
           fontSize: 13,
@@ -465,12 +473,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       'Full Rankings',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textColor,
+                        color: Theme.of(context).textTheme.titleMedium?.color,
                       ),
                     ),
                     const Spacer(),
@@ -582,14 +590,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     final second = top3.length > 1 ? top3[1] : null;
     final third = top3.length > 2 ? top3[2] : null;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -612,12 +623,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'Top Traders',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textColor,
+                  color: Theme.of(context).textTheme.titleMedium?.color,
                 ),
               ),
             ],
@@ -735,7 +746,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           style: TextStyle(
             fontSize: isFirst ? 13 : 11,
             fontWeight: FontWeight.w600,
-            color: AppColors.textColor,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
@@ -790,14 +801,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     final totalParticipants = _stats['total_participants'] ?? 0;
     final totalVolume = double.tryParse(_stats['total_volume']?.toString() ?? '0') ?? 0;
     
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

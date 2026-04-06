@@ -528,6 +528,9 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: SizedBox.expand(
         child: Stack(
@@ -546,9 +549,12 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
             Container(
               width: double.infinity,
               height: 260,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
+                  colors: [
+                    isDark ? AppColors.headerDark : AppColors.primary,
+                    isDark ? AppColors.headerDark : AppColors.primary,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -617,9 +623,9 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -649,7 +655,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                   vertical: 16,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.cardBackground,
+                                  color: theme.cardColor,
                                   borderRadius: BorderRadius.circular(5),
                                   border: Border.all(
                                     color: AppColors.lightGrey,
@@ -673,16 +679,16 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                         style: TextStyle(
                                           fontSize: 14,
                                           color: _selectedProviderName != null
-                                              ? AppColors.textColor
-                                              : AppColors.textColor.withOpacity(
+                                              ? (theme.textTheme.bodyMedium?.color ?? AppColors.textColor)
+                                              : (theme.textTheme.bodyMedium?.color?.withOpacity(0.5) ?? AppColors.textColor.withOpacity(
                                                   0.5,
-                                                ),
+                                                )),
                                         ),
                                       ),
                                     ),
-                                    const Icon(
+                                    Icon(
                                       Icons.keyboard_arrow_down,
-                                      color: AppColors.textColor,
+                                      color: theme.textTheme.bodyMedium?.color ?? AppColors.textColor,
                                     ),
                                   ],
                                 ),
@@ -737,7 +743,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                               'Verifying meter...',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textColor.withOpacity(0.6),
+                                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? AppColors.textColor.withOpacity(0.6),
                               ),
                             ),
                           ],
@@ -773,10 +779,10 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                     ),
                                     Text(
                                       _customerName!,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
-                                        color: AppColors.textColor,
+                                        color: theme.textTheme.bodyMedium?.color ?? AppColors.textColor,
                                       ),
                                     ),
                                   ],
@@ -838,7 +844,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
-                                  color: AppColors.textColor.withOpacity(0.7),
+                                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? AppColors.textColor.withOpacity(0.7),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -934,10 +940,12 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
     required List<String> items,
     required Function(String?) onChanged,
   }) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(5),
         border: Border.all(color: AppColors.lightGrey, width: 1),
       ),
@@ -947,7 +955,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
           hint,
           style: TextStyle(
             fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
+            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5) ?? AppColors.textColor.withOpacity(0.5),
           ),
         ),
         isExpanded: true,
@@ -985,7 +993,7 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.textColor,
+            color: isSelected ? Colors.white : (Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textColor),
           ),
         ),
       ),
@@ -995,10 +1003,10 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
   Widget _buildLabel(String label) {
     return Text(
       label,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: AppColors.textColor,
+        color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textColor,
       ),
     );
   }
@@ -1008,9 +1016,11 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
     required String hintText,
     TextInputType keyboardType = TextInputType.text,
   }) {
+    final theme = Theme.of(context);
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(5),
         border: Border.all(color: AppColors.lightGrey, width: 1),
       ),
@@ -1018,12 +1028,12 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
         controller: controller,
         keyboardType: keyboardType,
         maxLength: keyboardType == TextInputType.phone ? 11 : null,
-        style: const TextStyle(fontSize: 14, color: AppColors.textColor),
+        style: TextStyle(fontSize: 14, color: theme.textTheme.bodyMedium?.color ?? AppColors.textColor),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(
             fontSize: 14,
-            color: AppColors.textColor.withOpacity(0.5),
+            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5) ?? AppColors.textColor.withOpacity(0.5),
           ),
           border: InputBorder.none,
           counterText: '',
@@ -1090,15 +1100,17 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
 
   // Update the bottom sheet to use the new helper
   void _showProviderBottomSheet() {
+    final theme = Theme.of(context);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(25),
             topRight: Radius.circular(25),
           ),
@@ -1121,12 +1133,12 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Select Provider',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textColor,
+                      color: Theme.of(context).textTheme.titleLarge?.color ?? AppColors.textColor,
                     ),
                   ),
                   IconButton(
@@ -1192,16 +1204,16 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                                 const SizedBox(width: 16),
                                 // Provider Name
                                 Expanded(
-                                  child: Text(
-                                    provider['name'],
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
-                                      color: AppColors.textColor,
+                                    Text(
+                                      provider['name'],
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w600
+                                            : FontWeight.w400,
+                                        color: Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textColor,
+                                      ),
                                     ),
-                                  ),
                                 ),
                                 // Check icon for selected
                                 if (isSelected)

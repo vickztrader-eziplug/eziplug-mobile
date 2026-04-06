@@ -9,9 +9,9 @@ import '../../core/utils/constants.dart';
 import '../../core/utils/api_response.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
+import '../../core/widgets/pin_verification_modal.dart';
 import '../../services/auth_service.dart';
-import '../reusable/pin_entry_screen.dart';
-import '../reusable/receipt_screen.dart';
+import 'transaction_details_unified_screen.dart';
 
 class CableScreen extends StatefulWidget {
   const CableScreen({super.key});
@@ -347,51 +347,26 @@ class _CableScreenState extends State<CableScreen> {
       final isSuccess = isSuccessResponse(responseData);
 
       if (isSuccess) {
-        // Success: Close PIN screen and show receipt
-        Navigator.pop(context);
-
         // Refresh wallet balance
         await _fetchWalletBalance();
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReceiptScreen(
-              title: 'Purchase Successful',
-              subtitle: 'Your cable subscription was successful',
-              details: [
-                ReceiptDetail(
-                  label: 'Transaction ID',
-                  value:
-                      responseData['transaction_id']?.toString() ??
-                      responseData['reference']?.toString() ??
-                      responseData['data']?['transaction_id']?.toString() ??
-                      responseData['data']?['reference']?.toString() ??
-                      'N/A',
-                ),
+        final reference = responseData['reference']?.toString() ?? 
+                         responseData['data']?['reference']?.toString() ??
+                         responseData['transaction_id']?.toString();
 
-                ReceiptDetail(
-                  label: 'Customer Name',
-                  value: _customerName ?? '',
-                ),
-                ReceiptDetail(label: 'IUC Number', value: _iucController.text),
-                ReceiptDetail(label: 'Plan', value: _selectedPlanName ?? ''),
-                ReceiptDetail(
-                  label: 'Phone Number',
-                  value: _phoneController.text,
-                ),
-                ReceiptDetail(
-                  label: 'Amount',
-                  value: '₦${_selectedPlanAmount?.toString() ?? '0'}',
-                ),
-                ReceiptDetail(
-                  label: 'Date',
-                  value: DateTime.now().toString().split('.')[0],
-                ),
-              ],
+        if (reference != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TransactionDetailUnifiedScreen(
+                transactionReference: reference,
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          _showSnackBar('Subscription successful', Colors.green);
+          Navigator.pop(context);
+        }
       } else {
         // Failure: Check if it's a PIN error (don't close PIN screen)
         final errorMessage =
@@ -596,23 +571,21 @@ class _CableScreenState extends State<CableScreen> {
       return;
     }
 
-    // Navigate to PIN screen
-    if (!mounted) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PinEntryScreen(
-          title: 'Confirm Purchase',
-          subtitle: 'Enter your 4 digit PIN to purchase cable subscription',
-          onPinComplete: (pin) => _purchaseCable(pin),
-          onForgotPin: () {
-            Navigator.pop(context);
-            _showSnackBar('Contact support to reset PIN', Colors.orange);
-          },
-        ),
-      ),
+    final pin = await PinVerificationModal.show(
+      context: context,
+      title: 'Confirm Purchase',
+      subtitle: 'Enter your 4-digit PIN to confirm this subscription',
+      transactionType: 'Cable TV',
+      recipient: _iucController.text,
+      amount: '₦${_formatBalance(_selectedPlanAmount?.toDouble() ?? 0.0)}',
+      onForgotPin: () {
+        _showSnackBar('Go to Profile > PIN Management to reset your PIN', Colors.orange);
+      },
     );
+
+    if (pin != null && pin.length == 4) {
+      _purchaseCable(pin);
+    }
   }
 
   // Future<void> _purchaseCable(String pin) async {

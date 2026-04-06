@@ -96,22 +96,27 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
     }
   }
 
-  // Method to show image source selection dialog
-  void _showImageSourceDialog() {
+    final theme = Theme.of(context);
+    
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      backgroundColor: theme.cardColor,
       builder: (context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'Upload Profile Photo',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18, 
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.titleLarge?.color,
+                ),
               ),
               const SizedBox(height: 20),
               ListTile(
@@ -226,6 +231,9 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: SizedBox.expand(
         child: Stack(
@@ -234,9 +242,12 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
             Container(
               width: double.infinity,
               height: 220,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary],
+                  colors: [
+                    isDark ? AppColors.headerDark : AppColors.primary,
+                    isDark ? AppColors.headerDark : AppColors.primary,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -283,9 +294,9 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
               right: 0,
               bottom: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -301,12 +312,12 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const Text(
+                            Text(
                               'Complete Your KYC',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textColor,
+                                color: theme.textTheme.titleLarge?.color ?? AppColors.textColor,
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -315,7 +326,7 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 13,
-                                color: AppColors.textColor.withOpacity(0.7),
+                                color: theme.textTheme.bodyMedium?.color ?? AppColors.textColor.withOpacity(0.7),
                                 height: 1.4,
                               ),
                             ),
@@ -451,18 +462,18 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
+                                color: isDark ? AppColors.primary.withOpacity(0.2) : AppColors.primary.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Account Limit',
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.textColor,
+                                      color: theme.textTheme.titleMedium?.color ?? AppColors.textColor,
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -526,11 +537,14 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
   }
 
   Widget _buildKYCStep(String title, bool isCompleted) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.lightGrey.withOpacity(0.3),
+        color: isDark ? theme.cardColor : AppColors.lightGrey.withOpacity(0.3),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -538,10 +552,10 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: AppColors.textColor,
+              color: theme.textTheme.bodyMedium?.color ?? AppColors.textColor,
             ),
           ),
           if (isCompleted)
@@ -598,10 +612,10 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
         children: [
           Text(
             'KYC $tier',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.textColor,
+              color: Theme.of(context).textTheme.titleMedium?.color ?? AppColors.textColor,
             ),
           ),
           Row(
@@ -623,7 +637,8 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
     );
   }
 
-  Widget _buildLimitRow(String label, String value) {
+    final theme = Theme.of(context);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -631,15 +646,15 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
           label,
           style: TextStyle(
             fontSize: 13,
-            color: AppColors.textColor.withOpacity(0.7),
+            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? AppColors.textColor.withOpacity(0.7),
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.textColor,
+            color: theme.textTheme.titleMedium?.color ?? AppColors.textColor,
           ),
         ),
       ],

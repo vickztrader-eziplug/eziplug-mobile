@@ -157,11 +157,14 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   }
 
   Widget _buildImagePickerSheet() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -178,12 +181,12 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Change Profile Photo',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.textColor,
+              color: theme.textTheme.titleLarge?.color ?? AppColors.textColor,
             ),
           ),
           const SizedBox(height: 24),
@@ -332,8 +335,10 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           SafeArea(
@@ -414,12 +419,12 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             ),
           ),
           const SizedBox(width: 8),
-          const Text(
+          Text(
             'Edit Profile',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textColor,
+              color: Theme.of(context).textTheme.titleLarge?.color ?? AppColors.textColor,
             ),
           ),
         ],
@@ -457,17 +462,20 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   }
 
   Widget _buildLoadingOverlay() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       color: Colors.black.withOpacity(0.5),
       child: Center(
         child: Container(
           padding: const EdgeInsets.all(30),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
                 blurRadius: 20,
               ),
             ],
@@ -615,7 +623,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
+            color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.grey.shade700,
           ),
         ),
 
@@ -658,14 +666,17 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   }
 
   Widget _buildPersonalInfoCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -679,22 +690,22 @@ class _EditProfileScreenState extends State<EditProfileScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: isDark ? Colors.blue.withOpacity(0.2) : Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   Icons.person_outline_rounded,
-                  color: Colors.blue.shade600,
+                  color: isDark ? Colors.blue.shade300 : Colors.blue.shade600,
                   size: 22,
                 ),
               ),
               const SizedBox(width: 14),
-              const Text(
+              Text(
                 'Personal Information',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textColor,
+                  color: theme.textTheme.titleMedium?.color ?? AppColors.textColor,
                 ),
               ),
             ],
@@ -766,14 +777,17 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   }
 
   Widget _buildContactInfoCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -787,22 +801,22 @@ class _EditProfileScreenState extends State<EditProfileScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
+                  color: isDark ? Colors.green.withOpacity(0.2) : Colors.green.shade50,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   Icons.contact_mail_outlined,
-                  color: Colors.green.shade600,
+                  color: isDark ? Colors.green.shade300 : Colors.green.shade600,
                   size: 22,
                 ),
               ),
               const SizedBox(width: 14),
-              const Text(
+              Text(
                 'Contact Information',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textColor,
+                  color: theme.textTheme.titleMedium?.color ?? AppColors.textColor,
                 ),
               ),
             ],
@@ -855,61 +869,64 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   }) {
     final bool hasError = errorText != null && errorText.isNotEmpty;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            color: enabled ? Colors.white : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: hasError
-                  ? Colors.red.shade400
-                  : enabled
-                      ? (focusNode?.hasFocus ?? false
-                          ? AppColors.primary
-                          : Colors.grey.shade200)
-                      : Colors.grey.shade300,
-              width: hasError
-                  ? 1.5
-                  : (enabled && (focusNode?.hasFocus ?? false) ? 2 : 1),
-            ),
-            boxShadow: enabled
-                ? [
-                    BoxShadow(
-                      color: hasError
-                          ? Colors.red.withOpacity(0.08)
-                          : Colors.black.withOpacity(0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ]
-                : null,
-          ),
-          child: TextFormField(
-            controller: controller,
-            focusNode: focusNode,
-            keyboardType: keyboardType,
-            enabled: enabled,
-            style: TextStyle(
-              fontSize: 15,
-              color: enabled ? Colors.black87 : Colors.grey.shade600,
-            ),
-            decoration: InputDecoration(
-              hintText: 'Enter $label',
-              hintStyle: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade400,
-              ),
+           label,
+           style: TextStyle(
+             fontSize: 14,
+             fontWeight: FontWeight.w600,
+             color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
+           ),
+         ),
+         const SizedBox(height: 10),
+         Container(
+           decoration: BoxDecoration(
+             color: enabled ? theme.cardColor : (isDark ? Colors.grey.shade900 : Colors.grey.shade100),
+             borderRadius: BorderRadius.circular(14),
+             border: Border.all(
+               color: hasError
+                   ? Colors.red.shade400
+                   : enabled
+                       ? (focusNode?.hasFocus ?? false
+                           ? AppColors.primary
+                           : (isDark ? Colors.grey.shade800 : Colors.grey.shade200))
+                       : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
+               width: hasError
+                   ? 1.5
+                   : (enabled && (focusNode?.hasFocus ?? false) ? 2 : 1),
+             ),
+             boxShadow: enabled
+                 ? [
+                     BoxShadow(
+                       color: hasError
+                           ? Colors.red.withOpacity(0.08)
+                           : Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                       blurRadius: 8,
+                       offset: const Offset(0, 3),
+                     ),
+                   ]
+                 : null,
+           ),
+           child: TextFormField(
+             controller: controller,
+             focusNode: focusNode,
+             keyboardType: keyboardType,
+             enabled: enabled,
+             style: TextStyle(
+               fontSize: 15,
+               color: enabled ? (theme.textTheme.bodyMedium?.color ?? Colors.black87) : Colors.grey.shade600,
+             ),
+             decoration: InputDecoration(
+               hintText: 'Enter $label',
+               hintStyle: TextStyle(
+                 fontSize: 14,
+                 color: Colors.grey.shade500,
+               ),
               prefixIcon: Container(
                 padding: const EdgeInsets.all(12),
                 child: Icon(
