@@ -385,7 +385,7 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
       final bytes = await _capturedImage!.readAsBytes();
       
       // Upload profile photo
-      final result = await authService.updateProfilePhoto(bytes, _capturedImage!.name);
+      final result = await authService.submitLivenessPhoto(bytes, _capturedImage!.name);
 
       if (!mounted) return;
 

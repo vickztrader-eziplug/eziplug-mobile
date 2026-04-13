@@ -906,7 +906,7 @@ class AuthService extends ChangeNotifier {
     await _clearAuth();
   }
 
-  /// Update profile photo from liveness check (uses same endpoint as edit profile)
+  /// Update profile photo (passport)
   Future<Map<String, dynamic>> updateProfilePhoto(List<int> imageBytes, String filename) async {
     final token = await getToken();
     if (token == null) {
@@ -920,7 +920,49 @@ class AuthService extends ChangeNotifier {
       request.headers['Authorization'] = 'Bearer $token';
       request.headers['Accept'] = 'application/json';
 
-      // Add the image file - uses 'photo' field same as edit profile
+      request.files.add(http.MultipartFile.fromBytes(
+        'photo',
+        imageBytes,
+        filename: filename.isNotEmpty ? filename : 'passport_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      ));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        await refreshUserData();
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Profile photo updated successfully',
+          'data': data['data'],
+        };
+      } else {
+        final data = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to upload photo',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  /// Submit liveness verification photo (identity verification)
+  Future<Map<String, dynamic>> submitLivenessPhoto(List<int> imageBytes, String filename) async {
+    final token = await getToken();
+    if (token == null) {
+      return {'success': false, 'message': 'Not authenticated'};
+    }
+
+    try {
+      final uri = Uri.parse('$baseUrl/liveness');
+      final request = http.MultipartRequest('POST', uri);
+
+      request.headers['Authorization'] = 'Bearer $token';
+      request.headers['Accept'] = 'application/json';
+
       request.files.add(http.MultipartFile.fromBytes(
         'photo',
         imageBytes,
@@ -932,28 +974,21 @@ class AuthService extends ChangeNotifier {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        
-        // Refresh user data to get the updated photo URL
         await refreshUserData();
-        
         return {
           'success': true,
-          'message': data['message'] ?? 'Photo updated successfully',
+          'message': data['message'] ?? 'Liveness photo uploaded successfully',
           'data': data['data'],
         };
       } else {
         final data = jsonDecode(response.body);
         return {
           'success': false,
-          'message': data['message'] ?? 'Failed to upload photo',
+          'message': data['message'] ?? 'Failed to upload liveness photo',
         };
       }
     } catch (e) {
-      debugPrint('Error uploading profile photo: $e');
-      return {
-        'success': false,
-        'message': 'Error uploading photo: $e',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 }
