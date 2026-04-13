@@ -63,10 +63,8 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   String? _verifiedName;
   String? _maskedPhone;
   String? _verificationError;
-  
-  // OTP state
-  final _otpController = TextEditingController();
-  String? _debugOtp;
+  DateTime? _selectedIdDob;
+  String _selectedIdDobStr = '';
   
   // Tier 3 form data
   XFile? _proofOfAddress;
@@ -93,7 +91,6 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     _stateController.dispose();
     _zipCodeController.dispose();
     _idNumberController.dispose();
-    _otpController.dispose();
     super.dispose();
   }
 
@@ -118,6 +115,12 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
         (_selectedIdType == 'bvn' || _selectedIdType == 'nin') && 
         !_identityVerified && 
         !_isVerifyingIdentity) {
+      
+      // For BVN, require DOB to be selected
+      if (_selectedIdType == 'bvn' && _selectedIdDobStr.isEmpty) {
+        return;
+      }
+      
       _verifyIdentity();
     }
   }
@@ -156,6 +159,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
         body: jsonEncode({
           'id_type': _selectedIdType,
           'id_number': idNumber,
+          'dob': _selectedIdType == 'bvn' ? _selectedIdDobStr : null,
         }),
       );
 
@@ -371,11 +375,6 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     );
   }
 
-  // Check if selected ID type requires photo upload
-  bool _isIdPhotoRequired() {
-    // BVN and NIN can be verified electronically, so photo is optional
-    return _selectedIdType != 'bvn' && _selectedIdType != 'nin';
-  }
 
   Future<void> _submitTier2() async {
     // Clear previous errors
@@ -399,39 +398,24 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
       }
     }
     
-    if (_isIdPhotoRequired() && _idPhoto == null) {
-      setState(() => _fieldErrors['id_photo'] = 'Please upload your ID photo');
-      return;
-    }
-
     setState(() => _isSubmitting = true);
-
+    
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       final token = await authService.getToken();
 
-      var request = http.MultipartRequest(
-        'POST',
+      final response = await http.post(
         Uri.parse('${Constants.baseUrl}/kyc/tier2'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'id_type': _selectedIdType,
+          'id_number': _idNumberController.text.trim(),
+        }),
       );
-
-      request.headers['Authorization'] = 'Bearer $token';
-      request.headers['Accept'] = 'application/json';
-
-      request.fields['id_type'] = _selectedIdType!;
-      request.fields['id_number'] = _idNumberController.text;
-
-      // Add ID photo if provided
-      if (_idPhoto != null && _idPhotoBytes != null) {
-        request.files.add(http.MultipartFile.fromBytes(
-          'id_photo',
-          _idPhotoBytes!,
-          filename: _idPhoto!.name,
-        ));
-      }
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
 
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -439,18 +423,18 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        // Extract masked phone and debug OTP from response
-        _maskedPhone = responseData['data']?['phone_masked'] ?? 
-                       responseData['phone_masked'] ?? _maskedPhone;
-        _debugOtp = responseData['data']?['debug_otp'] ?? 
-                    responseData['debug_otp'];
         
-        // Show OTP modal after frame rebuild completes
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _showOtpModal();
-          }
-        });
+        // Identity details matched, proceed to liveness check
+        if (responseData['data']?['proceed_to_liveness'] == true || responseData['proceed_to_liveness'] == true) {
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (mounted) {
+              final result = await Navigator.pushNamed(context, '/liveness-check');
+              if (result == true && mounted) {
+                _fetchKycStatus();
+              }
+            }
+          });
+        }
       } else {
         final error = jsonDecode(response.body);
         _setFieldErrors(error);
@@ -463,388 +447,6 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     }
   }
 
-  // Show OTP input bottom sheet modal
-  void _showOtpModal() {
-    _otpController.clear();
-    
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: false,
-      enableDrag: true,
-      builder: (sheetContext) {
-        bool isVerifying = false;
-        bool isResending = false;
-        
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
-            final screenHeight = MediaQuery.of(context).size.height;
-            
-            return Container(
-              height: (screenHeight * 0.65) + bottomPadding,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(25),
-                  topRight: Radius.circular(25),
-                ),
-              ),
-              child: Column(
-                children: [
-                  // Drag handle
-                  Container(
-                    margin: const EdgeInsets.only(top: 12, bottom: 8),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    AppColors.primary,
-                                    AppColors.primary.withOpacity(0.8),
-                                  ],
-                                ),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.sms_outlined,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Enter OTP',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          onPressed: isVerifying
-                              ? null
-                              : () {
-                                  Navigator.of(sheetContext).pop();
-                                  _otpController.clear();
-                                },
-                          icon: const Icon(Icons.close, size: 24),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const Divider(height: 1),
-                  
-                  // Content
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.only(
-                        left: 24, right: 24, top: 24,
-                        bottom: bottomPadding + 24,
-                      ),
-                      child: Column(
-                        children: [
-                          // SMS icon
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.sms,
-                              color: AppColors.primary,
-                              size: 40,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'We sent a verification code to\n${_maskedPhone ?? "your phone"}',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                              height: 1.5,
-                            ),
-                          ),
-                          if (_verifiedName != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'Name: $_verifiedName',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 24),
-                          
-                          // OTP Input Field
-                          TextField(
-                            controller: _otpController,
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            autofocus: true,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 10,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: '------',
-                              hintStyle: TextStyle(
-                                fontSize: 28,
-                                letterSpacing: 10,
-                                color: Colors.grey[300],
-                              ),
-                              counterText: '',
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Colors.grey.shade200),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(
-                                  color: AppColors.primary,
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 18,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          
-                          // Verify OTP Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 54,
-                            child: ElevatedButton(
-                              onPressed: isVerifying
-                                  ? null
-                                  : () async {
-                                      final otp = _otpController.text.trim();
-                                      if (otp.isEmpty) {
-                                        _showSnackBar('Please enter the OTP', isError: true);
-                                        return;
-                                      }
-                                      if (otp.length != 6) {
-                                        _showSnackBar('OTP must be exactly 6 digits', isError: true);
-                                        return;
-                                      }
-
-                                      setSheetState(() => isVerifying = true);
-                                      
-                                      try {
-                                        await _verifyOtp(otp);
-                                        if (mounted) {
-                                          Navigator.of(sheetContext).pop();
-                                          _showTier2SuccessDialog();
-                                        }
-                                      } catch (e) {
-                                        _showSnackBar(
-                                          'Error: ${e.toString().replaceAll('Exception: ', '')}',
-                                          isError: true,
-                                        );
-                                      } finally {
-                                        if (mounted) {
-                                          setSheetState(() => isVerifying = false);
-                                        }
-                                      }
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: isVerifying
-                                  ? const SizedBox(
-                                      height: 22,
-                                      width: 22,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2.5,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Verify OTP',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          
-                          // Resend OTP row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Didn't receive code? ",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              isResending
-                                  ? Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const SizedBox(
-                                          height: 14,
-                                          width: 14,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: AppColors.primary,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'Sending...',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.primary.withOpacity(0.7),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : TextButton(
-                                      onPressed: () async {
-                                        setSheetState(() => isResending = true);
-                                        try {
-                                          await _resendOtp();
-                                          _showSnackBar('OTP resent successfully');
-                                        } catch (e) {
-                                          _showSnackBar(
-                                            'Error: ${e.toString().replaceAll('Exception: ', '')}',
-                                            isError: true,
-                                          );
-                                        } finally {
-                                          if (mounted) {
-                                            setSheetState(() => isResending = false);
-                                          }
-                                        }
-                                      },
-                                      style: TextButton.styleFrom(
-                                        padding: EdgeInsets.zero,
-                                        minimumSize: const Size(0, 0),
-                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                      child: const Text(
-                                        'Resend',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-                                    ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // Verify the OTP with backend
-  Future<void> _verifyOtp(String otp) async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final token = await authService.getToken();
-
-    if (token == null || token.isEmpty) {
-      throw Exception('Authentication token not found');
-    }
-
-    final response = await http.post(
-      Uri.parse('${Constants.baseUrl}/kyc/tier2/verify-otp'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'otp': otp}),
-    );
-
-    final responseData = jsonDecode(response.body);
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception(responseData['message'] ?? 'OTP verification failed');
-    }
-  }
-
-  // Resend OTP
-  Future<void> _resendOtp() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final token = await authService.getToken();
-
-    if (token == null || token.isEmpty) {
-      throw Exception('Authentication token not found');
-    }
-
-    final response = await http.post(
-      Uri.parse('${Constants.baseUrl}/kyc/tier2/resend-otp'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
-    );
-
-    final responseData = jsonDecode(response.body);
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      _debugOtp = responseData['data']?['debug_otp'] ?? responseData['debug_otp'];
-    } else {
-      throw Exception(responseData['message'] ?? 'Failed to resend OTP');
-    }
-  }
 
   // Show success dialog after OTP verification
   void _showTier2SuccessDialog() {
@@ -1517,6 +1119,35 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
             ),
             _buildFieldError('id_number'),
             
+            // DOB for BVN
+            if (_selectedIdType == 'bvn') ...[
+              const SizedBox(height: 16),
+              ModernFormWidgets.buildTextField(
+                controller: TextEditingController(text: _selectedIdDobStr),
+                label: 'Date of Birth',
+                hintText: 'Select your birthday',
+                prefixIcon: Icons.calendar_today_outlined,
+                readOnly: true,
+                onTap: () async {
+                  final DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedIdDob ?? DateTime(2000),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null && picked != _selectedIdDob) {
+                    setState(() {
+                      _selectedIdDob = picked;
+                      _selectedIdDobStr = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+                      _identityVerified = false; // Reset verification to trigger with new DOB
+                    });
+                    _onIdNumberChanged(); // Trigger verification
+                  }
+                },
+              ),
+              _buildFieldError('dob'),
+            ],
+            
             // Verification Status Display
             if (_isVerifyingIdentity && (_selectedIdType == 'bvn' || _selectedIdType == 'nin')) ...[
               const SizedBox(height: 12),
@@ -1636,22 +1267,14 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
             ],
             const SizedBox(height: 20),
             
-            // ID Photo upload
-            _buildImageUpload(
-              label: 'ID Document Photo',
-              hint: 'Take a clear photo of your ID',
-              imageBytes: _idPhotoBytes,
-              onTap: () => _pickImage('id_photo'),
-              isOptional: !_isIdPhotoRequired(),
-            ),
-            _buildFieldError('id_photo'),
+            // ID Photo upload has been removed for Tier 2
             const SizedBox(height: 24),
             
             // Submit button
             ModernFormWidgets.buildPrimaryButton(
               label: (_selectedIdType == 'bvn' || _selectedIdType == 'nin')
                   ? (_identityVerified && _nameMatch 
-                      ? 'Send OTP to Complete' 
+                      ? 'Complete Verification' 
                       : (!_identityVerified 
                           ? 'Enter ID to Verify' 
                           : 'Name Mismatch'))

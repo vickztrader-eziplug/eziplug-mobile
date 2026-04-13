@@ -392,8 +392,8 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
       if (result['success'] == true) {
         ToastHelper.showSuccess('Photo uploaded successfully!');
         
-        // Navigate to PIN setup
-        Navigator.pushReplacementNamed(context, AppRoutes.pinSetup);
+        // Navigate back to KYC screen
+        Navigator.of(context).pop(true);
       } else {
         ToastHelper.showError(result['message'] ?? 'Failed to upload photo');
         setState(() {
@@ -412,7 +412,7 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
   }
 
   void _skipLivenessCheck() {
-    Navigator.pushReplacementNamed(context, AppRoutes.pinSetup);
+    Navigator.of(context).pop();
   }
 
   String _getStepTitle() {
@@ -572,7 +572,7 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
                       ),
                     ),
                     child: const Text(
-                      'Continue to PIN Setup',
+                      'Return to KYC',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -888,7 +888,7 @@ class _LivenessCheckScreenState extends State<LivenessCheckScreen>
                         ),
                       )
                     : const Text(
-                        'Continue',
+                        'Submit Liveness Check',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

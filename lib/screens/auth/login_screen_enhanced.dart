@@ -233,12 +233,12 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
               },
             );
           }
-        } else if (!isLivenessComplete) {
-          // Email verified but liveness check not completed
-          await debugLogger.log('NAV', 'Navigating to liveness check screen');
-          ToastHelper.showInfo("Please complete identity verification");
+        } else if (!isPinSet) {
+          // Liveness check is now part of KYC Tier 2, so we skip it here
+          await debugLogger.log('NAV', 'Navigating to PIN setup screen');
+          ToastHelper.showInfo("Please set up your PIN");
           if (mounted) {
-            Navigator.pushReplacementNamed(context, AppRoutes.livenessCheck);
+            Navigator.pushReplacementNamed(context, AppRoutes.pinSetup);
           }
         } else if (!isPinSet) {
           // Liveness complete but PIN not set

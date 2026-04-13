@@ -75,11 +75,8 @@ class _SplashScreenState extends State<SplashScreen>
             'token': authService.token,
           },
         );
-      } else if (!authService.isLivenessComplete) {
-        // Email verified but liveness not complete → Go to liveness check
-        Navigator.of(context).pushReplacementNamed(AppRoutes.livenessCheck);
       } else if (!authService.isPinSet) {
-        // Liveness complete but PIN not set → Go to PIN setup
+        // Email verified but PIN not set → Go to PIN setup
         Navigator.of(context).pushReplacementNamed(AppRoutes.pinSetup);
       } else {
         // All verifications complete → Show app lock screen for security
