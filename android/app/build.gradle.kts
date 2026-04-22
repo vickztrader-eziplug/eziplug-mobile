@@ -45,7 +45,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = 34
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -74,7 +74,7 @@ flutter {
 }
 
 dependencies {
-    // Modular Play Core libraries compatible with targetSdkVersion 34
+    // Modular Play Core libraries compatible with targetSdkVersion 34 and higher (Android 14+)
     implementation("com.google.android.play:app-update:2.1.0")
     implementation("com.google.android.play:asset-delivery:2.2.2")
     implementation("com.google.android.play:review:2.0.1")
