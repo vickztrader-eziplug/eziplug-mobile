@@ -15,8 +15,8 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.example.cashpoint"
-    compileSdk = flutter.compileSdkVersion
+    namespace = "com.eziplug"
+    compileSdk = 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -41,11 +41,11 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.cashpoint"
+        applicationId = "com.eziplug"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -74,6 +74,8 @@ flutter {
 }
 
 dependencies {
-    // Play Core library required for Flutter deferred components
-    implementation("com.google.android.play:core:1.10.3")
+    // Modular Play Core libraries compatible with targetSdkVersion 34
+    implementation("com.google.android.play:app-update:2.1.0")
+    implementation("com.google.android.play:asset-delivery:2.2.2")
+    implementation("com.google.android.play:review:2.0.1")
 }

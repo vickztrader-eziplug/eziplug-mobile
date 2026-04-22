@@ -1,4 +1,4 @@
-package com.example.cashpoint
+package com.eziplug
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
