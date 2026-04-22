@@ -49,13 +49,24 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
       
-      # Build Release APK (dependencies fixed in pubspec.yaml)
+      # Build Release App Bundle (for Google Play Store)
+      - name: Build Release AAB
+        run: flutter build appbundle --release
+      
+      # Build Release APK (for manual testing)
       - name: Build Release APK
         run: flutter build apk --release
       
+      - name: Upload Release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: eziplug-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 5
+
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: eziplug-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 2
+          retention-days: 5

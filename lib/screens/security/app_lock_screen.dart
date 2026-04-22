@@ -337,7 +337,7 @@ class _AppLockScreenState extends State<AppLockScreen>
                 ),
                 child: Center(
                   child: Image.asset(
-                    'assets/images/logo_no_bg.png',
+                    'assets/images/logo.png',
                     width: 60,
                     height: 60,
                   ),

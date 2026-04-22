@@ -452,7 +452,7 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
                           shape: BoxShape.circle,
                         ),
                         child: Image.asset(
-                          'assets/images/logo_no_bg.png',
+                          'assets/images/logo.png',
                           height: 50,
                           width: 50,
                           color: Colors.white,
