@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 
 class TermOfUserScreen extends StatefulWidget {
@@ -89,6 +90,17 @@ class _TermOfUserScreenState extends State<TermOfUserScreen>
     },
   ];
 
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch $url')),
+        );
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -163,7 +175,12 @@ class _TermOfUserScreenState extends State<TermOfUserScreen>
                         // Footer
                         _buildFooter(),
                         
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
+                        
+                        // Web Version Link
+                        _buildWebVersionLink(),
+                        
+                        const SizedBox(height: 30),
                       ],
                     ),
                   ),
@@ -401,6 +418,50 @@ class _TermOfUserScreenState extends State<TermOfUserScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWebVersionLink() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return InkWell(
+      onTap: () => _launchURL('https://eziplug.app/terms-and-conditions.html'),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.3),
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.language_rounded,
+              size: 20,
+              color: isDark ? AppColors.primaryLight : AppColors.primary,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'View Web Version',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.primaryLight : AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.open_in_new_rounded,
+              size: 16,
+              color: (isDark ? AppColors.primaryLight : AppColors.primary).withOpacity(0.7),
+            ),
+          ],
+        ),
       ),
     );
   }

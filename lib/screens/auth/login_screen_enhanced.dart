@@ -450,7 +450,7 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
                             shape: BoxShape.circle,
                           ),
                           child: Image.asset(
-                            'assets/images/logo.png',
+                            'assets/images/logo_no_bg.png',
                             height: 60,
                             width: 60,
                             color: Colors.white,

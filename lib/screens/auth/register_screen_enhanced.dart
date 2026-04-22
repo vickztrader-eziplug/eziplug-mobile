@@ -1,7 +1,9 @@
 import 'package:cashpoint/screens/auth/verification_screen_enhanced.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -20,6 +22,7 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
   bool _obscurePassword = true;
+  bool _agreedToTerms = false;
 
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -133,6 +136,15 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
     return null;
   }
 
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ToastHelper.showError('Could not launch $url');
+      }
+    }
+  }
+
   void _validateAllFields() {
     setState(() {
       _fieldErrors = {
@@ -156,6 +168,11 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
     if (_hasErrors()) {
       // Scroll to first error or just show the errors
       ToastHelper.showError('Please fix the errors below');
+      return;
+    }
+
+    if (!_agreedToTerms) {
+      ToastHelper.showError('Please agree to the Terms & Conditions to proceed');
       return;
     }
 
@@ -435,7 +452,7 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
                           shape: BoxShape.circle,
                         ),
                         child: Image.asset(
-                          'assets/images/logo.png',
+                          'assets/images/logo_no_bg.png',
                           height: 50,
                           width: 50,
                           color: Colors.white,
@@ -679,6 +696,54 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
 
                           const SizedBox(height: 32),
 
+                          // Terms and conditions checkbox
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: Checkbox(
+                                  value: _agreedToTerms,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _agreedToTerms = value ?? false;
+                                    });
+                                  },
+                                  activeColor: AppColors.primary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text.rich(
+                                  TextSpan(
+                                    text: 'I have read and agree to the ',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 13,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: 'Terms & Conditions',
+                                        style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w600,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                        recognizer: TapGestureRecognizer()
+                                          ..onTap = () => _launchURL('https://eziplug.app/terms-conditions.html'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 24),
+
                           // Register Button
                           Container(
                             width: double.infinity,
@@ -732,31 +797,6 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
                                         Icon(Icons.arrow_forward, color: Colors.white, size: 20),
                                       ],
                                     ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Terms and conditions
-                          Center(
-                            child: Text.rich(
-                              TextSpan(
-                                text: 'By registering, you agree to our ',
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontSize: 13,
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text: 'Terms & Conditions',
-                                    style: TextStyle(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              textAlign: TextAlign.center,
                             ),
                           ),
 

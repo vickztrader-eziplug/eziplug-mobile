@@ -906,6 +906,51 @@ class AuthService extends ChangeNotifier {
     await _clearAuth();
   }
 
+  /// Delete Account
+  Future<Map<String, dynamic>> deleteAccount() async {
+    final token = await getToken();
+    if (token == null) {
+      return {'success': false, 'message': 'Not authenticated'};
+    }
+
+    try {
+      final baseUrlClean = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+      final url = Uri.parse('$baseUrlClean/user/delete');
+      
+      final response = await http.delete(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Clear local auth state after successful deletion
+        await _clearAuth();
+        return {
+          'success': true,
+          'message': 'Account deleted successfully',
+        };
+      } else {
+        try {
+          final data = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': data['message'] ?? 'Failed to delete account',
+          };
+        } catch (_) {
+          return {
+            'success': false,
+            'message': 'Failed to delete account (${response.statusCode})',
+          };
+        }
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
   /// Update profile photo (passport)
   Future<Map<String, dynamic>> updateProfilePhoto(List<int> imageBytes, String filename) async {
     final token = await getToken();

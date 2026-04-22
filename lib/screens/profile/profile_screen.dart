@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../providers/theme_provider.dart';
 import '../../routes.dart';
 import '../../services/auth_service.dart';
+import '../../core/utils/toast_helper.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -296,6 +297,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         // Logout Button
                         _buildLogoutButton(authService, theme),
+
+                        const SizedBox(height: 16),
+
+                        // Delete Account Button
+                        _buildDeleteAccountButton(authService, theme),
 
                         const SizedBox(height: 30),
 
@@ -729,6 +735,117 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 'Sign Out',
                 style: TextStyle(
                   color: Colors.red.shade400,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeleteAccountButton(AuthService authService, ThemeData theme) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          final shouldDelete = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: theme.cardColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.warning_amber_rounded, color: Colors.red.shade600, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Delete Account',
+                    style: TextStyle(color: theme.textTheme.titleMedium?.color),
+                  ),
+                ],
+              ),
+              content: Text(
+                'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be cleared.',
+                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: theme.textTheme.bodySmall?.color),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade700,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Delete'),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldDelete == true) {
+            // Show loading overlay manually or just wait for response
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+            );
+
+            final response = await authService.deleteAccount();
+
+            if (mounted) {
+              Navigator.pop(context); // Dismiss loading dialog
+              if (response['success'] == true) {
+                ToastHelper.showSuccess(response['message'] ?? 'Account deleted successfully.');
+                Navigator.pushReplacementNamed(context, AppRoutes.login);
+              } else {
+                ToastHelper.showError(response['message'] ?? 'Failed to delete account.');
+              }
+            }
+          }
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.red.shade600,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.delete_forever_rounded, color: Colors.white, size: 22),
+              const SizedBox(width: 10),
+              const Text(
+                'Delete Account',
+                style: TextStyle(
+                  color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
