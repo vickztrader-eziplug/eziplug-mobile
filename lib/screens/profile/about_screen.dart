@@ -462,7 +462,7 @@ class _AboutScreenState extends State<AboutScreen>
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'supported@eziplug.app',
+                  'support@eziplug.app',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withOpacity(0.95),

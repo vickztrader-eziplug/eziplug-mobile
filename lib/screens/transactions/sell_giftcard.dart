@@ -137,6 +137,15 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
   void _onPriceRangeSelected(dynamic priceRange) {
     setState(() {
       _selectedPriceRange = priceRange;
+      
+      // Use range rate if available (> 0), otherwise fallback to country rate
+      final rangeRate = double.tryParse(priceRange['rate']?.toString() ?? '0') ?? 0.0;
+      if (rangeRate > 0) {
+        _rate = rangeRate;
+      } else if (_selectedCountry != null) {
+        _rate = double.tryParse(_selectedCountry['sell_rate']?.toString() ?? '0') ?? 0.0;
+      }
+      
       _amountUsdController.text = priceRange['min_amount'].toString();
       _calculateNairaAmount();
     });
@@ -949,6 +958,8 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
               .where((r) => r['category'] == category)
               .toList();
           _selectedPriceRange = null;
+          // Reset rate to country level until a range is selected
+          _rate = double.tryParse(_selectedCountry['sell_rate']?.toString() ?? '0') ?? 0.0;
         });
       },
       child: AnimatedContainer(

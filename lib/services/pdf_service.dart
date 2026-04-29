@@ -267,7 +267,7 @@ class PdfService {
                     ),
                     pw.SizedBox(height: 5),
                     pw.Text(
-                      'Support: supported@eziplug.app | Generated on ${DateTime.now().toString().split('.')[0]}',
+                      'Support: support@eziplug.app | Generated on ${DateTime.now().toString().split('.')[0]}',
                       style: pw.TextStyle(
                         fontSize: 8,
                         color: PdfColor.fromHex('#95A5A6'),

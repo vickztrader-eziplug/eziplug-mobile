@@ -30,6 +30,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
   bool _isGeneratingWallet = false;
   double _walletNaira = 0.0;
   double _currentRate = 0.0;
+  double _youReceiveNaira = 0.0;
 
   String? _selectedCoin;
   String? _selectedCoinId;
@@ -53,12 +54,31 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
     );
     // Initialize with cached balance immediately so it doesn't show 0
     final authService = Provider.of<AuthService>(context, listen: false);
-    _walletNaira = authService.walletNaira;
-    if (_walletNaira > 0) {
-      _isLoadingWallet = false;
-    }
     _fetchWalletBalance();
     _fetchCoins();
+
+    // Add listener for auto-calculation
+    _amountController.addListener(_calculateReceiveAmount);
+  }
+
+  void _calculateReceiveAmount() {
+    if (_amountController.text.isEmpty || _currentRate == 0) {
+      if (mounted) {
+        setState(() {
+          _youReceiveNaira = 0.0;
+        });
+      }
+      return;
+    }
+
+    final amountStr = _amountController.text.replaceAll(',', '');
+    final amount = double.tryParse(amountStr) ?? 0.0;
+
+    if (mounted) {
+      setState(() {
+        _youReceiveNaira = amount * _currentRate;
+      });
+    }
   }
 
   @override
@@ -191,6 +211,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
       _walletAddress = null;
       _qrCodeData = null;
       _expiryTimer?.cancel();
+      _calculateReceiveAmount(); // Recalculate when coin changes
     });
   }
 
@@ -491,11 +512,47 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                               hintText: 'Enter crypto amount to sell',
                               prefixIcon: Icons.money,
                               keyboardType: TextInputType.number,
+                              onChanged: (value) => _calculateReceiveAmount(),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
+
+                      // You Receive Preview (Before generating address)
+                      if (_youReceiveNaira > 0 && _walletAddress == null) ...[
+                        ModernFormWidgets.buildFormCard(
+                          backgroundColor: AppColors.primary.withOpacity(0.04),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'You Receive',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isDark ? theme.textTheme.bodySmall?.color : Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '₦${_formatBalance(_youReceiveNaira)}',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary.withOpacity(0.5), size: 32),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
 
                       // Rate Display
                       if (_currentRate > 0)
@@ -707,7 +764,64 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+
+          // Estimated Receive Amount (In Countdown Section)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? theme.cardColor : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isDark ? theme.dividerColor : Colors.grey.shade200),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Estimated Amount',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? theme.textTheme.bodySmall?.color : Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '₦${_formatBalance(_youReceiveNaira)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.success,
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Crypto Amount',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? theme.textTheme.bodySmall?.color : Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${_amountController.text} ${_selectedCoin ?? ""}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
 
           // Wallet Address
           Container(
