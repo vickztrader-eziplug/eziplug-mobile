@@ -324,7 +324,9 @@ class _AppLockScreenState extends State<AppLockScreen>
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        const SizedBox(width: double.infinity),
                         const Spacer(flex: 1),
               
               // Logo

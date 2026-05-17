@@ -30,14 +30,13 @@ class _SplashScreenState extends State<SplashScreen>
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
     _controller.forward();
-    Timer(const Duration(seconds: 3), () {
-      _navigateToNextScreen();
+    
+    // Wait for the 2-second animation to finish before navigating away
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _navigateToNextScreen();
+      }
     });
-
-    // Navigate to Onboarding after 3 seconds
-    // Timer(const Duration(seconds: 3), () {
-    //   Navigator.of(context).pushReplacementNamed(AppRoutes.onboarding);
-    // });
   }
 
   @override

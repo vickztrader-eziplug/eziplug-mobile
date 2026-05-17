@@ -308,7 +308,8 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
       'id', 'user_id', 'transaction_id', 'gift_card_transaction_id', 
       'api_response', 'trade_id', 'crypto_id', 'gift_card_country_id',
       'price_range_id', 'status', 'amount_crypto', 'network_id',
-      'commission', 'service_id', 'payment_id', 'webhook_call_id'
+      'commission', 'service_id', 'payment_id', 'webhook_call_id', 
+      'provider'
     };
 
     metadata.forEach((key, value) {

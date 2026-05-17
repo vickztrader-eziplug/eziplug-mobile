@@ -728,8 +728,8 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
 
                             // Register Link
                             Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                              child: Wrap(
+                                alignment: WrapAlignment.center,
                                 children: [
                                   Text(
                                     "Don't have an account? ",

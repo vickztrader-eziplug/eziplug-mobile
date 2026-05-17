@@ -65,30 +65,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         padding: EdgeInsets.fromLTRB(sw * 0.05, sh * 0.02, sw * 0.05, sh * 0.04),
                         child: Column(
                           children: [
-                            // Top Row with Title and Refresh
+                            // Top Row with Title
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
+                              children: const [
+                                Text(
                                   'My Profile',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 22,
                                     fontWeight: FontWeight.bold,
                                   ),
-                                ),
-                                IconButton(
-                                  onPressed: _isRefreshing ? null : _refreshUserData,
-                                  icon: _isRefreshing
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : const Icon(Icons.refresh_rounded, color: Colors.white),
                                 ),
                               ],
                             ),

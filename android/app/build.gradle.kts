@@ -78,4 +78,5 @@ dependencies {
     implementation("com.google.android.play:app-update:2.1.0")
     implementation("com.google.android.play:asset-delivery:2.2.2")
     implementation("com.google.android.play:review:2.0.1")
+    implementation("androidx.activity:activity-ktx:1.8.0")
 }
