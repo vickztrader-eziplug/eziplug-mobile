@@ -68,8 +68,8 @@ jobs:
         run: jarsigner -verify -verbose -certs build/app/outputs/bundle/release/app-release.aab
       
       # #  Build Release APK (for manual testing)
-      # - name: Build Release APK
-      #   run: flutter build apk --release
+      - name: Build Release APK
+        run: flutter build apk --release
       
       - name: Upload Release AAB
         uses: actions/upload-artifact@v4
