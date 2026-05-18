@@ -10,6 +10,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../services/auth_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/update_service.dart';
 import '../../routes.dart';
 import '../transactions/airtime_screen.dart';
 import '../transactions/data_screen.dart';
@@ -105,6 +106,9 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     _startAutoScroll();
     _fetchUserData();
     _fetchPromotions();
+    
+    // Check for app updates
+    UpdateService.checkForUpdates();
   }
 
   @override
