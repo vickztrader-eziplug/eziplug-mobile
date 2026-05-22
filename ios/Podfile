@@ -1,4 +1,9 @@
+# Set platform to 15.5
 platform :ios, '15.5'
+
+# Load the Flutter podhelper script which defines necessary helper methods
+flutter_ios_podfile_path = File.expand_path(File.join('..', 'Flutter', 'podhelper.rb'), __FILE__)
+require flutter_ios_podfile_path
 
 flutter_install_all_ios_pods File.dirname(File.expand_path(__FILE__))
 
