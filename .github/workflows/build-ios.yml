@@ -83,6 +83,16 @@ jobs:
           </plist>
           EOF
 
+      # Inject code signing settings into the Xcode project for CI
+      - name: Configure Code Signing
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_PROVISIONING_PROFILE_NAME: ${{ secrets.APPLE_PROVISIONING_PROFILE_NAME }}
+        run: |
+          # Add DEVELOPMENT_TEAM, CODE_SIGN_STYLE, and PROVISIONING_PROFILE_SPECIFIER
+          # to all Runner target build configurations in project.pbxproj
+          sed -i '' "s|PRODUCT_BUNDLE_IDENTIFIER = com.eziplug.app;|PRODUCT_BUNDLE_IDENTIFIER = com.eziplug.app; DEVELOPMENT_TEAM = ${APPLE_TEAM_ID}; CODE_SIGN_STYLE = Manual; PROVISIONING_PROFILE_SPECIFIER = \"${APPLE_PROVISIONING_PROFILE_NAME}\";|g" ios/Runner.xcodeproj/project.pbxproj
+
       # Compile the IPA for distribution
       - name: Build IPA
         run: flutter build ipa --release --export-options-plist=ios/Runner/ExportOptions.plist
