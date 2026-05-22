@@ -53,8 +53,10 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
           
-      - name: Get Dependencies
-        run: flutter pub get
+      - name: Get Dependencies and Generate iOS Config
+        run: |
+          flutter pub get
+          flutter build ios --config-only
         
       # Dynamically generate the ExportOptions.plist on the runner to keep it clean and private
       - name: Generate ExportOptions.plist
