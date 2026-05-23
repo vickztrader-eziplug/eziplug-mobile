@@ -49,15 +49,53 @@ jobs:
           security import $CERTIFICATE_PATH -k $KEYCHAIN_PATH -P "$P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/productsign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
+          # IMPORTANT: Add keychain to the search list so Xcode can find it
+          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | sed s/\"//g)
+
           # Apply the Provisioning Profile to the system
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
-          
-      - name: Get Dependencies and Generate iOS Config
+
+      # Debug step to verify certificate and profile were installed correctly
+      - name: Verify Code Signing Setup
         run: |
-          flutter pub get
-          flutter build ios --config-only
-        
+          echo "=== Decoded .p12 file size ==="
+          ls -la $RUNNER_TEMP/build_certificate.p12
+
+          echo ""
+          echo "=== Decoded provisioning profile file size ==="
+          ls -la $RUNNER_TEMP/build_pp.mobileprovision
+
+          echo ""
+          echo "=== Keychain search list ==="
+          security list-keychains -d user
+
+          echo ""
+          echo "=== Signing identities found in keychain ==="
+          security find-identity -v -p codesigning $RUNNER_TEMP/app-signing.keychain-db
+
+          echo ""
+          echo "=== ALL signing identities (including invalid) ==="
+          security find-identity -p codesigning $RUNNER_TEMP/app-signing.keychain-db
+
+          echo ""
+          echo "=== Provisioning profile info ==="
+          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision 2>/dev/null | head -80 || echo "Could not read provisioning profile"
+          
+      # Inject code signing settings into the Xcode project for CI
+      # IMPORTANT: This must happen BEFORE flutter build ios --config-only
+      - name: Configure Code Signing
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_PROVISIONING_PROFILE_NAME: ${{ secrets.APPLE_PROVISIONING_PROFILE_NAME }}
+        run: |
+          # Add DEVELOPMENT_TEAM, CODE_SIGN_STYLE, and PROVISIONING_PROFILE_SPECIFIER
+          # to all Runner target build configurations in project.pbxproj
+          sed -i '' "s|PRODUCT_BUNDLE_IDENTIFIER = com.eziplug.app;|PRODUCT_BUNDLE_IDENTIFIER = com.eziplug.app; DEVELOPMENT_TEAM = ${APPLE_TEAM_ID}; CODE_SIGN_STYLE = Manual; CODE_SIGN_IDENTITY = \"Apple Distribution\"; PROVISIONING_PROFILE_SPECIFIER = \"${APPLE_PROVISIONING_PROFILE_NAME}\";|g" ios/Runner.xcodeproj/project.pbxproj
+
+          echo "=== Verifying sed replacement worked ==="
+          grep -c "DEVELOPMENT_TEAM" ios/Runner.xcodeproj/project.pbxproj || echo "WARNING: DEVELOPMENT_TEAM not found - sed replacement may have failed!"
+
       # Dynamically generate the ExportOptions.plist on the runner to keep it clean and private
       - name: Generate ExportOptions.plist
         run: |
@@ -83,16 +121,11 @@ jobs:
           </plist>
           EOF
 
-      # Inject code signing settings into the Xcode project for CI
-      - name: Configure Code Signing
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APPLE_PROVISIONING_PROFILE_NAME: ${{ secrets.APPLE_PROVISIONING_PROFILE_NAME }}
+      - name: Get Dependencies and Generate iOS Config
         run: |
-          # Add DEVELOPMENT_TEAM, CODE_SIGN_STYLE, and PROVISIONING_PROFILE_SPECIFIER
-          # to all Runner target build configurations in project.pbxproj
-          sed -i '' "s|PRODUCT_BUNDLE_IDENTIFIER = com.eziplug.app;|PRODUCT_BUNDLE_IDENTIFIER = com.eziplug.app; DEVELOPMENT_TEAM = ${APPLE_TEAM_ID}; CODE_SIGN_STYLE = Manual; CODE_SIGN_IDENTITY = \"Apple Distribution\"; PROVISIONING_PROFILE_SPECIFIER = \"${APPLE_PROVISIONING_PROFILE_NAME}\";|g" ios/Runner.xcodeproj/project.pbxproj
-
+          flutter pub get
+          flutter build ios --config-only
+        
       # Compile the IPA for distribution
       - name: Build IPA
         run: flutter build ipa --release --export-options-plist=ios/Runner/ExportOptions.plist
