@@ -7,12 +7,21 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
-    timeout-minutes: 45
+    runs-on: macos-15
+    timeout-minutes: 60
     
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      # Select Xcode 26 to get iOS 26 SDK (required for App Store submissions)
+      - name: Select Xcode 26
+        run: |
+          echo "=== Available Xcode versions ==="
+          ls /Applications/ | grep Xcode
+          sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
+          echo "=== Selected Xcode ==="
+          xcodebuild -version
       
       # Setup Flutter
       - name: Setup Flutter
