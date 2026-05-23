@@ -19,7 +19,7 @@ jobs:
         run: |
           echo "=== Available Xcode versions ==="
           ls /Applications/ | grep Xcode
-          sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
           echo "=== Selected Xcode ==="
           xcodebuild -version
       
