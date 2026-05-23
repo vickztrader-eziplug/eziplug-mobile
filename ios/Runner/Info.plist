@@ -2,8 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+		<key>NSCameraUsageDescription</key>
+		<string>Eziplug needs camera access for face verification and document scanning.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Eziplug needs microphone access for video recording during verification.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>This app needs access to photos to upload documents</string>
+		<string>Eziplug needs access to your photo library to upload documents and profile pictures.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>Eziplug needs permission to save receipts and documents to your photo library.</string>
 		<key>LSApplicationQueriesSchemes</key>
 		<array>
 			<string>https</string>
