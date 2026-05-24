@@ -383,7 +383,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               // Header Section
               Container(
                 width: double.infinity,
-                height: 300,
+                height: 340,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: isDark 
@@ -448,7 +448,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       const SizedBox(height: 12),
                       // Amount
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
                           '${isPositive ? '+' : '-'} ₦${transaction.amount.toStringAsFixed(2)}',
                           style: TextStyle(
@@ -489,7 +489,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
               // Content Section
               Positioned(
-                top: 270,
+                top: 310,
                 left: 0,
                 right: 0,
                 bottom: 0,

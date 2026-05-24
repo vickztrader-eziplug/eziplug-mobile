@@ -41,6 +41,19 @@ class _ChangePinOtpScreenState extends State<ChangePinOtpScreen>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
     
+    for (int i = 0; i < 6; i++) {
+      _focusNodes[i].onKeyEvent = (node, event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.backspace) {
+          if (_otpControllers[i].text.isEmpty && i > 0) {
+            _focusNodes[i - 1].requestFocus();
+            _otpControllers[i - 1].clear();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      };
+    }
+    
     _loadUserEmail();
     _sendOtp();
   }
@@ -127,8 +140,12 @@ class _ChangePinOtpScreenState extends State<ChangePinOtpScreen>
   void _onOtpChanged(int index, String value) {
     setState(() => _errorMessage = null);
     
-    if (value.isNotEmpty && index < 5) {
-      _focusNodes[index + 1].requestFocus();
+    if (value.isNotEmpty) {
+      if (index < 5) {
+        _focusNodes[index + 1].requestFocus();
+      }
+    } else if (index > 0) {
+      _focusNodes[index - 1].requestFocus();
     }
     
     // Auto-verify when all 6 digits entered
@@ -243,15 +260,6 @@ class _ChangePinOtpScreenState extends State<ChangePinOtpScreen>
                   : Colors.grey.shade300,
           width: _focusNodes[index].hasFocus ? 2 : 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: _focusNodes[index].hasFocus
-                ? AppColors.primary.withOpacity(0.15)
-                : Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: TextField(
         controller: _otpControllers[index],
@@ -267,6 +275,12 @@ class _ChangePinOtpScreenState extends State<ChangePinOtpScreen>
         decoration: const InputDecoration(
           counterText: '',
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+          filled: false,
         ),
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         onChanged: (value) => _onOtpChanged(index, value),

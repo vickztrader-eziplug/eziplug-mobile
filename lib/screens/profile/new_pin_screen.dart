@@ -40,6 +40,30 @@ class _NewPinScreenState extends State<NewPinScreen> with TickerProviderStateMix
       CurveTween(curve: Curves.elasticIn),
     ).animate(_shakeController);
     
+    for (int i = 0; i < 4; i++) {
+      _pinFocusNodes[i].onKeyEvent = (node, event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.backspace) {
+          if (_pinControllers[i].text.isEmpty && i > 0) {
+            _pinFocusNodes[i - 1].requestFocus();
+            _pinControllers[i - 1].clear();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      };
+      
+      _confirmPinFocusNodes[i].onKeyEvent = (node, event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.backspace) {
+          if (_confirmPinControllers[i].text.isEmpty && i > 0) {
+            _confirmPinFocusNodes[i - 1].requestFocus();
+            _confirmPinControllers[i - 1].clear();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      };
+    }
+    
     // Auto-focus first PIN field
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _pinFocusNodes[0].requestFocus();
@@ -94,6 +118,8 @@ class _NewPinScreenState extends State<NewPinScreen> with TickerProviderStateMix
           _validateAndSubmit();
         }
       }
+    } else if (index > 0) {
+      focusNodes[index - 1].requestFocus();
     }
   }
 
@@ -220,15 +246,6 @@ class _NewPinScreenState extends State<NewPinScreen> with TickerProviderStateMix
                     : Colors.grey.shade300,
             width: focusNodes[index].hasFocus ? 2 : 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: focusNodes[index].hasFocus
-                  ? AppColors.primary.withOpacity(0.2)
-                  : Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Center(
           child: TextField(
@@ -247,6 +264,12 @@ class _NewPinScreenState extends State<NewPinScreen> with TickerProviderStateMix
             decoration: const InputDecoration(
               counterText: '',
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+              filled: false,
             ),
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (value) => _onPinChanged(index, value, isConfirm),
