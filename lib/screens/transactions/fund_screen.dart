@@ -183,6 +183,7 @@ class _FundScreenState extends State<FundScreen> with SingleTickerProviderStateM
       child: Scaffold(
         backgroundColor: isDark ? AppColors.headerDark : AppColors.primary,
         body: SafeArea(
+          bottom: false,
           child: Column(
             children: [
               // Header Section with gradient

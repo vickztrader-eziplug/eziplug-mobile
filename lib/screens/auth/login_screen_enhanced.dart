@@ -413,11 +413,10 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
       ),
       child: Scaffold(
         backgroundColor: Colors.grey.shade50,
-        body: SafeArea(
-        child: SingleChildScrollView(
+        body: SingleChildScrollView(
           child: Column(
             children: [
-              // Header with gradient
+              // Header with gradient (extends behind status bar on iOS)
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -435,7 +434,7 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
                   ),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(24, sh * 0.05, 24, 40),
+                  padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 40),
                   child: Column(
                     children: [
                       // Logo - Long press to open debug logs
@@ -767,7 +766,6 @@ class _LoginScreenEnhancedState extends State<LoginScreenEnhanced>
           ),
         ),
       ),
-    ),
     );
   }
 }

@@ -259,6 +259,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
       child: Scaffold(
         backgroundColor: isDark ? AppColors.headerDark : AppColors.primary,
         body: SafeArea(
+          bottom: false,
           child: Column(
             children: [
               // Enhanced Header Section

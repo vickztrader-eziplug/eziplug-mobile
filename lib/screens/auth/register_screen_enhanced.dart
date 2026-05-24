@@ -402,11 +402,10 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
       ),
       child: Scaffold(
         backgroundColor: Colors.grey.shade50,
-        body: SafeArea(
-        child: SingleChildScrollView(
+        body: SingleChildScrollView(
           child: Column(
             children: [
-              // Header with gradient
+              // Header with gradient (extends behind status bar on iOS)
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -424,7 +423,7 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
                   ),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(24, sh * 0.04, 24, 35),
+                  padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 16, 24, 35),
                   child: Column(
                     children: [
                       // Back button row
@@ -862,7 +861,6 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
           ),
         ),
       ),
-    ),
     );
   }
 }

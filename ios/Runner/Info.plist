@@ -60,6 +60,8 @@
 		<true/>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 		<key>NSFaceIDUsageDescription</key>
 		<string>Eziplug uses Face ID to securely authenticate you when accessing the app.</string>
 		<key>UIStatusBarHidden</key>

@@ -355,6 +355,7 @@ class _CardDepositScreenState extends State<CardDepositScreen> {
       child: Scaffold(
         backgroundColor: isDark ? AppColors.headerDark : AppColors.primary,
         body: SafeArea(
+          bottom: false,
           child: Column(
             children: [
               // Enhanced Header Section

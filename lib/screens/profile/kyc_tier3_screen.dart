@@ -315,6 +315,7 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.headerDark : AppColors.primary,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             // Header
