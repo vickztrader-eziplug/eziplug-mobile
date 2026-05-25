@@ -656,7 +656,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       value: SystemUiOverlayStyle(
         statusBarColor: isDark ? AppColors.headerDark : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        // iOS uses statusBarBrightness to determine icon color:
+        // Brightness.dark = light/white icons (for dark backgrounds)
+        statusBarBrightness: Brightness.dark,
       ),
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,

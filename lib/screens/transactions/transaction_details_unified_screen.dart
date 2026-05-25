@@ -458,7 +458,9 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
       value: SystemUiOverlayStyle(
         statusBarColor: isDark ? theme.scaffoldBackgroundColor : AppColors.primary,
         statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        // iOS uses statusBarBrightness to determine icon color:
+        // Brightness.dark = light/white icons (for dark backgrounds)
+        statusBarBrightness: Brightness.dark,
       ),
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -468,7 +470,7 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
               // Header Section
               Container(
                 width: double.infinity,
-                height: 260,
+                height: 310,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: isDark
@@ -525,37 +527,20 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
                           size: 30,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       // Amount
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          '${isCredit ? '+' : '-'} ₦${transaction.amount.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Status Badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isDark ? theme.cardColor : Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: isDark ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
-                        ),
-                        child: Text(
-                          transaction.status.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? _getStatusColor(transaction.status) : Colors.white,
-                            letterSpacing: 1.2,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '${isCredit ? '+' : '-'} ₦${transaction.amount.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? theme.textTheme.bodyLarge?.color : Colors.white,
+                            ),
+                            maxLines: 1,
                           ),
                         ),
                       ),
@@ -566,7 +551,7 @@ class _TransactionDetailUnifiedScreenState extends State<TransactionDetailUnifie
 
               // Content Section
               Positioned(
-                top: 230,
+                top: 280,
                 left: 0,
                 right: 0,
                 bottom: 0,
