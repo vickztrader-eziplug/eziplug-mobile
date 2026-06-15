@@ -731,7 +731,7 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
                                   ),
                                 )
                               : const Text(
-                                  'Confirm and Trade',
+                                  'Submit',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,

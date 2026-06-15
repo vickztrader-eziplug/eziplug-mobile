@@ -370,7 +370,7 @@ class _RateCalculatorScreenState extends State<RateCalculatorScreen> {
             // Modern Gradient Header
             ModernFormWidgets.buildGradientHeader(
               context: context,
-              title: 'Rate Calculator',
+              title: 'Rate',
               subtitle: 'Calculate giftcard & crypto rates',
               primaryColor: _primaryColor,
             ),

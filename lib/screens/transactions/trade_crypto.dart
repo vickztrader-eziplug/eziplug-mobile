@@ -218,7 +218,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
                 const SizedBox(height: 16),
 
                 Text(
-                  'Trade $symbol',
+                  '$symbol',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -237,7 +237,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
 
                 // Buy Button
                 ModernFormWidgets.buildPrimaryButton(
-                  label: 'Buy $symbol',
+                  label: 'Receive $symbol',
                   onPressed: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -257,7 +257,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
 
                 // Sell Button
                 ModernFormWidgets.buildPrimaryButton(
-                  label: 'Sell $symbol',
+                  label: 'Convert $symbol',
                   onPressed: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -303,8 +303,8 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
           // Modern Gradient Header
           ModernFormWidgets.buildGradientHeader(
             context: context,
-            title: 'Trade Crypto',
-            subtitle: 'Buy & Sell cryptocurrency instantly',
+            title: 'Crypto',
+            subtitle: 'Convert your cryptocurrency instantly',
             walletBalance: _walletNaira,
             isLoadingBalance: _isLoadingWallet,
             primaryColor: AppColors.primary,
@@ -358,7 +358,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
 
                               // Info card
                               ModernFormWidgets.buildInfoCard(
-                                message: 'Tap a coin to buy or sell. Prices are updated in real-time. All transactions are processed on-chain.',
+                                message: 'Tap a coin to buy or sell. Prices are updated in real-time..',
                                 icon: Icons.info_outline_rounded,
                                 color: AppColors.primary,
                               ),

@@ -84,16 +84,16 @@ class MoreServicesScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(
-                      child: _buildEnhancedServiceCard(
-                        context: context,
-                        title: 'Buy Giftcard',
-                        subtitle: 'Shop gift cards',
-                        icon: Icons.card_giftcard_outlined,
-                        color: AppColors.giftcardColor,
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.buyGiftcard),
-                      ),
-                    ),
+                      // Expanded(
+                      //   child: _buildEnhancedServiceCard(
+                      //     context: context,
+                      //     title: 'Buy Giftcard',
+                      //     subtitle: 'Shop gift cards',
+                      //     icon: Icons.card_giftcard_outlined,
+                      //     color: AppColors.giftcardColor,
+                      //     onTap: () => Navigator.pushNamed(context, AppRoutes.buyGiftcard),
+                      //   ),
+                      // ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildEnhancedServiceCard(
@@ -141,8 +141,8 @@ class MoreServicesScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 _buildEnhancedServiceCard(
                   context: context,
-                  title: 'Airtime Swap',
-                  subtitle: 'Convert airtime to cash',
+                  title: 'Airtime Cashback',
+                  subtitle: 'Convert unused airtime to cash',
                   icon: Icons.swap_horiz_rounded,
                   color: const Color(0xFF9C27B0),
                   onTap: () => Navigator.pushNamed(context, AppRoutes.airtimeSwap),
@@ -187,16 +187,16 @@ class MoreServicesScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(
-                      child: _buildEnhancedServiceCard(
-                        context: context,
-                        title: 'Betting',
-                        subtitle: 'Fund betting wallet',
-                        icon: Icons.sports_esports_rounded,
-                        color: const Color(0xFF00BCD4),
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.bet),
-                      ),
-                    ),
+                    // Expanded(
+                    //   child: _buildEnhancedServiceCard(
+                    //     context: context,
+                    //     title: 'Betting',
+                    //     subtitle: 'Fund betting wallet',
+                    //     icon: Icons.sports_esports_rounded,
+                    //     color: const Color(0xFF00BCD4),
+                    //     onTap: () => Navigator.pushNamed(context, AppRoutes.bet),
+                    //   ),
+                    // ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildEnhancedServiceCard(
@@ -232,7 +232,7 @@ class MoreServicesScreen extends StatelessWidget {
                     Expanded(
                       child: _buildEnhancedServiceCard(
                         context: context,
-                        title: 'Save & Earn',
+                        title: 'Flexi Lock',
                         subtitle: 'Grow your money',
                         icon: Icons.savings_rounded,
                         color: const Color(0xFF4CAF50),
@@ -249,7 +249,7 @@ class MoreServicesScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 _buildEnhancedServiceCard(
                   context: context,
-                  title: 'Rate Calculator',
+                  title: 'Rate',
                   subtitle: 'Check live exchange rates',
                   icon: Icons.calculate_rounded,
                   color: AppColors.calculatorColor,

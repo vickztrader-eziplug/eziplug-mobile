@@ -26,7 +26,7 @@ class _TermOfUserScreenState extends State<TermOfUserScreen>
       'icon': Icons.person_add_outlined,
       'color': Colors.blue,
       'title': 'Account Registration',
-      'content': 'Users must provide accurate information including name, phone number, email, and complete KYC verification using valid government-issued documents. You are responsible for maintaining the confidentiality of your account credentials.',
+      'content': 'Users must provide accurate information including name, phone number, email, and complete KYC verification using valid government-issued documents. You are responsible for maintaining the confidentiality of your account credentials. Required by Nigerian financial regulations. We verify your identity to keep your account secure and compliant.',
     },
     {
       'icon': Icons.block_outlined,
@@ -56,13 +56,13 @@ class _TermOfUserScreenState extends State<TermOfUserScreen>
       'icon': Icons.savings_outlined,
       'color': Colors.indigo,
       'title': 'Saving Products',
-      'content': 'Eziplug offers Saving Products where Users can deposit funds to earn interest. Sub-products may include fixed-term deposits, flexible savings, or target savings. Interest rates vary based on deposit type, amount, and duration.',
+      'content': 'Eziplug offers Flexi Products where Users can deposit funds to earn commission. Sub-products may include fixed-term deposits, flexible savings, or target savings. Commission vary based on deposit type, amount, and duration. Flexi Lock is a value-added product offered by Eziplug. Terms and conditions apply.',
     },
     {
       'icon': Icons.copyright_outlined,
       'color': Colors.brown,
       'title': 'Intellectual Property',
-      'content': 'All Eziplug trademarks, software, and platform content remain the property of VYCKZ EJ GLOBAL.',
+      'content': 'All Eziplug trademarks, software, and platform content remain the property of EZIPLUG TECHNOLOGY LTD.',
     },
     {
       'icon': Icons.shield_outlined,
@@ -277,7 +277,7 @@ class _TermOfUserScreenState extends State<TermOfUserScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'These Terms constitute a legally binding agreement between you and VYCKZ EJ GLOBAL (RC: 3592966), operating under the brand name Eziplug.',
+            'These Terms constitute a legally binding agreement between you and EZIPLUG TECHNOLOGY LTD (RC: 9452503), operating under the brand name Eziplug.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,

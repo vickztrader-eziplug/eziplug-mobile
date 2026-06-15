@@ -48,7 +48,7 @@ class _TemplateScreenState extends State<TemplateScreen> {
                           ),
                           const Expanded(
                             child: Text(
-                              'Save & Earn',
+                              'Flexi Lock',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 18,

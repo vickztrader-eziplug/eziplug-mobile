@@ -443,8 +443,8 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
               // Modern Gradient Header
               ModernFormWidgets.buildGradientHeader(
                 context: context,
-                title: 'Sell ${_selectedCoin ?? widget.cryptoName}',
-                subtitle: 'Send crypto, receive Naira',
+                title: 'Convert ${_selectedCoin ?? widget.cryptoName}',
+                subtitle: 'convert crypto receive Naira',
                 walletBalance: _walletNaira,
                 isLoadingBalance: _isLoadingWallet,
                 primaryColor: AppColors.primary,
@@ -509,7 +509,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                             const SizedBox(height: 12),
                             ModernFormWidgets.buildTextField(
                               controller: _amountController,
-                              hintText: 'Enter crypto amount to sell',
+                              hintText: 'Enter crypto amount',
                               prefixIcon: Icons.money,
                               keyboardType: TextInputType.number,
                               onChanged: (value) => _calculateReceiveAmount(),
@@ -578,7 +578,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Sell Rate',
+                                      'Rate',
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: isDark ? theme.textTheme.bodySmall?.color : Colors.grey.shade600,

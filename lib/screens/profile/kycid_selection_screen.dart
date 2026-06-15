@@ -1,6 +1,7 @@
 // 3. KYC ID Selection Screen
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 
 class KYCIDSelectionScreen extends StatefulWidget {
   const KYCIDSelectionScreen({super.key});
@@ -120,6 +121,13 @@ class _KYCIDSelectionScreenState extends State<KYCIDSelectionScreen> {
                                 height: 1.4,
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            ModernFormWidgets.buildInfoCard(
+                              message: 'Required by Nigerian financial regulations. We verify your identity to keep your account secure and compliant.',
+                              icon: Icons.shield_outlined,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(height: 18),
                             const SizedBox(height: 24),
 
                             // ID Type Options

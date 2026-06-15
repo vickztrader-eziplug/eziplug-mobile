@@ -9,6 +9,7 @@ import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../services/auth_service.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 
 class KYCTier1Screen extends StatefulWidget {
   const KYCTier1Screen({super.key});
@@ -330,6 +331,13 @@ class _KYCTier1ScreenState extends State<KYCTier1Screen> {
                                 height: 1.4,
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            ModernFormWidgets.buildInfoCard(
+                              message: 'Required by Nigerian financial regulations. We verify your identity to keep your account secure and compliant.',
+                              icon: Icons.shield_outlined,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(height: 22),
                             const SizedBox(height: 30),
 
                             // Profile Image with Upload

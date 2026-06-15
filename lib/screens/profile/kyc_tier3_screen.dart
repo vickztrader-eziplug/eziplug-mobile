@@ -7,6 +7,7 @@ import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
 import '../../services/auth_service.dart';
+import '../../core/widgets/modern_form_widgets.dart';
 
 // KYC Tier 3 Screen
 class KYCTier3Screen extends StatefulWidget {
@@ -359,6 +360,12 @@ class _KYCTier3ScreenState extends State<KYCTier3Screen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      ModernFormWidgets.buildInfoCard(
+                        message: 'Required by Nigerian financial regulations. We verify your identity to keep your account secure and compliant.',
+                        icon: Icons.shield_outlined,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(height: 12),
                       // Tier 1 Status
                       _buildTierStatus('Tier 1', tier1Complete),
                       const SizedBox(height: 12),

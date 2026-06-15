@@ -355,7 +355,7 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
               // Modern Gradient Header
               ModernFormWidgets.buildGradientHeader(
                 context: context,
-                title: 'Buy ${_selectedCoin ?? widget.cryptoName}',
+                title: 'Receive ${_selectedCoin ?? widget.cryptoName}',
                 walletBalance: _walletNaira,
                 isLoadingBalance: _isLoadingWallet,
                 primaryColor: AppColors.primary,
@@ -442,7 +442,7 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
                             const SizedBox(height: 12),
                             ModernFormWidgets.buildTextField(
                               controller: _walletAddressController,
-                              hintText: 'Paste your external wallet address',
+                              hintText: 'Paste your wallet address',
                               prefixIcon: Icons.link_rounded,
                             ),
                           ],

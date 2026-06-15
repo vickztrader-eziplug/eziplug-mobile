@@ -107,8 +107,9 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
       return 'Phone number is required';
     }
     final digitsOnly = value.replaceAll(RegExp(r'\D'), '');
-    if (digitsOnly.length != 11) {
-      return 'Phone number must be exactly 11 digits';
+    // Expect 10 digits after the fixed +234 country code
+    if (digitsOnly.length != 10) {
+      return 'Phone number must be exactly 10 digits (after +234)';
     }
     return null;
   }
@@ -179,13 +180,16 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
     setState(() => _loading = true);
     final auth = Provider.of<AuthService>(context, listen: false);
 
+    final phoneDigits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    final phoneValue = '+234$phoneDigits';
+
     final data = {
       "first_name": _firstNameController.text.trim(),
       "last_name": _lastNameController.text.trim(),
       "middle_name": _middleNameController.text.trim(),
       "username": _usernameController.text.trim(),
       "email": _emailController.text.trim(),
-      "phone": _phoneController.text.trim(),
+      "phone": phoneValue,
       "password": _passwordController.text.trim(),
       if (_referralCodeController.text.trim().isNotEmpty)
         "referral_code": _referralCodeController.text.trim(),
@@ -277,10 +281,25 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     Widget? suffixIcon,
+    Widget? prefix,
+    String? prefixText,
+    Widget? prefixIconWidget,
     Function(String)? onChanged,
   }) {
     final errorText = _fieldErrors[errorKey];
     final hasError = errorText != null && errorText.isNotEmpty;
+
+    final _prefixIconWidget = prefixIconWidget ?? Container(
+      margin: const EdgeInsets.only(left: 12, right: 8),
+      child: Icon(
+        icon,
+        color: hasError ? Colors.red.shade400 : AppColors.primary.withOpacity(0.7),
+        size: 20,
+      ),
+    );
+    final _prefixIconConstraints = prefixIconWidget != null
+      ? const BoxConstraints(minWidth: 72)
+      : const BoxConstraints(minWidth: 48);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,15 +349,17 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-              prefixIcon: Container(
-                margin: const EdgeInsets.only(left: 12, right: 8),
-                child: Icon(
-                  icon,
-                  color: hasError ? Colors.red.shade400 : AppColors.primary.withOpacity(0.7),
-                  size: 20,
-                ),
-              ),
-              prefixIconConstraints: const BoxConstraints(minWidth: 48),
+              prefixIcon: _prefixIconWidget,
+              prefixIconConstraints: _prefixIconConstraints,
+                prefix: prefix,
+                prefixText: prefixText,
+                prefixStyle: prefixText != null
+                    ? TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      )
+                    : null,
               suffixIcon: suffixIcon,
               filled: true,
               fillColor: Colors.white,
@@ -620,14 +641,36 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
                           _buildTextField(
                             controller: _phoneController,
                             label: 'Phone Number',
-                            hint: '08012345678',
+                            hint: '8012345678',
                             icon: Icons.phone_outlined,
                             errorKey: 'phone',
                             keyboardType: TextInputType.phone,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(11),
+                              LengthLimitingTextInputFormatter(10),
                             ],
+                            prefixIconWidget: Container(
+                              margin: const EdgeInsets.only(left: 6, right: 2),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.phone_outlined,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '+234',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                             onChanged: (value) {
                               if (_fieldErrors['phone'] != null) {
                                 setState(() {
@@ -847,6 +890,18 @@ class _RegisterScreenEnhancedState extends State<RegisterScreenEnhanced>
                                   ),
                                 ),
                               ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+                          Center(
+                            child: Text(
+                              'Available in Nigeria only',
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
 

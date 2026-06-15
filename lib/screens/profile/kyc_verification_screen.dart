@@ -745,9 +745,19 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                 ModernFormWidgets.buildGradientHeader(
                   context: context,
                   title: 'KYC Verification',
-                  subtitle: 'Verify your identity to unlock more features',
+                  subtitle: 'Complete identity verification to access features',
                   primaryColor: AppColors.primary,
                 ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: ModernFormWidgets.buildInfoCard(
+                    message: 'Required by Nigerian financial regulations. We verify your identity to keep your account secure and compliant.',
+                    icon: Icons.shield_outlined,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 12),
                 // Content
                 Expanded(
                   child: SingleChildScrollView(

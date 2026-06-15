@@ -253,7 +253,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'This Privacy Policy represents the policy of VYCKZ EJ GLOBAL (RC: 3592966), regarding the collection, use, disclosure, and management of personal data.',
+            'This Privacy Policy represents the policy of EZIPLUG TECHNOLOGY LTD (RC: 9452503), regarding the collection, use, disclosure, and management of personal data.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,

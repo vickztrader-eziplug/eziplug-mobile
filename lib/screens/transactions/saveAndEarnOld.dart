@@ -128,7 +128,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                   )
                   .toList();
 
-              // Calculate total interest
+              // Calculate Total Bonus
               _totalInterest = _lockHistory.fold(
                 0.0,
                 (sum, item) => sum + (item['interest'] as double),
@@ -568,7 +568,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                           ),
                           const Expanded(
                             child: Text(
-                              'Save & Earn',
+                              'Flexi Lock',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 18,
@@ -718,7 +718,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildStatCard(
-                              'Total Interest (₦)',
+                              'Total Bonus (₦)',
                               _formatBalance(_totalInterest),
                             ),
                           ),

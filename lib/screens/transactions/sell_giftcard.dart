@@ -306,7 +306,7 @@ class _SellGiftCardScreenState extends State<SellGiftCardScreen> {
           ModernFormWidgets.buildGradientHeader(
             context: context,
             title: 'Sell Giftcard',
-            subtitle: 'Convert your gift cards to cash',
+            subtitle: 'Convert your unused gift card to Naira.',
             primaryColor: _themeColor,
           ),
 

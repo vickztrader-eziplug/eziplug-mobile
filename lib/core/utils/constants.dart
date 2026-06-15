@@ -55,8 +55,6 @@ class Constants {
   // Pagination
   static const int defaultPageSize = 20;
 
-  static const String paystackPublicKey = "pk_live_e11f08bf1689bc8ea11a550bcbfd6d4e68ee2b8b";
-  static const String paystackSecreteKey = "sk_live_5873ce22b9e6f34bad22bf5bf330d6e7133a2cda";
   static const sellGiftCardUrl = '$baseUrl/giftcard/sell';
   static const buyGiftCardUrl = '$baseUrl/giftcard/buy';
   static const buyCryptoUrl = '$baseUrl/crypto/buy';

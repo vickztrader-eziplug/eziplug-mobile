@@ -718,7 +718,7 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
                                     ),
                                     const Expanded(
                                       child: Text(
-                                        'I have read and agree to the terms and conditions',
+                                        'I have read and agree to the terms and conditions and that I own this gift card and it has not been used or redeemed.',
                                         style: TextStyle(fontSize: 13),
                                       ),
                                     ),
@@ -766,7 +766,7 @@ class _GiftCardTermsScreenState extends State<GiftCardTermsScreen> {
                                   ),
                                 )
                               : const Text(
-                                  'Confirm and Trade',
+                                  'Submit',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,

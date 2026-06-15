@@ -259,7 +259,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
             // Modern Gradient Header
             ModernFormWidgets.buildGradientHeader(
               context: context,
-              title: 'Save & Earn',
+              title: 'Flexi Lock',
               walletBalance: _walletNaira,
               isLoadingBalance: _isLoadingWallet,
               primaryColor: _primaryColor,
@@ -316,7 +316,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Lock your funds and earn interest',
+                                    'Lock your balance for a set period',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
@@ -349,7 +349,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildModernStatCard(
-                            'Total Interest',
+                            'Total Bonus',
                             '₦${_formatBalance(_totalInterestBal)}',
                             Icons.trending_up,
                           ),
@@ -360,7 +360,7 @@ class _SaveAndEarnScreenState extends State<SaveAndEarnScreen> {
 
                     // Info Card
                     ModernFormWidgets.buildInfoCard(
-                      message: 'Lock your funds for a period of time to earn interest. The longer you lock, the more you earn!',
+                      message: 'Lock your balance and receive a loyalty bonus when the lock period ends. Terms apply.',
                       icon: Icons.lightbulb_outline,
                       color: _primaryColor,
                     ),

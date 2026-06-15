@@ -54,7 +54,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
   // Time-based greeting
   String get _greeting {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
+    if (hour < 12) return 'Welcome';
     if (hour < 17) return 'Good Afternoon';
     return 'Good Evening';
   }
@@ -514,7 +514,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Good Morning,', // We'll assume the greeting logic is handled elsewhere or simplified
+                                'Welcome,', // We'll assume the greeting logic is handled elsewhere or simplified
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 12, // Reduced size
@@ -795,7 +795,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
                     ),
                     const SizedBox(width: 8),
                     _buildCardButton(
-                      label: 'Save & Earn',
+                      label: 'Flexi Lock',
                       icon: Icons.savings_rounded,
                       bgColor: currency == '₦' ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.05),
                       onTap: currency == '₦'
@@ -962,24 +962,24 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
     final actions = [
       {
         'icon': Icons.card_giftcard_rounded,
-        'label': 'Trade Giftcard',
-        'subtitle': 'Enjoy sweet rates with swift payment',
+        'label': 'Giftcard',
+        'subtitle': 'Fast Naira payout for you gift card',
         'color': AppColors.giftcardColor,
         'bgColor': AppColors.primary.withOpacity(0.12),
         'destination': const SellGiftCardScreen(),
       },
       {
         'icon': Icons.currency_bitcoin_rounded,
-        'label': 'Trade Crypto',
-        'subtitle': 'Trade BTC, ETH, BNB & More for instant cash',
+        'label': 'Crypto',
+        'subtitle': 'Convert BTC, ETH, BNB & More for instant cash',
         'color': AppColors.cryptoColor,
         'bgColor': AppColors.primary.withOpacity(0.12),
         'destination': const TradeCryptoScreen(),
       },
       {
         'icon': Icons.calculate_rounded,
-        'label': 'Rate Calculator',
-        'subtitle': 'Use rate calculator to preview currency rate',
+        'label': 'Rate',
+        'subtitle': 'Estimate your Naira payout',
         'color': AppColors.calculatorColor,
         'bgColor': AppColors.primary.withOpacity(0.12),
         'destination': const RateCalculatorScreen(),

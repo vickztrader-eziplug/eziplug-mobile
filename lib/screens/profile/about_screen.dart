@@ -325,14 +325,14 @@ class _AboutScreenState extends State<AboutScreen>
           ),
           _buildFeatureItem(
             Icons.currency_bitcoin_rounded,
-            'Crypto Trading',
+            'Crypto Conversion',
             'Buy & sell cryptocurrencies',
             Colors.amber,
           ),
           _buildFeatureItem(
             Icons.card_giftcard_rounded,
             'Gift Cards',
-            'Trade gift cards securely',
+            'Convert Gift cards securely',
             Colors.pink,
           ),
           _buildFeatureItem(
@@ -428,7 +428,7 @@ class _AboutScreenState extends State<AboutScreen>
           ),
           const SizedBox(height: 16),
           const Text(
-            'VYCKZ EJ GLOBAL',
+            'EZIPLUG TECHNOLOGY LTD',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -438,7 +438,7 @@ class _AboutScreenState extends State<AboutScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'RC: 3592966',
+            'RC: 9452503',
             style: TextStyle(
               fontSize: 14,
               color: Colors.white.withOpacity(0.9),
