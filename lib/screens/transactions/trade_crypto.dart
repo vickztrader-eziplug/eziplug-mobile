@@ -358,7 +358,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
 
                               // Info card
                               ModernFormWidgets.buildInfoCard(
-                                message: 'Tap a coin to buy or sell. Prices are updated in real-time..',
+                                message: 'Tap a coin to receive or convert. Prices are updated in real-time..',
                                 icon: Icons.info_outline_rounded,
                                 color: AppColors.primary,
                               ),

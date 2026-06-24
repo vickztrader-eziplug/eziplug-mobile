@@ -963,7 +963,7 @@ class _HomeScreenEnhancedState extends State<HomeScreenEnhanced>
       {
         'icon': Icons.card_giftcard_rounded,
         'label': 'Giftcard',
-        'subtitle': 'Fast Naira payout for you gift card',
+        'subtitle': 'Fast Naira payout for your gift card',
         'color': AppColors.giftcardColor,
         'bgColor': AppColors.primary.withOpacity(0.12),
         'destination': const SellGiftCardScreen(),

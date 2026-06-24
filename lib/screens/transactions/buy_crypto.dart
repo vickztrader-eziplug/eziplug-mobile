@@ -487,7 +487,7 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
 
                       // Buy Button
                       ModernFormWidgets.buildPrimaryButton(
-                        label: 'Buy ${_selectedCoin ?? 'Crypto'}',
+                        label: 'Receive ${_selectedCoin ?? 'Crypto'}',
                         onPressed: _proceedToPin,
                         isLoading: _isLoading,
                         backgroundColor: AppColors.success,
