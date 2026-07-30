@@ -50,7 +50,7 @@ class OnboardingScreen extends StatelessWidget {
 
               // Subtitle
               Text(
-                'Discover a world of convenience and ease with EZIPLUG, your ultimate lifestyle companion. Our innovative app offers a unique blend of features to simplify your daily life: VTU Solutions, instant crypto to Naira conversions, and gift card sales.',
+                'Discover a world of convenience and ease with EZIPLUG, your ultimate lifestyle companion. Our innovative app offers a unique blend of features to simplify your daily life: VTU Solutions, crypto to Naira conversions, and convert your unused gift card to Naira.',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.lightGrey,
