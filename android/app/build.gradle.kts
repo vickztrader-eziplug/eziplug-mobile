@@ -21,6 +21,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -49,6 +50,7 @@ android {
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -75,6 +77,9 @@ flutter {
 }
 
 dependencies {
+    // Core library desugaring (required by flutter_local_notifications)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
     // Modular Play Core libraries compatible with targetSdkVersion 34 and higher (Android 14+)
     implementation("com.google.android.play:app-update:2.1.0")
     implementation("com.google.android.play:asset-delivery:2.2.2")

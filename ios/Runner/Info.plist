@@ -66,5 +66,10 @@
 		<string>Eziplug uses Face ID to securely authenticate you when accessing the app.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>remote-notification</string>
+			<string>fetch</string>
+		</array>
 	</dict>
 </plist>
