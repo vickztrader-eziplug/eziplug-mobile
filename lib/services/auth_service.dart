@@ -9,8 +9,8 @@ import 'package:cashpoint/services/api_client.dart';
 import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
+import 'package:firebase_messaging/firebase_messaging.dart';
 // Removed SharedPreferences - using FlutterSecureStorage only for release compatibility
 
 class AuthService extends ChangeNotifier {
@@ -714,6 +714,26 @@ class AuthService extends ChangeNotifier {
 
     _isAuthenticated = token != null;
     notifyListeners();
+
+    if (_isAuthenticated) {
+      try {
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        if (fcmToken != null) {
+          final uri = Uri.parse('${Constants.baseUrl}/user/device-token');
+          await http.post(
+            uri,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({'device_token': fcmToken}),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error sending FCM token on login: $e');
+      }
+    }
   }
 
   /// Mark onboarding as completed (call this from your onboarding screen)

@@ -8,6 +8,8 @@ import 'services/api_client.dart';
 import 'theme.dart';
 import 'routes.dart';
 import 'providers/theme_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'services/push_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +21,22 @@ void main() async {
     await debugLogger.log('STARTUP', 'App starting on WEB platform');
   }
   
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e');
+  }
+  
   final authService = AuthService();
+  final pushService = PushNotificationService(authService);
+  
+  // Initialize Push Notifications
+  try {
+    await pushService.initialize();
+  } catch (e) {
+    debugPrint('Push service initialization error: $e');
+  }
   
   // Initialize auth with a timeout to prevent blocking the app
   try {
