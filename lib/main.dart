@@ -23,6 +23,9 @@ void main() async {
   }
   
   // Initialize Firebase
+  // On iOS, FirebaseApp.configure() is called in AppDelegate.swift first.
+  // Calling Firebase.initializeApp() in Dart is still required — it links
+  // the Flutter plugin to the already-configured native instance (no conflict).
   try {
     await Firebase.initializeApp();
     // Register the background message handler IMMEDIATELY after Firebase init.
@@ -35,9 +38,14 @@ void main() async {
   final authService = AuthService();
   final pushService = PushNotificationService(authService);
   
-  // Initialize Push Notifications
+  // Initialize Push Notifications (with timeout to prevent blocking the app)
   try {
-    await pushService.initialize();
+    await pushService.initialize().timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        debugPrint('Push service initialization timed out, continuing...');
+      },
+    );
   } catch (e) {
     debugPrint('Push service initialization error: $e');
   }

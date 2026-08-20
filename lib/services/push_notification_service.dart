@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -47,9 +48,11 @@ class PushNotificationService {
     const androidSettings =
         AndroidInitializationSettings('@drawable/ic_notification');
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      // Set to false: firebase_messaging handles permission requests.
+      // Having both plugins request permissions can cause conflicts on iOS.
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
     const initSettings = InitializationSettings(
       android: androidSettings,
@@ -72,7 +75,26 @@ class PushNotificationService {
           'PUSH', 'User granted permission for push notifications');
 
       // ── 4. Get the FCM token and send to backend ──
-      String? token = await _firebaseMessaging.getToken();
+      String? token;
+      if (!kIsWeb && Platform.isIOS) {
+        // On iOS, we must wait for the APNs token before requesting FCM token.
+        // Without this, getToken() can hang indefinitely.
+        debugLogger.log('PUSH', 'iOS: Waiting for APNs token...');
+        String? apnsToken;
+        for (int i = 0; i < 20; i++) {
+          apnsToken = await _firebaseMessaging.getAPNSToken();
+          if (apnsToken != null) break;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+        if (apnsToken != null) {
+          debugLogger.log('PUSH', 'iOS: APNs token received, requesting FCM token...');
+          token = await _firebaseMessaging.getToken();
+        } else {
+          debugLogger.log('PUSH', 'iOS: APNs token not available, skipping FCM token for now');
+        }
+      } else {
+        token = await _firebaseMessaging.getToken();
+      }
       if (token != null) {
         debugLogger.log('PUSH', 'FCM Token: $token');
         await sendTokenToBackend(token);
@@ -106,13 +128,21 @@ class PushNotificationService {
     }
   }
 
-  /// Display a foreground FCM message as a local heads-up notification
+  /// Display a foreground FCM message as a local heads-up notification.
+  /// On iOS, the system handles foreground display via
+  /// setForegroundNotificationPresentationOptions, so we only need this
+  /// for Android (which does NOT auto-show foreground notifications).
   void _handleForegroundMessage(RemoteMessage message) {
     debugLogger.log('PUSH',
         'Received foreground message: ${message.notification?.title}');
 
     final notification = message.notification;
     if (notification == null) return;
+
+    // On iOS, the system already displays the notification via
+    // setForegroundNotificationPresentationOptions(alert: true).
+    // Showing it again via flutter_local_notifications would cause duplicates.
+    if (!kIsWeb && Platform.isIOS) return;
 
     _localNotifications.show(
       notification.hashCode, // unique id
