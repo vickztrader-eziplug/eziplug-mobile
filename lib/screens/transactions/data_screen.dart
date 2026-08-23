@@ -35,6 +35,28 @@ class _DataScreenState extends State<DataScreen> {
   List<Map<String, dynamic>> _networks = [];
   List<Map<String, dynamic>> _dataPlans = [];
 
+  // Validity buckets (daily/weekly/monthly/night) the backend reports for the
+  // selected network, plus the currently-active filter. Filtering is done
+  // locally since all of the network's plans are already loaded.
+  List<String> _planTypes = [];
+  String _selectedPlanType = 'all';
+
+  static const Map<String, String> _planTypeLabels = {
+    'all': 'All',
+    'daily': 'Daily',
+    'weekly': 'Weekly',
+    'monthly': 'Monthly',
+    'night': 'Midnight',
+    'other': 'Other',
+  };
+
+  List<Map<String, dynamic>> get _filteredPlans {
+    if (_selectedPlanType == 'all') return _dataPlans;
+    return _dataPlans
+        .where((p) => (p['plan_type']?.toString() ?? '') == _selectedPlanType)
+        .toList();
+  }
+
   // External link for networks (optional - comment out to use internal API)
   // final String networksExternalUrl = 'https://your-api.com/networks';
 
@@ -209,6 +231,8 @@ class _DataScreenState extends State<DataScreen> {
       _isFetchingPlans = true;
       _dataPlans = [];
       _selectedPlan = null;
+      _planTypes = [];
+      _selectedPlanType = 'all';
     });
 
     try {
@@ -231,11 +255,20 @@ class _DataScreenState extends State<DataScreen> {
 
         if (plansData != null) {
           if (mounted) {
+            // plan_types sits alongside data in the response envelope, so read
+            // it from the raw result rather than the unwrapped plans payload.
+            final rawTypes = result['plan_types'] ??
+                result['data']?['plan_types'] ??
+                (plansData is Map ? plansData['plan_types'] : null);
+
             setState(() {
               _dataPlans = List<Map<String, dynamic>>.from(
                 plansData is List ? plansData : (plansData['data'] ?? plansData ?? []),
               );
-              print('✅ Loaded ${_dataPlans.length} data plans');
+              _planTypes = rawTypes is List
+                  ? rawTypes.map((t) => t.toString()).toList()
+                  : <String>[];
+              print('✅ Loaded ${_dataPlans.length} data plans, types: $_planTypes');
             });
           }
         } else {
@@ -365,6 +398,7 @@ class _DataScreenState extends State<DataScreen> {
               _selectedPlan!['id']?.toString() ??
               _selectedPlan!['plan_id']?.toString(),
           'phone': _phoneController.text.trim(),
+          'pin': pin,
         }),
       );
 
@@ -564,12 +598,33 @@ class _DataScreenState extends State<DataScreen> {
                                   ),
                                 ),
                               )
-                            : Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: _dataPlans.map((plan) {
-                                  return _buildDataPlanChip(plan);
-                                }).toList(),
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (_planTypes.length > 1) ...[
+                                    _buildPlanTypeToggles(isDark),
+                                    const SizedBox(height: 14),
+                                  ],
+                                  if (_filteredPlans.isEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 20),
+                                      child: Text(
+                                        'No ${_planTypeLabels[_selectedPlanType]?.toLowerCase() ?? ''} plans for this network',
+                                        style: TextStyle(
+                                          color: isDark ? const Color(0xFF8891A5) : Colors.grey[600],
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    Wrap(
+                                      spacing: 10,
+                                      runSpacing: 10,
+                                      children: _filteredPlans.map((plan) {
+                                        return _buildDataPlanChip(plan);
+                                      }).toList(),
+                                    ),
+                                ],
                               ),
                           ],
                         ),
@@ -616,6 +671,63 @@ class _DataScreenState extends State<DataScreen> {
     );
   }
 
+  /// Horizontally scrollable validity filters (All / Daily / Weekly /
+  /// Monthly / Midnight). Only the buckets the backend actually returned for
+  /// this network are shown, so no toggle ever leads to an empty list.
+  Widget _buildPlanTypeToggles(bool isDark) {
+    final options = <String>['all', ..._planTypes];
+
+    return SizedBox(
+      height: 36,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: options.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final type = options[index];
+          final isSelected = _selectedPlanType == type;
+          final activeColor = isDark ? AppColors.primaryLight : AppColors.primary;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedPlanType = type;
+                _selectedPlan = null; // clear selection when switching buckets
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? activeColor.withOpacity(0.12)
+                    : (isDark ? const Color(0xFF1E2230) : Colors.grey.shade100),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected
+                      ? activeColor
+                      : (isDark ? const Color(0xFF2D3141) : Colors.grey.shade300),
+                  width: isSelected ? 1.5 : 1,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                _planTypeLabels[type] ?? type,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? activeColor
+                      : (isDark ? const Color(0xFF8891A5) : Colors.grey.shade700),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildDataPlanChip(Map<String, dynamic> plan) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -658,10 +770,16 @@ class _DataScreenState extends State<DataScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Lead with the parsed size ("1.8GB") rather than the provider's
+            // free-text name — VTpass names run long ("1.8GB + 6mins + 5 SMS,
+            // Monthly - N1500") and truncate to noise in a 90px chip.
             Text(
-              plan['data']?.toString() ?? plan['plan_name']?.toString() ?? 'N/A',
+              plan['size']?.toString() ??
+                  plan['data']?.toString() ??
+                  plan['plan_name']?.toString() ??
+                  'N/A',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
                 color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
                 height: 1.1,

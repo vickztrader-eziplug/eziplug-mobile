@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/constants.dart';
-import '../../core/utils/toast_helper.dart';
 import '../../core/widgets/modern_form_widgets.dart';
 import '../../services/auth_service.dart';
 import 'buy_crypto.dart';
@@ -24,6 +23,18 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
 
   // Coins list from API
   List<Map<String, dynamic>> _coins = [];
+
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  List<Map<String, dynamic>> get _filteredCoins {
+    if (_searchQuery.isEmpty) return _coins;
+    return _coins.where((coin) {
+      final symbol = (coin['symbol'] as String).toLowerCase();
+      final name = (coin['name'] as String).toLowerCase();
+      return symbol.contains(_searchQuery) || name.contains(_searchQuery);
+    }).toList();
+  }
 
   // Fallback icons & colors for known coins
   final Map<String, IconData> _coinIcons = {
@@ -63,6 +74,15 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
     }
     _fetchWalletBalance();
     _fetchCoins();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchWalletBalance() async {
@@ -130,8 +150,10 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
               'id': coin['id']?.toString() ?? '',
               'symbol': (coin['symbol'] ?? coin['name'] ?? '').toString().toUpperCase(),
               'name': coin['name'] ?? coin['symbol'] ?? '',
+              'logo': coin['logo']?.toString(),
               'buy_rate_ngn': double.tryParse(coin['buy_rate_ngn']?.toString() ?? '0') ?? 0.0,
               'sell_rate_ngn': double.tryParse(coin['sell_rate_ngn']?.toString() ?? '0') ?? 0.0,
+              'networks': coin['networks'] is List ? coin['networks'] : [],
             }).toList();
             _isLoadingCoins = false;
           });
@@ -148,20 +170,64 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
     if (mounted) {
       setState(() {
         _coins = [
-          {'id': '1', 'symbol': 'BTC', 'name': 'Bitcoin', 'buy_rate_ngn': 0.0, 'sell_rate_ngn': 0.0},
-          {'id': '2', 'symbol': 'USDT', 'name': 'Tether', 'buy_rate_ngn': 0.0, 'sell_rate_ngn': 0.0},
-          {'id': '3', 'symbol': 'ETH', 'name': 'Ethereum', 'buy_rate_ngn': 0.0, 'sell_rate_ngn': 0.0},
-          {'id': '4', 'symbol': 'LTC', 'name': 'Litecoin', 'buy_rate_ngn': 0.0, 'sell_rate_ngn': 0.0},
+          {'id': '1', 'symbol': 'BTC', 'name': 'Bitcoin', 'logo': null, 'buy_rate_ngn': 0.0, 'sell_rate_ngn': 0.0, 'networks': []},
+          {'id': '2', 'symbol': 'USDT', 'name': 'Tether', 'logo': null, 'buy_rate_ngn': 0.0, 'sell_rate_ngn': 0.0, 'networks': []},
+          {'id': '3', 'symbol': 'ETH', 'name': 'Ethereum', 'logo': null, 'buy_rate_ngn': 0.0, 'sell_rate_ngn': 0.0, 'networks': []},
+          {'id': '4', 'symbol': 'LTC', 'name': 'Litecoin', 'logo': null, 'buy_rate_ngn': 0.0, 'sell_rate_ngn': 0.0, 'networks': []},
         ];
         _isLoadingCoins = false;
       });
     }
   }
 
+  /// Circular coin logo with a graceful fallback to the gradient+icon avatar
+  /// when there's no logo or it fails to load.
+  Widget _buildCoinLogo(Map<String, dynamic> coin, {double size = 44}) {
+    final symbol = coin['symbol'] as String;
+    final logoUrl = Constants.resolveLogoUrl(coin['logo'] as String?);
+    final gradientColors = _coinGradients[symbol] ?? [AppColors.primary, AppColors.primaryLight];
+    final icon = _coinIcons[symbol] ?? Icons.currency_exchange_rounded;
+
+    Widget fallback() => Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: gradientColors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(size / 2),
+          ),
+          child: Icon(icon, color: Colors.white, size: size * 0.5),
+        );
+
+    if (logoUrl == null) {
+      debugPrint('[CryptoLogo] No logo for $symbol (raw="${coin['logo']}")');
+      return fallback();
+    }
+
+    return ClipOval(
+      child: Image.network(
+        logoUrl,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return fallback();
+        },
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('[CryptoLogo] Failed to load "$logoUrl": $error');
+          return fallback();
+        },
+      ),
+    );
+  }
+
   void _showTradeOptionsModal(BuildContext context, Map<String, dynamic> coin) {
     final symbol = coin['symbol'] as String;
     final name = coin['name'] as String;
-    final gradientColors = _coinGradients[symbol] ?? [AppColors.primary, AppColors.primaryLight];
 
     showModalBottomSheet(
       context: context,
@@ -194,27 +260,8 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Coin icon
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: gradientColors),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: gradientColors[0].withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    _coinIcons[symbol] ?? Icons.currency_exchange_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
+                // Coin logo
+                _buildCoinLogo(coin, size: 56),
                 const SizedBox(height: 16),
 
                 Text(
@@ -246,6 +293,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
                         builder: (context) => BuyCryptoScreen(
                           cryptoName: symbol,
                           cryptoId: coin['id']?.toString() ?? '',
+                          coin: coin,
                         ),
                       ),
                     );
@@ -266,6 +314,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
                         builder: (context) => SellCryptoScreen(
                           cryptoName: symbol,
                           cryptoId: coin['id']?.toString() ?? '',
+                          coin: coin,
                         ),
                       ),
                     );
@@ -294,7 +343,6 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -313,7 +361,7 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
           // Content Section
           Expanded(
             child: _isLoadingCoins
-                ? _buildLoadingGrid()
+                ? _buildLoadingList()
                 : _coins.isEmpty
                     ? _buildEmptyState()
                     : RefreshIndicator(
@@ -324,48 +372,43 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
                           ]);
                         },
                         color: AppColors.primary,
-                        child: SingleChildScrollView(
+                        child: ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Section label
-                              ModernFormWidgets.buildSectionLabel(
-                                'Available Coins',
-                                icon: Icons.currency_bitcoin_rounded,
-                                iconColor: AppColors.cryptoColor,
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Coins Grid
-                              GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                  childAspectRatio: 1.35,
-                                ),
-                                itemCount: _coins.length,
-                                itemBuilder: (context, index) {
-                                  return _buildCoinCard(_coins[index]);
-                                },
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              // Info card
+                          children: [
+                            ModernFormWidgets.buildSectionLabel(
+                              'Available Coins',
+                              icon: Icons.currency_bitcoin_rounded,
+                              iconColor: AppColors.cryptoColor,
+                            ),
+                            const SizedBox(height: 12),
+                            ModernFormWidgets.buildTextField(
+                              controller: _searchController,
+                              hintText: 'Search by name or symbol',
+                              prefixIcon: Icons.search_rounded,
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.close_rounded, size: 18),
+                                      onPressed: () => _searchController.clear(),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            if (_filteredCoins.isEmpty)
+                              _buildNoSearchResults()
+                            else ...[
+                              for (final coin in _filteredCoins) ...[
+                                _buildCoinRow(coin),
+                                const SizedBox(height: 10),
+                              ],
                               ModernFormWidgets.buildInfoCard(
-                                message: 'Tap a coin to receive or convert. Prices are updated in real-time..',
+                                message: 'Tap a coin to receive or convert. Prices are updated in real-time.',
                                 icon: Icons.info_outline_rounded,
                                 color: AppColors.primary,
                               ),
-
-                              const SizedBox(height: 20),
                             ],
-                          ),
+                            const SizedBox(height: 20),
+                          ],
                         ),
                       ),
           ),
@@ -374,97 +417,90 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
     );
   }
 
-  Widget _buildCoinCard(Map<String, dynamic> coin) {
+  Widget _buildCoinRow(Map<String, dynamic> coin) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final symbol = coin['symbol'] as String;
     final name = coin['name'] as String;
-    final gradientColors = _coinGradients[symbol] ?? [AppColors.primary, AppColors.primaryLight];
-    final icon = _coinIcons[symbol] ?? Icons.currency_exchange_rounded;
 
     return GestureDetector(
       onTap: () => _showTradeOptionsModal(context, coin),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: theme.cardColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
               color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Row(
           children: [
-            // Top row: Icon + Symbol
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Gradient coin icon
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: gradientColors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+            _buildCoinLogo(coin, size: 40),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    symbol,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: theme.textTheme.titleMedium?.color,
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: gradientColors[0].withOpacity(0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
                   ),
-                  child: Icon(icon, color: Colors.white, size: 20),
-                ),
-                // Trade arrow indicator
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 2),
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white60 : Colors.grey.shade500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  child: const Icon(
-                    Icons.swap_vert_rounded,
-                    color: AppColors.primary,
-                    size: 16,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-
-            // Bottom section: Name + Price
+            const SizedBox(width: 8),
             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  symbol,
+                  '1 $symbol',
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: theme.textTheme.titleMedium?.color,
+                    fontSize: 10,
+                    color: isDark ? Colors.white38 : Colors.grey.shade500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? Colors.white60 : Colors.grey.shade500,
+                  _coinRateLabel(coin),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.success,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
+            ),
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.swap_vert_rounded,
+                color: AppColors.primary,
+                size: 16,
+              ),
             ),
           ],
         ),
@@ -472,45 +508,74 @@ class _TradeCryptoScreenState extends State<TradeCryptoScreen> {
     );
   }
 
-  Widget _buildLoadingGrid() {
+  /// "≈ ₦X" using the buy rate (what it costs to receive 1 unit), falling
+  /// back to the sell rate if buy isn't configured for this coin.
+  String _coinRateLabel(Map<String, dynamic> coin) {
+    final buyRate = (coin['buy_rate_ngn'] as double?) ?? 0.0;
+    final sellRate = (coin['sell_rate_ngn'] as double?) ?? 0.0;
+    final rate = buyRate > 0 ? buyRate : sellRate;
+    if (rate <= 0) return 'Rate N/A';
+    return '≈ ₦${_formatBalance(rate)}';
+  }
+
+  Widget _buildLoadingList() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: 6,
+      separatorBuilder: (context, index) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        return Container(
+          height: 66,
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.primary.withOpacity(0.3),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNoSearchResults() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: GridView.builder(
-        shrinkWrap: true,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.35,
-        ),
-        itemCount: 4,
-        itemBuilder: (context, index) {
-          return Container(
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        children: [
+          Icon(
+            Icons.search_off_rounded,
+            size: 40,
+            color: isDark ? Colors.white38 : Colors.grey.shade400,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No coins match "${_searchController.text.trim()}"',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.white60 : Colors.grey.shade500,
             ),
-            child: Center(
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.primary.withOpacity(0.3),
-                ),
-              ),
-            ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

@@ -14,7 +14,13 @@ import 'transaction_details_unified_screen.dart';
 class BuyCryptoScreen extends StatefulWidget {
   final String cryptoName;
   final String cryptoId;
-  const BuyCryptoScreen({super.key, required this.cryptoName, required this.cryptoId});
+  /// Full coin data pre-loaded from TradeCryptoScreen (logo, rates, networks)
+  /// so this screen doesn't need to re-fetch or show a coin picker. Falls
+  /// back to fetching by [cryptoId]/[cryptoName] when reached without it
+  /// (e.g. a future deep link) — the coin is still always locked, never
+  /// user-pickable here.
+  final Map<String, dynamic>? coin;
+  const BuyCryptoScreen({super.key, required this.cryptoName, required this.cryptoId, this.coin});
 
   @override
   State<BuyCryptoScreen> createState() => _BuyCryptoScreenState();
@@ -33,8 +39,11 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
 
   String? _selectedCoin;
   String? _selectedCoinId;
-  List<Map<String, dynamic>> _coins = [];
-  bool _isLoadingCoins = true;
+  String? _coinName;
+  String? _coinLogo;
+  List<Map<String, dynamic>> _networks = [];
+  String? _selectedNetworkValue;
+  String? _selectedNetworkLabel;
 
   @override
   void dispose() {
@@ -53,8 +62,25 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
       _isLoadingWallet = false;
     }
     _fetchWalletBalance();
-    _fetchCoins();
+    _loadCoinData();
     _amountController.addListener(_calculateYouReceive);
+  }
+
+  void _applyCoin(Map<String, dynamic> coin) {
+    _selectedCoin = (coin['symbol'] ?? widget.cryptoName).toString();
+    _selectedCoinId = (coin['id'] ?? widget.cryptoId).toString();
+    _coinName = coin['name']?.toString();
+    _coinLogo = coin['logo']?.toString();
+    _currentRate = double.tryParse(coin['buy_rate_ngn']?.toString() ?? '0') ?? 0.0;
+    _networks = (coin['networks'] is List)
+        ? List<Map<String, dynamic>>.from(
+            (coin['networks'] as List).map((n) => Map<String, dynamic>.from(n as Map)))
+        : [];
+    if (_networks.isNotEmpty) {
+      _selectedNetworkValue = _networks.first['value']?.toString();
+      _selectedNetworkLabel = _networks.first['label']?.toString();
+    }
+    _isLoadingRate = false;
   }
 
   Future<void> _fetchWalletBalance() async {
@@ -92,7 +118,18 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
     }
   }
 
-  Future<void> _fetchCoins() async {
+  /// The coin is always locked to what was tapped on TradeCryptoScreen — this
+  /// screen never lets the user pick a different coin. When [widget.coin] is
+  /// already provided, use it directly with no network round trip; otherwise
+  /// (e.g. a future deep link with just an id) fetch the coin list once to
+  /// look up that one coin's full details.
+  Future<void> _loadCoinData() async {
+    if (widget.coin != null) {
+      setState(() => _applyCoin(widget.coin!));
+      _calculateYouReceive();
+      return;
+    }
+
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       final token = await authService.getToken();
@@ -116,69 +153,63 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
           coinsList = data['data'];
         }
 
+        final coins = coinsList.map<Map<String, dynamic>>((coin) => {
+          'id': coin['id']?.toString() ?? '',
+          'symbol': (coin['symbol'] ?? coin['name'] ?? '').toString().toUpperCase(),
+          'name': coin['name'] ?? coin['symbol'] ?? '',
+          'logo': coin['logo']?.toString(),
+          'buy_rate_ngn': double.tryParse(coin['buy_rate_ngn']?.toString() ?? '0') ?? 0.0,
+          'networks': coin['networks'] is List ? coin['networks'] : [],
+        }).toList();
+
+        // Match by id first, fall back to symbol
+        Map<String, dynamic>? match;
+        if (widget.cryptoId.isNotEmpty) {
+          match = coins.cast<Map<String, dynamic>?>().firstWhere(
+            (c) => c!['id'] == widget.cryptoId,
+            orElse: () => null,
+          );
+        }
+        match ??= coins.cast<Map<String, dynamic>?>().firstWhere(
+          (c) => c!['symbol'] == widget.cryptoName.toUpperCase(),
+          orElse: () => null,
+        );
+
         if (mounted) {
           setState(() {
-            _coins = coinsList.map<Map<String, dynamic>>((coin) => {
-              'id': coin['id']?.toString() ?? '',
-              'symbol': (coin['symbol'] ?? coin['name'] ?? '').toString().toUpperCase(),
-              'name': coin['name'] ?? coin['symbol'] ?? '',
-              'buy_rate_ngn': double.tryParse(coin['buy_rate_ngn']?.toString() ?? '0') ?? 0.0,
-            }).toList();
-            _isLoadingCoins = false;
-
-            // Auto-select coin if matching (prefer id, fallback to symbol)
-            Map<String, dynamic>? match;
-            if (widget.cryptoId.isNotEmpty) {
-              match = _coins.cast<Map<String, dynamic>?>().firstWhere(
-                (c) => c!['id'] == widget.cryptoId,
-                orElse: () => null,
-              );
-            }
-            match ??= _coins.cast<Map<String, dynamic>?>().firstWhere(
-              (c) => c!['symbol'] == widget.cryptoName.toUpperCase(),
-              orElse: () => null,
-            );
             if (match != null) {
-              _selectedCoin = match['symbol'];
-              _selectedCoinId = match['id'];
-              _currentRate = match['buy_rate_ngn'] ?? 0.0;
+              _applyCoin(match);
+            } else {
+              _selectedCoin = widget.cryptoName;
+              _selectedCoinId = widget.cryptoId;
               _isLoadingRate = false;
             }
           });
+          _calculateYouReceive();
         }
-      } else {
-        _loadFallbackCoins();
+      } else if (mounted) {
+        setState(() {
+          _selectedCoin = widget.cryptoName;
+          _selectedCoinId = widget.cryptoId;
+          _isLoadingRate = false;
+        });
       }
     } catch (e) {
-      _loadFallbackCoins();
+      if (mounted) {
+        setState(() {
+          _selectedCoin = widget.cryptoName;
+          _selectedCoinId = widget.cryptoId;
+          _isLoadingRate = false;
+        });
+      }
     }
   }
 
-  void _loadFallbackCoins() {
-    if (mounted) {
-      setState(() {
-        _coins = [
-          {'id': '1', 'symbol': 'BTC', 'name': 'Bitcoin', 'buy_rate_ngn': 0.0},
-          {'id': '2', 'symbol': 'USDT', 'name': 'Tether', 'buy_rate_ngn': 0.0},
-        ];
-        _isLoadingCoins = false;
-        _isLoadingRate = false;
-      });
-    }
-  }
-
-  void _onCoinSelected(String coinId) {
-    final coin = _coins.firstWhere(
-      (c) => c['id'] == coinId,
-      orElse: () => {},
-    );
+  void _onNetworkSelected(Map<String, dynamic> network) {
     setState(() {
-      _selectedCoin = coin['symbol']?.toString();
-      _selectedCoinId = coinId;
-      _currentRate = coin['buy_rate_ngn'] ?? 0.0;
-      _isLoadingRate = false;
+      _selectedNetworkValue = network['value']?.toString();
+      _selectedNetworkLabel = network['label']?.toString();
     });
-    _calculateYouReceive();
   }
 
   void _calculateYouReceive() {
@@ -222,6 +253,11 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
 
     if (_walletAddressController.text.isEmpty) {
       _showSnackBar('Please enter your wallet address', Colors.red);
+      return;
+    }
+
+    if (_networks.isNotEmpty && _selectedNetworkValue == null) {
+      _showSnackBar('Please select a network', Colors.red);
       return;
     }
 
@@ -273,6 +309,7 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
           'crypto_id': _selectedCoinId ?? widget.cryptoId,
           'amount_ngn': amountNaira,
           'wallet_address': _walletAddressController.text,
+          if (_selectedNetworkValue != null) 'network': _selectedNetworkValue,
         }),
       );
 
@@ -341,6 +378,51 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
         );
   }
 
+  /// Circular coin logo with a graceful fallback to a lettered avatar when
+  /// there's no logo or it fails to load.
+  Widget _buildCoinLogo({double size = 44}) {
+    final logoUrl = Constants.resolveLogoUrl(_coinLogo);
+    final symbol = _selectedCoin ?? widget.cryptoName;
+
+    Widget fallback() => Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(size / 2),
+          ),
+          child: Center(
+            child: Text(
+              symbol.isNotEmpty ? symbol.substring(0, 1) : '?',
+              style: TextStyle(
+                fontSize: size * 0.4,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        );
+
+    if (logoUrl == null) {
+      debugPrint('[CryptoLogo] No logo for $symbol (raw="$_coinLogo")');
+      return fallback();
+    }
+
+    return ClipOval(
+      child: Image.network(
+        logoUrl,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) => progress == null ? child : fallback(),
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('[CryptoLogo] Failed to load "$logoUrl": $error');
+          return fallback();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -368,44 +450,73 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Coin Selection
+                      // Locked coin (selected on the previous screen)
                       ModernFormWidgets.buildFormCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            ModernFormWidgets.buildSectionLabel(
-                              'Select Coin',
-                              icon: Icons.currency_bitcoin_rounded,
-                              iconColor: AppColors.cryptoColor,
-                            ),
-                            const SizedBox(height: 12),
-                            _isLoadingCoins
-                                ? const Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(16),
-                                      child: CircularProgressIndicator(strokeWidth: 2),
+                            _buildCoinLogo(size: 44),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _selectedCoin ?? widget.cryptoName,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.textTheme.titleMedium?.color,
                                     ),
-                                  )
-                                : Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: _coins.map((coin) {
-                                      final coinId = coin['id'] as String;
-                                      final name = coin['name'] as String;
-                                      final symbol = coin['symbol'] as String;
-                                      final isSelected = _selectedCoinId == coinId;
-                                      return ModernFormWidgets.buildSelectableChip(
-                                        label: '$name ($symbol)',
-                                        isSelected: isSelected,
-                                        onTap: () => _onCoinSelected(coinId),
-                                        selectedColor: AppColors.primary,
-                                      );
-                                    }).toList(),
                                   ),
+                                  if (_coinName != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _coinName!,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark ? Colors.white60 : Colors.grey.shade500,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
+
+                      // Network Selection
+                      if (_networks.isNotEmpty) ...[
+                        ModernFormWidgets.buildFormCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ModernFormWidgets.buildSectionLabel(
+                                'Select Network',
+                                icon: Icons.hub_outlined,
+                                iconColor: AppColors.accentTeal,
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _networks.map((network) {
+                                  final label = network['label']?.toString() ?? '';
+                                  final isSelected = _selectedNetworkValue == network['value']?.toString();
+                                  return ModernFormWidgets.buildSelectableChip(
+                                    label: label,
+                                    isSelected: isSelected,
+                                    onTap: () => _onNetworkSelected(network),
+                                    selectedColor: AppColors.accentTeal,
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
 
                       // Amount Input
                       ModernFormWidgets.buildFormCard(
@@ -456,12 +567,23 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
                           children: [
                             _buildSummaryRow(
                               'Rate',
-                              _currentRate > 0
-                                  ? '₦${_formatBalance(_currentRate)} / 1 ${_selectedCoin ?? 'Crypto'}'
-                                  : 'Select a coin',
+                              _isLoadingRate
+                                  ? 'Loading...'
+                                  : _currentRate > 0
+                                      ? '₦${_formatBalance(_currentRate)} / 1 ${_selectedCoin ?? 'Crypto'}'
+                                      : 'Rate unavailable',
                               icon: Icons.trending_up_rounded,
                               theme: theme,
                             ),
+                            if (_selectedNetworkLabel != null) ...[
+                              Divider(color: isDark ? theme.dividerColor : Colors.grey.shade200, height: 20),
+                              _buildSummaryRow(
+                                'Network',
+                                _selectedNetworkLabel!,
+                                icon: Icons.hub_outlined,
+                                theme: theme,
+                              ),
+                            ],
                             Divider(color: isDark ? theme.dividerColor : Colors.grey.shade200, height: 20),
                             _buildSummaryRow(
                               'You Receive',

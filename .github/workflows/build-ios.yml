@@ -140,14 +140,53 @@ jobs:
           GOOGLE_SERVICE_INFO_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_BASE64 }}
         run: |
           # 1. Inject the GoogleService-Info.plist from GitHub Secrets
-          if [ ! -z "$GOOGLE_SERVICE_INFO_BASE64" ]; then
-            echo -n "$GOOGLE_SERVICE_INFO_BASE64" | base64 --decode > ios/Runner/GoogleService-Info.plist
-            echo "✅ Injected GoogleService-Info.plist"
-          else
-            echo "⚠️ GOOGLE_SERVICE_INFO_BASE64 secret is missing. Push notifications may fail."
+          if [ -z "$GOOGLE_SERVICE_INFO_BASE64" ]; then
+            echo "::error::GOOGLE_SERVICE_INFO_BASE64 secret is missing. FirebaseApp.configure() will crash the app on launch."
+            exit 1
           fi
-          
-          # 2. Create the Entitlements file for Push Notifications
+          echo -n "$GOOGLE_SERVICE_INFO_BASE64" | base64 --decode > ios/Runner/GoogleService-Info.plist
+
+          # Fail fast if the secret decoded into something that isn't a valid plist,
+          # rather than shipping a build that crashes on every launch.
+          if ! plutil -lint ios/Runner/GoogleService-Info.plist; then
+            echo "::error::Decoded GoogleService-Info.plist is not a valid plist. Check the base64 secret."
+            exit 1
+          fi
+          echo "✅ Injected GoogleService-Info.plist"
+
+          # 2. Register the plist in the Xcode project's "Copy Bundle Resources"
+          #    phase. THIS IS REQUIRED — writing the file to disk is not enough.
+          #    Xcode only copies files that are listed in the target's resources
+          #    build phase, so without this the plist never reaches the .app and
+          #    FirebaseApp.configure() terminates the app at launch.
+          cat <<'RUBY' > "$RUNNER_TEMP/add_firebase_plist.rb"
+          require 'xcodeproj'
+
+          project = Xcodeproj::Project.open('ios/Runner.xcodeproj')
+          target = project.targets.find { |t| t.name == 'Runner' }
+          abort('Runner target not found in Xcode project') if target.nil?
+
+          already_bundled = target.resources_build_phase.files.any? do |build_file|
+            build_file.file_ref &&
+              build_file.file_ref.path.to_s.end_with?('GoogleService-Info.plist')
+          end
+
+          if already_bundled
+            puts 'GoogleService-Info.plist is already in Copy Bundle Resources'
+          else
+            file_ref = project.new_file('Runner/GoogleService-Info.plist')
+            target.resources_build_phase.add_file_reference(file_ref, true)
+            project.save
+            puts 'Added GoogleService-Info.plist to Copy Bundle Resources'
+          end
+          RUBY
+
+          # xcodeproj ships as a CocoaPods dependency and is present on the
+          # macOS runner; install only if that assumption ever stops holding.
+          ruby -e "require 'xcodeproj'" 2>/dev/null || sudo gem install xcodeproj --no-document
+          ruby "$RUNNER_TEMP/add_firebase_plist.rb"
+
+          # 3. Create the Entitlements file for Push Notifications
           cat <<EOF > ios/Runner/Runner.entitlements
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -160,15 +199,54 @@ jobs:
           EOF
           echo "✅ Created Runner.entitlements for Push Notifications"
           
-          # 3. Add Background Modes (remote-notification) to Info.plist
-          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" ios/Runner/Info.plist || true
-          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string remote-notification" ios/Runner/Info.plist || true
-          echo "✅ Added remote-notification to UIBackgroundModes"
+          # 4. Ensure remote-notification is in UIBackgroundModes.
+          #    Info.plist already declares it, and PlistBuddy's "Add :...:0"
+          #    would INSERT a duplicate at index 0 on every run, so check first.
+          if /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" ios/Runner/Info.plist 2>/dev/null | grep -q "remote-notification"; then
+            echo "✅ remote-notification already present in UIBackgroundModes"
+          else
+            /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" ios/Runner/Info.plist 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes: string remote-notification" ios/Runner/Info.plist
+            echo "✅ Added remote-notification to UIBackgroundModes"
+          fi
+
+          # 5. Prove the plist will actually ship — the whole point of this step.
+          echo "=== Runner target Copy Bundle Resources (GoogleService check) ==="
+          grep -c "GoogleService-Info.plist" ios/Runner.xcodeproj/project.pbxproj \
+            || { echo "::error::GoogleService-Info.plist is still not referenced in the Xcode project."; exit 1; }
         
       # Compile the IPA for distribution
       - name: Build IPA
         run: flutter build ipa --release --export-options-plist=ios/Runner/ExportOptions.plist
-        
+
+      # Verify the shipped binary actually contains the Firebase config and the
+      # push entitlement. Without this, a packaging regression only surfaces as
+      # a launch crash after the build reaches TestFlight testers.
+      - name: Verify Firebase config and push entitlement in IPA
+        run: |
+          IPA=$(ls build/ios/ipa/*.ipa | head -n 1)
+          echo "Inspecting $IPA"
+          WORK=$(mktemp -d)
+          unzip -q "$IPA" -d "$WORK"
+          APP=$(ls -d "$WORK"/Payload/*.app | head -n 1)
+
+          if [ -f "$APP/GoogleService-Info.plist" ]; then
+            echo "✅ GoogleService-Info.plist IS bundled in the .app"
+          else
+            echo "::error::GoogleService-Info.plist is NOT in the built .app — the app will crash on launch."
+            echo "Bundle contents:"; ls "$APP" | head -40
+            exit 1
+          fi
+
+          echo "=== Signed entitlements ==="
+          codesign -d --entitlements :- "$APP" 2>/dev/null | tee "$WORK/ents.txt"
+          if grep -q "aps-environment" "$WORK/ents.txt"; then
+            echo "✅ aps-environment entitlement present"
+          else
+            echo "::error::aps-environment missing — push notifications will not work."
+            exit 1
+          fi
+
       # Upload the final signed .ipa to GitHub Artifacts (backup)
       - name: Upload Signed IPA Artifact
         uses: actions/upload-artifact@v4

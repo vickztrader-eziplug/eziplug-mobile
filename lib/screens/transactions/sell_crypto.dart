@@ -15,7 +15,12 @@ import 'crypto_sell_success_screen.dart';
 class SellCryptoScreen extends StatefulWidget {
   final String cryptoName;
   final String cryptoId;
-  const SellCryptoScreen({super.key, required this.cryptoName, required this.cryptoId});
+  /// Full coin data pre-loaded from TradeCryptoScreen (logo, rates) so this
+  /// screen doesn't need to re-fetch or show a coin picker. Falls back to
+  /// fetching by [cryptoId]/[cryptoName] when reached without it (e.g. a
+  /// future deep link) — the coin is still always locked here.
+  final Map<String, dynamic>? coin;
+  const SellCryptoScreen({super.key, required this.cryptoName, required this.cryptoId, this.coin});
 
   @override
   State<SellCryptoScreen> createState() => _SellCryptoScreenState();
@@ -26,7 +31,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
   final TextEditingController _amountController = TextEditingController();
   bool _isLoading = false;
   bool _isLoadingWallet = true;
-  bool _isLoadingCoins = true;
+  bool _isLoadingRate = true;
   bool _isGeneratingWallet = false;
   double _walletNaira = 0.0;
   double _currentRate = 0.0;
@@ -34,7 +39,8 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
 
   String? _selectedCoin;
   String? _selectedCoinId;
-  List<Map<String, dynamic>> _coins = [];
+  String? _coinName;
+  String? _coinLogo;
 
   String? _walletAddress;
   String? _qrCodeData;
@@ -55,7 +61,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
     // Initialize with cached balance immediately so it doesn't show 0
     final authService = Provider.of<AuthService>(context, listen: false);
     _fetchWalletBalance();
-    _fetchCoins();
+    _loadCoinData();
 
     // Add listener for auto-calculation
     _amountController.addListener(_calculateReceiveAmount);
@@ -125,7 +131,26 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
     }
   }
 
-  Future<void> _fetchCoins() async {
+  void _applyCoin(Map<String, dynamic> coin) {
+    _selectedCoin = (coin['symbol'] ?? widget.cryptoName).toString();
+    _selectedCoinId = (coin['id'] ?? widget.cryptoId).toString();
+    _coinName = coin['name']?.toString();
+    _coinLogo = coin['logo']?.toString();
+    _currentRate = double.tryParse(coin['sell_rate_ngn']?.toString() ?? '0') ?? 0.0;
+    _isLoadingRate = false;
+  }
+
+  /// The coin is always locked to what was tapped on TradeCryptoScreen — this
+  /// screen never lets the user pick a different coin. When [widget.coin] is
+  /// already provided, use it directly with no network round trip; otherwise
+  /// (e.g. a future deep link with just an id) fetch the coin list once to
+  /// look up that one coin's full details.
+  Future<void> _loadCoinData() async {
+    if (widget.coin != null) {
+      setState(() => _applyCoin(widget.coin!));
+      return;
+    }
+
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       final token = await authService.getToken();
@@ -149,70 +174,53 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
           coinsList = data['data'];
         }
 
+        final coins = coinsList.map<Map<String, dynamic>>((coin) => {
+          'id': coin['id']?.toString() ?? '',
+          'symbol': (coin['symbol'] ?? coin['name'] ?? '').toString().toUpperCase(),
+          'name': coin['name'] ?? coin['symbol'] ?? '',
+          'logo': coin['logo']?.toString(),
+          'sell_rate_ngn': double.tryParse(coin['sell_rate_ngn']?.toString() ?? '0') ?? 0.0,
+        }).toList();
+
+        Map<String, dynamic>? match;
+        if (widget.cryptoId.isNotEmpty) {
+          match = coins.cast<Map<String, dynamic>?>().firstWhere(
+            (c) => c!['id'] == widget.cryptoId,
+            orElse: () => null,
+          );
+        }
+        match ??= coins.cast<Map<String, dynamic>?>().firstWhere(
+          (c) => c!['symbol'] == widget.cryptoName.toUpperCase(),
+          orElse: () => null,
+        );
+
         if (mounted) {
           setState(() {
-            _coins = coinsList.map<Map<String, dynamic>>((coin) => {
-              'id': coin['id']?.toString() ?? '',
-              'symbol': (coin['symbol'] ?? coin['name'] ?? '').toString().toUpperCase(),
-              'name': coin['name'] ?? coin['symbol'] ?? '',
-              'sell_rate_ngn': double.tryParse(coin['sell_rate_ngn']?.toString() ?? '0') ?? 0.0,
-            }).toList();
-            _isLoadingCoins = false;
-
-            // Auto-select coin if matching (prefer id, fallback to symbol)
-            Map<String, dynamic>? match;
-            if (widget.cryptoId.isNotEmpty) {
-              match = _coins.cast<Map<String, dynamic>?>().firstWhere(
-                (c) => c!['id'] == widget.cryptoId,
-                orElse: () => null,
-              );
-            }
-            match ??= _coins.cast<Map<String, dynamic>?>().firstWhere(
-              (c) => c!['symbol'] == widget.cryptoName.toUpperCase(),
-              orElse: () => null,
-            );
             if (match != null) {
-              _selectedCoin = match['symbol'];
-              _selectedCoinId = match['id'];
-              _currentRate = match['sell_rate_ngn'] ?? 0.0;
+              _applyCoin(match);
+            } else {
+              _selectedCoin = widget.cryptoName;
+              _selectedCoinId = widget.cryptoId;
+              _isLoadingRate = false;
             }
           });
         }
-      } else {
-        _loadFallbackCoins();
+      } else if (mounted) {
+        setState(() {
+          _selectedCoin = widget.cryptoName;
+          _selectedCoinId = widget.cryptoId;
+          _isLoadingRate = false;
+        });
       }
     } catch (e) {
-      _loadFallbackCoins();
+      if (mounted) {
+        setState(() {
+          _selectedCoin = widget.cryptoName;
+          _selectedCoinId = widget.cryptoId;
+          _isLoadingRate = false;
+        });
+      }
     }
-  }
-
-  void _loadFallbackCoins() {
-    if (mounted) {
-      setState(() {
-        _coins = [
-          {'id': '1', 'symbol': 'BTC', 'name': 'Bitcoin', 'sell_rate_ngn': 0.0},
-          {'id': '2', 'symbol': 'USDT', 'name': 'Tether', 'sell_rate_ngn': 0.0},
-        ];
-        _isLoadingCoins = false;
-      });
-    }
-  }
-
-  void _onCoinSelected(String coinId) {
-    final coin = _coins.firstWhere(
-      (c) => c['id'] == coinId,
-      orElse: () => {},
-    );
-    setState(() {
-      _selectedCoin = coin['symbol']?.toString();
-      _selectedCoinId = coinId;
-      _currentRate = coin['sell_rate_ngn'] ?? 0.0;
-      // Reset wallet address when coin changes
-      _walletAddress = null;
-      _qrCodeData = null;
-      _expiryTimer?.cancel();
-      _calculateReceiveAmount(); // Recalculate when coin changes
-    });
   }
 
   void _startExpiryTimer() {
@@ -429,6 +437,51 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
         );
   }
 
+  /// Circular coin logo with a graceful fallback to a lettered avatar when
+  /// there's no logo or it fails to load.
+  Widget _buildCoinLogo({double size = 44}) {
+    final logoUrl = Constants.resolveLogoUrl(_coinLogo);
+    final symbol = _selectedCoin ?? widget.cryptoName;
+
+    Widget fallback() => Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(size / 2),
+          ),
+          child: Center(
+            child: Text(
+              symbol.isNotEmpty ? symbol.substring(0, 1) : '?',
+              style: TextStyle(
+                fontSize: size * 0.4,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        );
+
+    if (logoUrl == null) {
+      debugPrint('[CryptoLogo] No logo for $symbol (raw="$_coinLogo")');
+      return fallback();
+    }
+
+    return ClipOval(
+      child: Image.network(
+        logoUrl,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) => progress == null ? child : fallback(),
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('[CryptoLogo] Failed to load "$logoUrl": $error');
+          return fallback();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -457,40 +510,37 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Coin Selection
+                      // Locked coin (selected on the previous screen)
                       ModernFormWidgets.buildFormCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            ModernFormWidgets.buildSectionLabel(
-                              'Select Coin',
-                              icon: Icons.currency_bitcoin_rounded,
-                              iconColor: AppColors.cryptoColor,
-                            ),
-                            const SizedBox(height: 12),
-                            _isLoadingCoins
-                                ? const Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(16),
-                                      child: CircularProgressIndicator(strokeWidth: 2),
+                            _buildCoinLogo(size: 44),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _selectedCoin ?? widget.cryptoName,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.textTheme.titleMedium?.color,
                                     ),
-                                  )
-                                : Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: _coins.map((coin) {
-                                      final coinId = coin['id'] as String;
-                                      final name = coin['name'] as String;
-                                      final symbol = coin['symbol'] as String;
-                                      final isSelected = _selectedCoinId == coinId;
-                                      return ModernFormWidgets.buildSelectableChip(
-                                        label: '$name ($symbol)',
-                                        isSelected: isSelected,
-                                        onTap: () => _onCoinSelected(coinId),
-                                        selectedColor: AppColors.primary,
-                                      );
-                                    }).toList(),
                                   ),
+                                  if (_coinName != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _coinName!,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark ? Colors.white60 : Colors.grey.shade500,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -555,7 +605,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                       ],
 
                       // Rate Display
-                      if (_currentRate > 0)
+                      if (_isLoadingRate || _currentRate > 0)
                         ModernFormWidgets.buildFormCard(
                           backgroundColor: isDark ? theme.cardColor : AppColors.primary.withOpacity(0.04),
                           child: Row(
@@ -586,7 +636,9 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '₦${_formatBalance(_currentRate)} = 1 ${_selectedCoin ?? 'Crypto'}',
+                                      _isLoadingRate
+                                          ? 'Loading...'
+                                          : '₦${_formatBalance(_currentRate)} = 1 ${_selectedCoin ?? 'Crypto'}',
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
@@ -599,7 +651,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                             ],
                           ),
                         ),
-                      if (_currentRate > 0) const SizedBox(height: 16),
+                      if (_isLoadingRate || _currentRate > 0) const SizedBox(height: 16),
 
                       // Generate Address or Show Address
                       if (_walletAddress == null)

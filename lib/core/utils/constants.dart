@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class Constants {
   static const String baseUrl =
-      // "http://127.0.0.1:8000/api"; // For local testing
-      "https://app.eziplug.app/api"; // Production URL.
+      "http://127.0.0.1:8000/api"; // For local testing
+      // "https://app.eziplug.app/api"; // Production URL.
 
   // Storage URL (for images, files, etc.)
   static String get storageUrl {
@@ -39,6 +39,14 @@ class Constants {
     }
     
     return url;
+  }
+
+  /// Resolve a crypto/coin logo path (relative storage path or full URL)
+  /// into a displayable, platform-fixed URL. Returns null if there's no logo.
+  static String? resolveLogoUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    final url = path.startsWith('http') ? path : '$storageUrl/$path';
+    return fixLocalUrl(url);
   }
 
   // App Info

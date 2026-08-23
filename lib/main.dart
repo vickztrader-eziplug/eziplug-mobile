@@ -27,10 +27,14 @@ void main() async {
   // Calling Firebase.initializeApp() in Dart is still required — it links
   // the Flutter plugin to the already-configured native instance (no conflict).
   try {
-    await Firebase.initializeApp();
-    // Register the background message handler IMMEDIATELY after Firebase init.
-    // This must happen before any other Firebase Messaging calls.
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    if (!kIsWeb) {
+      await Firebase.initializeApp();
+      // Register the background message handler IMMEDIATELY after Firebase init.
+      // This must happen before any other Firebase Messaging calls.
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    } else {
+      debugPrint('Bypassing Firebase initialization on Web to avoid local missing config crash.');
+    }
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
   }

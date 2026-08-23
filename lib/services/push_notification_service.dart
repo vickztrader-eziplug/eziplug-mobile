@@ -20,7 +20,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class PushNotificationService {
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  FirebaseMessaging get _firebaseMessaging => FirebaseMessaging.instance;
   final AuthService _authService;
 
   static final FlutterLocalNotificationsPlugin _localNotifications =
@@ -38,6 +38,11 @@ class PushNotificationService {
 
   /// Initialize Firebase Messaging, local notifications, and request permissions
   Future<void> initialize() async {
+    if (kIsWeb) {
+      debugPrint('[PUSH] Bypassing push notification initialization on Web.');
+      return;
+    }
+
     // ── 1. Create the Android notification channel ──
     await _localNotifications
         .resolvePlatformSpecificImplementation<
