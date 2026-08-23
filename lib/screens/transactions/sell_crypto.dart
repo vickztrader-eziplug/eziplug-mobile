@@ -42,6 +42,14 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
   String? _coinName;
   String? _coinLogo;
 
+  // The deposit address Quidax generates is network-specific — a TRC20 address
+  // is not the same as an ERC20 one for the same coin. The chosen network is
+  // sent with the sell request so Quidax generates an address on the right
+  // chain, and is shown on the address card so the user knows where to send.
+  List<Map<String, dynamic>> _networks = [];
+  String? _selectedNetworkValue;
+  String? _selectedNetworkLabel;
+
   String? _walletAddress;
   String? _qrCodeData;
   int? _tradeId;
@@ -137,7 +145,37 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
     _coinName = coin['name']?.toString();
     _coinLogo = coin['logo']?.toString();
     _currentRate = double.tryParse(coin['sell_rate_ngn']?.toString() ?? '0') ?? 0.0;
+    _networks = (coin['networks'] is List)
+        ? List<Map<String, dynamic>>.from(
+            (coin['networks'] as List).map((n) => Map<String, dynamic>.from(n as Map)))
+        : [];
+    if (_networks.isNotEmpty) {
+      _selectedNetworkValue = _networks.first['value']?.toString();
+      _selectedNetworkLabel = _networks.first['label']?.toString();
+    }
     _isLoadingRate = false;
+  }
+
+  /// Switching network invalidates any address already on screen — it was
+  /// generated for the previous chain, and sending to it on the new network
+  /// would lose the funds.
+  void _onNetworkSelected(Map<String, dynamic> network) {
+    final value = network['value']?.toString();
+    if (value == _selectedNetworkValue) return;
+
+    setState(() {
+      _selectedNetworkValue = value;
+      _selectedNetworkLabel = network['label']?.toString();
+
+      if (_walletAddress != null) {
+        _walletAddress = null;
+        _qrCodeData = null;
+        _tradeId = null;
+        _expiryTimer?.cancel();
+        _pollTimer?.cancel();
+        _timerPulseController.stop();
+      }
+    });
   }
 
   /// The coin is always locked to what was tapped on TradeCryptoScreen — this
@@ -180,6 +218,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
           'name': coin['name'] ?? coin['symbol'] ?? '',
           'logo': coin['logo']?.toString(),
           'sell_rate_ngn': double.tryParse(coin['sell_rate_ngn']?.toString() ?? '0') ?? 0.0,
+          'networks': coin['networks'] is List ? coin['networks'] : [],
         }).toList();
 
         Map<String, dynamic>? match;
@@ -339,6 +378,11 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
       return;
     }
 
+    if (_networks.isNotEmpty && _selectedNetworkValue == null) {
+      _showSnackBar('Please select a network', Colors.red);
+      return;
+    }
+
     setState(() => _isGeneratingWallet = true);
 
     try {
@@ -362,6 +406,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
         body: jsonEncode({
           'crypto_id': _selectedCoinId ?? widget.cryptoId,
           'amount_crypto': amount,
+          if (_selectedNetworkValue != null) 'network': _selectedNetworkValue,
         }),
       );
 
@@ -546,6 +591,51 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                       ),
                       const SizedBox(height: 16),
 
+                      // Network Selection — determines which chain Quidax
+                      // generates the deposit address on.
+                      if (_networks.isNotEmpty) ...[
+                        ModernFormWidgets.buildFormCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ModernFormWidgets.buildSectionLabel(
+                                'Select Network',
+                                icon: Icons.hub_outlined,
+                                iconColor: AppColors.accentTeal,
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _networks.map((network) {
+                                  final label = network['label']?.toString() ?? '';
+                                  final isSelected = _selectedNetworkValue ==
+                                      network['value']?.toString();
+                                  return ModernFormWidgets.buildSelectableChip(
+                                    label: label,
+                                    isSelected: isSelected,
+                                    onTap: () => _onNetworkSelected(network),
+                                    selectedColor: AppColors.accentTeal,
+                                  );
+                                }).toList(),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Only send ${_selectedCoin ?? 'crypto'} on the '
+                                '${_selectedNetworkLabel ?? 'selected'} network. '
+                                'Sending on another network will result in loss of funds.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.orange.shade300 : Colors.orange.shade800,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
                       // Amount Input
                       ModernFormWidgets.buildFormCard(
                         child: Column(
@@ -674,7 +764,9 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                       // Info tip
                       ModernFormWidgets.buildInfoCard(
                         message: _walletAddress != null
-                            ? 'Send the exact amount to the address above. Your Naira wallet will be credited after blockchain confirmation (3-60 minutes).'
+                            ? 'Send the exact amount to the address above using the '
+                                '${_selectedNetworkLabel ?? 'selected'} network only. '
+                                'Your Naira wallet will be credited after blockchain confirmation (3-60 minutes).'
                             : 'Generate a deposit address, then send crypto from your external wallet (Trust Wallet, Binance, etc.) to receive Naira credit.',
                         icon: Icons.info_outline_rounded,
                         color: AppColors.primary,
@@ -779,6 +871,25 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                     color: isDark ? theme.textTheme.bodySmall?.color : Colors.grey.shade600,
                   ),
                 ),
+                if (_selectedNetworkLabel != null) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentTeal.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.accentTeal.withOpacity(0.4)),
+                    ),
+                    child: Text(
+                      '${_selectedNetworkLabel!} network only',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.accentTeal,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Container(
                   width: 160,

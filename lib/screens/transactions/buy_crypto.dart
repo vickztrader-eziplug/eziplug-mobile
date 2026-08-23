@@ -512,6 +512,17 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
                                   );
                                 }).toList(),
                               ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Make sure your wallet address below supports the '
+                                '${_selectedNetworkLabel ?? 'selected'} network. '
+                                'Sending to an address on a different network will result in loss of funds.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.orange.shade300 : Colors.orange.shade800,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ],
                           ),
                         ),
