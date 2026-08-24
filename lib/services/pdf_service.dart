@@ -145,10 +145,6 @@ class PdfService {
             pw.SizedBox(height: 10),
             _tokenBox(receipt.tokenLabel, receipt.token!),
           ],
-          if (receipt.walletLines.isNotEmpty) ...[
-            pw.SizedBox(height: 10),
-            _section('Wallet', receipt.walletLines),
-          ],
           pw.SizedBox(height: 12),
           _closing(),
         ],
@@ -923,20 +919,4 @@ class _ReceiptData {
     return null;
   }
 
-  /// Balances only exist on the unified payload; the ledger view is what makes
-  /// a receipt reconcilable, so print it whenever it is there.
-  List<_Line> get walletLines {
-    final lines = <_Line>[];
-    final before = double.tryParse(
-      transaction.rawData['balance_before']?.toString() ?? '',
-    );
-    final after = double.tryParse(
-      transaction.rawData['balance_after']?.toString() ?? '',
-    );
-
-    if (before == null && after == null) return lines;
-    if (before != null) lines.add(_Line('Balance Before', _money(before)));
-    if (after != null) lines.add(_Line('Balance After', _money(after)));
-    return lines;
-  }
 }
