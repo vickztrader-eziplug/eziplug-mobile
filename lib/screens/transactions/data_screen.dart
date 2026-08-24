@@ -617,13 +617,7 @@ class _DataScreenState extends State<DataScreen> {
                                       ),
                                     )
                                   else
-                                    Wrap(
-                                      spacing: 10,
-                                      runSpacing: 10,
-                                      children: _filteredPlans.map((plan) {
-                                        return _buildDataPlanChip(plan);
-                                      }).toList(),
-                                    ),
+                                    _buildPlanGrid(),
                                 ],
                               ),
                           ],
@@ -728,10 +722,48 @@ class _DataScreenState extends State<DataScreen> {
     );
   }
 
-  Widget _buildDataPlanChip(Map<String, dynamic> plan) {
+  /// Plans laid out two per row, each card stretching to fill its half of the
+  /// available width. Rows are built manually (rather than with a GridView or
+  /// Wrap) so the card height follows the plan name — names wrap to two or
+  /// three lines and a fixed extent would either clip them or leave gaps.
+  Widget _buildPlanGrid() {
+    const spacing = 10.0;
+    final plans = _filteredPlans;
+    final rows = <Widget>[];
+
+    for (var i = 0; i < plans.length; i += 2) {
+      final right = i + 1 < plans.length ? plans[i + 1] : null;
+
+      rows.add(
+        Padding(
+          padding: EdgeInsets.only(bottom: i + 2 < plans.length ? spacing : 0),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _buildDataPlanCard(plans[i])),
+                const SizedBox(width: spacing),
+                // Keeps a lone trailing plan at half width instead of letting
+                // it stretch across the whole row.
+                Expanded(
+                  child: right == null
+                      ? const SizedBox.shrink()
+                      : _buildDataPlanCard(right),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(children: rows);
+  }
+
+  Widget _buildDataPlanCard(Map<String, dynamic> plan) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     final planId = plan['id']?.toString() ?? plan['plan_id']?.toString() ?? '';
     final selectedPlanId =
         _selectedPlan?['id']?.toString() ??
@@ -748,8 +780,7 @@ class _DataScreenState extends State<DataScreen> {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 90,
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? (isDark ? AppColors.primaryLight : AppColors.primary) : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
@@ -769,49 +800,38 @@ class _DataScreenState extends State<DataScreen> {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Lead with the parsed size ("1.8GB") rather than the provider's
-            // free-text name — VTpass names run long ("1.8GB + 6mins + 5 SMS,
-            // Monthly - N1500") and truncate to noise in a 90px chip.
+            // The plan_name column already reads as a complete description
+            // ("1.8GB 15 Days - Social Bundles N500"), so show it verbatim and
+            // let it wrap — a half-width card has room for three lines.
             Text(
-              plan['size']?.toString() ??
+              plan['plan_name']?.toString() ??
+                  plan['size']?.toString() ??
                   plan['data']?.toString() ??
-                  plan['plan_name']?.toString() ??
                   'N/A',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.5,
                 fontWeight: FontWeight.bold,
                 color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
-                height: 1.1,
+                height: 1.25,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               '₦${plan['amount']?.toString() ?? plan['price']?.toString() ?? '0'}',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 color: isSelected ? Colors.white : AppColors.success,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            if (plan['validity'] != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                plan['validity'].toString(),
-                style: TextStyle(
-                  fontSize: 8,
-                  color: isSelected ? Colors.white70 : (isDark ? const Color(0xFF8891A5) : Colors.grey.shade500),
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
           ],
         ),
       ),
