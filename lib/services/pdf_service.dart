@@ -500,28 +500,38 @@ class PdfService {
   }
 
   static pw.Widget _closing() {
-    return pw.Column(
-      children: [
-        pw.Text(
-          'Thank you for using Eziplug',
-          style: pw.TextStyle(
-            fontSize: 11,
-            fontWeight: pw.FontWeight.bold,
-            color: _ink,
+    // pw.MultiPage lays its body out with crossAxisAlignment.start, so a bare
+    // Column here would shrink-wrap to its longest line and sit flush left —
+    // width: double.infinity makes it fill the page so the centered text
+    // actually centers on the page, not just within its own text block.
+    return pw.Container(
+      width: double.infinity,
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          pw.Text(
+            'Thank you for using Eziplug',
+            textAlign: pw.TextAlign.center,
+            style: pw.TextStyle(
+              fontSize: 11,
+              fontWeight: pw.FontWeight.bold,
+              color: _ink,
+            ),
           ),
-        ),
-        pw.SizedBox(height: 5),
-        pw.Text(
-          'This is a computer-generated receipt and does not require a signature.',
-          textAlign: pw.TextAlign.center,
-          style: pw.TextStyle(fontSize: 8.5, color: _inkSoft),
-        ),
-        pw.SizedBox(height: 3),
-        pw.Text(
-          'Generated ${_formatDateTime(DateTime.now())}',
-          style: pw.TextStyle(fontSize: 8, color: _inkSoft),
-        ),
-      ],
+          pw.SizedBox(height: 5),
+          pw.Text(
+            'This is a computer-generated receipt and does not require a signature.',
+            textAlign: pw.TextAlign.center,
+            style: pw.TextStyle(fontSize: 8.5, color: _inkSoft),
+          ),
+          pw.SizedBox(height: 3),
+          pw.Text(
+            'Generated ${_formatDateTime(DateTime.now())}',
+            textAlign: pw.TextAlign.center,
+            style: pw.TextStyle(fontSize: 8, color: _inkSoft),
+          ),
+        ],
+      ),
     );
   }
 
