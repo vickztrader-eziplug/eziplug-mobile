@@ -710,10 +710,10 @@ class _ReceiptData {
     lines.add(_Line('Date & Time', _formatDateTime(transaction.date)));
     lines.add(_Line('Status', statusLabel, emphasis: statusColor));
 
-    final provider = transaction.provider.trim();
-    if (provider.isNotEmpty && provider != 'null') {
-      lines.add(_Line('Provider', provider));
-    }
+    // transaction.provider is the internal VAS/payment vendor that fulfilled
+    // the transaction (vtpass, paystack, quidax, ...) — never surfaced on the
+    // receipt, since that's our own backend detail, not something the
+    // customer should see or that we should be advertising on their behalf.
 
     final recipient = transaction.recipient?.trim();
     if (recipient != null && recipient.isNotEmpty && recipient != 'null') {
@@ -836,9 +836,12 @@ class _ReceiptData {
         break;
 
       case 'Payment':
+        // The payment gateway (paystack, flutterwave, ...) is our own
+        // backend routing detail — never shown to the customer. The
+        // reference number is kept (relabelled) since it's just an opaque
+        // code useful for support, not a vendor name.
         add('Payment Method', _text(['type', 'channel'])?.toUpperCase());
-        add('Gateway', _text(['gateway'])?.toUpperCase());
-        add('Gateway Reference', _text(['gateway_reference']));
+        add('Payment Reference', _text(['gateway_reference']));
         add('Card Type', _text(['card_type']));
         final last4 = _text(['last4', 'last_four']);
         add('Card Number', last4 == null ? null : '**** **** **** $last4');
