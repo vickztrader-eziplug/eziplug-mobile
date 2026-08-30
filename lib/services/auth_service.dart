@@ -29,6 +29,7 @@ class AuthService extends ChangeNotifier {
   Map<String, dynamic>? get user => _user;
   bool get isAuthenticated => _isAuthenticated;
   String? get token => _token;
+  int? get userId => int.tryParse(_user?['id']?.toString() ?? '');
 
   Map<String, dynamic>? get _userData => _user;
   String get userName => _userData?['first_name'] ?? _userData?['firstName'] ?? 'User';
@@ -53,6 +54,11 @@ class AuthService extends ChangeNotifier {
   
   /// Check if user has set up their PIN
   bool get isPinSet => _userData?['has_pin'] == true;
+
+  /// Admin-gated access to P2P Automation — off by default for every
+  /// customer until an admin explicitly enables it from the customer
+  /// detail page (eziplug-admin-react).
+  bool get canTradeP2p => _userData?['can_trade_p2p'] == true;
   
   /// Check if user has completed liveness check (has passport photo)
   bool get isLivenessComplete {

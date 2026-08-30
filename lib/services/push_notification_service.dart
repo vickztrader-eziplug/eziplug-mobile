@@ -5,8 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import '../core/utils/constants.dart';
+import '../main.dart' show navigatorKey;
+import '../routes.dart';
 import 'auth_service.dart';
 import 'debug_logger.dart';
+import 'p2p_event_bus.dart';
 
 /// Top-level background message handler.
 /// Must be a top-level function (not a class method) for Firebase to invoke it
@@ -118,8 +121,15 @@ class PushNotificationService {
       // ── 6. Handle notification taps (background → opened) ──
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         debugLogger.log('PUSH', 'Message clicked! ${message.messageId}');
-        // Navigate to appropriate screen based on message.data
+        _navigateForMessage(message);
       });
+
+      // ── 6b. Handle the tap that cold-started the app from terminated ──
+      final initialMessage = await _firebaseMessaging.getInitialMessage();
+      if (initialMessage != null) {
+        debugLogger.log('PUSH', 'App opened from terminated state via notification');
+        _navigateForMessage(initialMessage);
+      }
 
       // ── 7. Set foreground notification presentation options (iOS) ──
       await _firebaseMessaging.setForegroundNotificationPresentationOptions(
@@ -140,6 +150,13 @@ class PushNotificationService {
   void _handleForegroundMessage(RemoteMessage message) {
     debugLogger.log('PUSH',
         'Received foreground message: ${message.notification?.title}');
+
+    // Emitted regardless of whether there's a visible notification payload,
+    // so any open P2P screen can refresh itself immediately instead of
+    // waiting on pull-to-refresh (or the user tapping the notification).
+    if (message.data['type'] == 'p2p_order') {
+      P2pEventBus.emit(P2pOrderPushEvent(message.data['dohify_order_id']?.toString()));
+    }
 
     final notification = message.notification;
     if (notification == null) return;
@@ -172,10 +189,44 @@ class PushNotificationService {
     );
   }
 
-  /// Called when user taps a local notification
+  /// Called when user taps a local notification (i.e. a foreground message
+  /// we displayed ourselves via flutter_local_notifications on Android).
   static void _onNotificationTapped(NotificationResponse response) {
     debugPrint('[PUSH] Notification tapped: ${response.payload}');
-    // Navigate to appropriate screen based on payload data
+    final payload = response.payload;
+    if (payload == null || payload.isEmpty) return;
+    try {
+      final data = jsonDecode(payload);
+      if (data is Map) {
+        _navigateForData(Map<String, dynamic>.from(data));
+      }
+    } catch (e) {
+      debugPrint('[PUSH] Failed to parse notification payload: $e');
+    }
+  }
+
+  /// Navigates to the appropriate screen based on a push notification's
+  /// `message.data` payload.
+  static void _navigateForMessage(RemoteMessage message) {
+    _navigateForData(message.data);
+  }
+
+  /// The backend sends `{"type": "p2p_order", "dohify_order_id": "..."}`
+  /// whenever a P2P automation order's status changes. Any other/unknown
+  /// `type` is ignored for now.
+  static void _navigateForData(Map<String, dynamic> data) {
+    final type = data['type']?.toString();
+    if (type == 'p2p_order') {
+      final orderId = data['dohify_order_id']?.toString();
+      if (orderId != null && orderId.isNotEmpty) {
+        navigatorKey.currentState?.pushNamed(
+          AppRoutes.p2pOrderDetail,
+          arguments: orderId,
+        );
+      } else {
+        debugPrint('[PUSH] p2p_order notification missing dohify_order_id');
+      }
+    }
   }
 
   /// Send the FCM token to the backend

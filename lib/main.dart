@@ -99,6 +99,10 @@ Future<void> _testNetworkConnectivity() async {
   }
 }
 
+/// Root navigator key, used by services (e.g. [PushNotificationService]) that
+/// need to push a route without a [BuildContext] of their own.
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -107,6 +111,7 @@ class MyApp extends StatelessWidget {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return MaterialApp(
+          navigatorKey: navigatorKey,
           title: 'Eziplug',
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),

@@ -33,6 +33,12 @@ import 'package:cashpoint/screens/transactions/sell_crypto.dart';
 import 'package:cashpoint/screens/transactions/sell_giftcard.dart';
 import 'package:cashpoint/screens/transactions/payout_screen.dart';
 import 'package:cashpoint/pages/debug_logs_screen.dart';
+import 'package:cashpoint/screens/p2p/p2p_home_screen.dart';
+import 'package:cashpoint/screens/p2p/p2p_orders_screen.dart';
+import 'package:cashpoint/screens/p2p/p2p_order_detail_screen.dart';
+import 'package:cashpoint/screens/p2p/p2p_integrations_screen.dart';
+import 'package:cashpoint/screens/p2p/p2p_rules_screen.dart';
+import 'package:cashpoint/screens/p2p/p2p_settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -87,6 +93,12 @@ class AppRoutes {
   static const debugLogs = '/debug-logs';
   static const livenessCheck = '/liveness-check';
   static const appLock = '/app-lock';
+  static const p2pHome = '/p2p';
+  static const p2pOrders = '/p2p/orders';
+  static const p2pOrderDetail = '/p2p/orders/detail';
+  static const p2pIntegrations = '/p2p/integrations';
+  static const p2pRules = '/p2p/rules';
+  static const p2pSettings = '/p2p/settings';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -206,6 +218,21 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const KycVerificationScreen());
       case payoutAccounts:
         return MaterialPageRoute(builder: (_) => const PayoutScreen());
+      case p2pHome:
+        return MaterialPageRoute(builder: (_) => const P2pHomeScreen());
+      case p2pOrders:
+        return MaterialPageRoute(builder: (_) => const P2pOrdersScreen());
+      case p2pOrderDetail:
+        final orderId = settings.arguments as String? ?? '';
+        return MaterialPageRoute(
+          builder: (_) => P2pOrderDetailScreen(orderId: orderId),
+        );
+      case p2pIntegrations:
+        return MaterialPageRoute(builder: (_) => const P2pIntegrationsScreen());
+      case p2pRules:
+        return MaterialPageRoute(builder: (_) => const P2pRulesScreen());
+      case p2pSettings:
+        return MaterialPageRoute(builder: (_) => const P2pSettingsScreen());
 
       default:
         return MaterialPageRoute(

@@ -544,7 +544,7 @@ class _BuyCryptoScreenState extends State<BuyCryptoScreen> {
                               controller: _amountController,
                               hintText: 'Enter amount in Naira',
                               prefixIcon: Icons.money,
-                              keyboardType: TextInputType.number,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             ),
                           ],
                         ),

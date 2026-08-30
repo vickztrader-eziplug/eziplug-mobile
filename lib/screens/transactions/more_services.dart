@@ -1,7 +1,9 @@
 import 'package:cashpoint/routes.dart';
 import 'package:cashpoint/screens/home/main_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../services/auth_service.dart';
 
 // More Services Screen - Enhanced Version
 class MoreServicesScreen extends StatelessWidget {
@@ -11,7 +13,8 @@ class MoreServicesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+    final canTradeP2p = Provider.of<AuthService>(context, listen: false).canTradeP2p;
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
@@ -243,6 +246,24 @@ class MoreServicesScreen extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 24),
+
+                // P2P Automation Section — admin-gated (User.can_trade_p2p),
+                // off for every customer by default until enabled from the
+                // admin customer detail page.
+                if (canTradeP2p) ...[
+                  _buildSectionHeader('P2P Automation', Icons.sync_alt_rounded, AppColors.primary, context),
+                  const SizedBox(height: 12),
+                  _buildEnhancedServiceCard(
+                    context: context,
+                    title: 'P2P Automation',
+                    subtitle: 'Automate your P2P trade settlement',
+                    icon: Icons.sync_alt_rounded,
+                    color: AppColors.primary,
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.p2pHome),
+                    isFullWidth: true,
+                  ),
+                  const SizedBox(height: 24),
+                ],
 
                 // Tools Section
                 _buildSectionHeader('Tools', Icons.build_rounded, AppColors.calculatorColor, context),

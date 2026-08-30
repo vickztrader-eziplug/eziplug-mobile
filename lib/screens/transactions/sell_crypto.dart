@@ -651,7 +651,7 @@ class _SellCryptoScreenState extends State<SellCryptoScreen>
                               controller: _amountController,
                               hintText: 'Enter crypto amount',
                               prefixIcon: Icons.money,
-                              keyboardType: TextInputType.number,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               onChanged: (value) => _calculateReceiveAmount(),
                             ),
                           ],

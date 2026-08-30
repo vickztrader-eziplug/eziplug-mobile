@@ -41,6 +41,24 @@ class Constants {
     return url;
   }
 
+  // Reverb (WebSocket) — the "key" is the Reverb app key, public by design
+  // (same as a Pusher app key); only the app secret, which never leaves the
+  // backend, is sensitive. Must match REVERB_APP_KEY in the backend's .env.
+  static const String reverbKey = 'lfmhzpzqyubvxnhplj6v';
+  static const int reverbPort = 8080;
+  static const bool reverbUseTLS = false; // flip to true once served over wss:// in production
+
+  static String get _apiOrigin {
+    final uri = Uri.parse(fixLocalUrl(baseUrl));
+    return '${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}';
+  }
+
+  static String get reverbHost => Uri.parse(fixLocalUrl(baseUrl)).host;
+
+  /// Laravel's broadcasting auth endpoint — lives at the app root, not under
+  /// /api (Broadcast::routes() registers it outside the api.php group).
+  static String get broadcastAuthUrl => '$_apiOrigin/broadcasting/auth';
+
   /// Resolve a crypto/coin logo path (relative storage path or full URL)
   /// into a displayable, platform-fixed URL. Returns null if there's no logo.
   static String? resolveLogoUrl(String? path) {
@@ -160,4 +178,65 @@ class Constants {
   static const String categoryEcode = 'E-code';
 
   static const user = '$baseUrl/user';
+
+  // ==========================================================================
+  // P2P Automation Endpoints
+  // ==========================================================================
+  static const p2pOnboard = '$baseUrl/p2p/onboard';
+  static const p2pStatus = '$baseUrl/p2p/status';
+  static const p2pDashboard = '$baseUrl/p2p/dashboard';
+  static const p2pSettings = '$baseUrl/p2p/settings';
+  static const p2pProviders = '$baseUrl/p2p/providers';
+  static const p2pExchangeConnect = '$baseUrl/p2p/integrations/exchange/connect';
+  static const p2pBankConnect = '$baseUrl/p2p/integrations/bank/connect';
+  static const p2pExchangeIntegrations = '$baseUrl/p2p/integrations/exchange';
+  static const p2pBankIntegrations = '$baseUrl/p2p/integrations/bank';
+  static const p2pBanks = '$baseUrl/p2p/banks';
+  static const p2pBanksCached = '$baseUrl/p2p/banks/cached';
+  static const p2pBanksVerify = '$baseUrl/p2p/banks/verify';
+  static const p2pOrders = '$baseUrl/p2p/orders';
+  static const p2pRules = '$baseUrl/p2p/rules';
+
+  // Eziplug's own bank list/verification (Paystack-backed) — used for the
+  // beneficiary editor instead of Dohify's own bank/verify, since the actual
+  // payout transfer executes through Eziplug's Paystack integration and
+  // needs Eziplug's own bank codes, not Dohify's connected provider's.
+  static const payoutBankList = '$baseUrl/payout/bank/list';
+  static const payoutAccountValidate = '$baseUrl/payout/account/validate';
+
+  static String p2pExchangeTest(String providerId) =>
+      '$baseUrl/p2p/integrations/exchange/$providerId/test';
+  static String p2pExchangeActive(String providerId) =>
+      '$baseUrl/p2p/integrations/exchange/$providerId/active';
+  static String p2pBankActive(String providerId) =>
+      '$baseUrl/p2p/integrations/bank/$providerId/active';
+  static String p2pExchangeDelete(String providerId) =>
+      '$baseUrl/p2p/integrations/exchange/$providerId';
+  static String p2pBankDelete(String providerId) =>
+      '$baseUrl/p2p/integrations/bank/$providerId';
+
+  static String p2pOrderDetail(String id) => '$baseUrl/p2p/orders/$id';
+  static String p2pOrderHistory(String id) => '$baseUrl/p2p/orders/$id/history';
+  static String p2pOrderEvents(String id) => '$baseUrl/p2p/orders/$id/events';
+  static String p2pOrderManualApproval(String id) =>
+      '$baseUrl/p2p/orders/$id/manual-approval';
+  static String p2pOrderMarkPay(String id) => '$baseUrl/p2p/orders/$id/mark-pay';
+  static String p2pOrderReceipt(String id) => '$baseUrl/p2p/orders/$id/receipt';
+  static String p2pOrderPayNow(String id) => '$baseUrl/p2p/orders/$id/pay-now';
+  static String p2pOrderApprovePayin(String id) =>
+      '$baseUrl/p2p/orders/$id/approve-payin';
+  static String p2pOrderPayUnpaidCompleted(String id) =>
+      '$baseUrl/p2p/orders/$id/pay-unpaid-completed';
+  static String p2pOrderMarkDone(String id) => '$baseUrl/p2p/orders/$id/mark-done';
+  static String p2pOrderRetry(String id) => '$baseUrl/p2p/orders/$id/retry';
+  static String p2pOrderCancel(String id) => '$baseUrl/p2p/orders/$id/cancel';
+  static String p2pOrderBeneficiary(String id) =>
+      '$baseUrl/p2p/orders/$id/beneficiary';
+
+  static String p2pRuleDetail(String id) => '$baseUrl/p2p/rules/$id';
+
+  /// [type] must be literally 'blacklist' or 'whitelist'
+  static String p2pList(String type) => '$baseUrl/p2p/lists/$type';
+  static String p2pListEntryDelete(String type, String entryId) =>
+      '$baseUrl/p2p/lists/$type/$entryId';
 }

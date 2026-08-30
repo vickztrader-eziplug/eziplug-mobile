@@ -98,10 +98,40 @@ class PdfService {
   static bool _assetsTried = false;
 
   static Future<File> generateReceipt(TransactionModel transaction) async {
+    final receipt = _ReceiptData(transaction);
+    final pdf = await _buildDocument(receipt);
+
+    final output = await getTemporaryDirectory();
+    final safeReference = receipt.reference.replaceAll(RegExp(r'[^\w\-]'), '_');
+    final file = File('${output.path}/Eziplug_Receipt_$safeReference.pdf');
+    await file.writeAsBytes(await pdf.save());
+
+    return file;
+  }
+
+  /// Same design as [generateReceipt], rasterized to a PNG instead of saved
+  /// as a PDF — for contexts (e.g. sharing a payout confirmation) where an
+  /// image is the more natural thing to hand someone than a PDF attachment.
+  static Future<File> generateReceiptImage(TransactionModel transaction) async {
+    final receipt = _ReceiptData(transaction);
+    final pdf = await _buildDocument(receipt);
+    final pdfBytes = await pdf.save();
+
+    final page = await Printing.raster(pdfBytes, pages: [0], dpi: 200).first;
+    final pngBytes = await page.toPng();
+
+    final output = await getTemporaryDirectory();
+    final safeReference = receipt.reference.replaceAll(RegExp(r'[^\w\-]'), '_');
+    final file = File('${output.path}/Eziplug_Receipt_$safeReference.png');
+    await file.writeAsBytes(pngBytes);
+
+    return file;
+  }
+
+  static Future<pw.Document> _buildDocument(_ReceiptData receipt) async {
     await _loadAssets();
 
-    final receipt = _ReceiptData(transaction);
-
+    final transaction = receipt.transaction;
     final pdf = pw.Document(
       title: 'Eziplug Receipt ${receipt.reference}',
       author: 'Eziplug',
@@ -151,12 +181,7 @@ class PdfService {
       ),
     );
 
-    final output = await getTemporaryDirectory();
-    final safeReference = receipt.reference.replaceAll(RegExp(r'[^\w\-]'), '_');
-    final file = File('${output.path}/Eziplug_Receipt_$safeReference.pdf');
-    await file.writeAsBytes(await pdf.save());
-
-    return file;
+    return pdf;
   }
 
   static Future<void> _loadAssets() async {
@@ -720,6 +745,14 @@ class _ReceiptData {
     // the transaction (vtpass, paystack, quidax, ...) — never surfaced on the
     // receipt, since that's our own backend detail, not something the
     // customer should see or that we should be advertising on their behalf.
+
+    // Only set for receipts that construct their own TransactionModel in
+    // memory (e.g. a P2P order's payout receipt) rather than one fetched
+    // from the general transactions API, which has no notion of a sender.
+    final sender = _text(['sender']);
+    if (sender != null) {
+      lines.add(_Line('Sender', sender));
+    }
 
     final recipient = transaction.recipient?.trim();
     if (recipient != null && recipient.isNotEmpty && recipient != 'null') {
