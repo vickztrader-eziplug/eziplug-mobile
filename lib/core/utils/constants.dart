@@ -45,8 +45,9 @@ class Constants {
   // (same as a Pusher app key); only the app secret, which never leaves the
   // backend, is sensitive. Must match REVERB_APP_KEY in the backend's .env.
   static const String reverbKey = 'lfmhzpzqyubvxnhplj6v';
-  static const int reverbPort = 8080;
-  static const bool reverbUseTLS = false; // flip to true once served over wss:// in production
+
+  static bool get reverbUseTLS => Uri.parse(baseUrl).scheme == 'https';
+  static int get reverbPort => reverbUseTLS ? 443 : 8080;
 
   static String get _apiOrigin {
     final uri = Uri.parse(fixLocalUrl(baseUrl));
