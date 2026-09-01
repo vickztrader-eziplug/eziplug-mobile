@@ -475,8 +475,7 @@ class _P2pOrderDetailScreenState extends State<P2pOrderDetailScreen>
             _infoRow('Payout Ref', order.payoutReference!),
           if (order.transactionReference != null)
             _infoRow('Transaction Ref', order.transactionReference!),
-          if (order.errorMessage != null && order.errorMessage!.isNotEmpty)
-            _infoRow('Error', order.errorMessage!, valueColor: AppColors.error),
+          _infoRow('Sender Name', _authService.userFullName),
           if (_showMoreDetails) ...[
             const Divider(height: 24),
             _infoRow('Price', order.price.toStringAsFixed(2)),

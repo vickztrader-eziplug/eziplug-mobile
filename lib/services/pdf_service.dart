@@ -154,7 +154,7 @@ class PdfService {
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.fromLTRB(28, 24, 28, 22),
           theme: theme,
-          buildBackground: (context) => _watermark(),
+          buildBackground: (context) => _pageBackground(),
         ),
         // Long receipts (a swap with bank details, a bill with a token) flow
         // onto a second page instead of being clipped by a fixed-height Page.
@@ -220,13 +220,26 @@ class PdfService {
 
   // ---------------------------------------------------------------- chrome
 
-  static pw.Widget _watermark() {
+  /// Full-bleed page background. A PDF page assumes white paper and never
+  /// paints its own base fill, so `Printing.raster(...).toPng()` leaves every
+  /// untouched pixel transparent — which the gallery / share sheet / chat apps
+  /// then flatten onto black, so the shared PNG came out as a black card.
+  /// Painting an opaque white rectangle behind everything makes the raster
+  /// match what a PDF viewer shows on paper. `FullPage(ignoreMargins: true)`
+  /// forces it edge to edge, past the page margins.
+  static pw.Widget _pageBackground() {
     final logo = _logo;
-    if (logo == null) return pw.SizedBox();
-    return pw.Center(
-      child: pw.Opacity(
-        opacity: 0.04,
-        child: pw.Image(logo, width: 360, height: 360),
+    return pw.FullPage(
+      ignoreMargins: true,
+      child: pw.Container(
+        color: PdfColors.white,
+        alignment: pw.Alignment.center,
+        child: logo == null
+            ? null
+            : pw.Opacity(
+                opacity: 0.04,
+                child: pw.Image(logo, width: 360, height: 360),
+              ),
       ),
     );
   }
